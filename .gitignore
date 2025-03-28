@@ -1,0 +1,21 @@
+# Build folders.
+build/
+out/
+
+# Visual Studio.
+.vs/
+
+# Visual Studio Code.
+.vscode/
+*.code-workspace
+
+# Clangd cache.
+.cache/
+
+# Python virtual environment.
+.venv
+
+# xmake cache.
+.xmake/
+vsxmake2022
+vsxmake2017
