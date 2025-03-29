@@ -1,6 +1,6 @@
 set_project("licht")
 set_version("0.0.1-dev")
-set_languages("c++latest")
+set_languages("c++20")
 
 set_targetdir("build/bin/$(plat)_$(arch)_$(mode)")
 
