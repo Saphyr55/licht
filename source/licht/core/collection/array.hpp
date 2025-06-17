@@ -144,7 +144,7 @@ public:
     constexpr Array(size_t capacity,
                     AllocatorType&& allocator = AllocatorType()) noexcept
         : data_(nullptr)
-        , size_(0)
+        , size_(capacity)
         , capacity_(capacity)
         , allocator_(allocator) {
         data_ = allocator_allocate(capacity_);
@@ -154,12 +154,12 @@ public:
                     const AllocatorType& allocator = AllocatorType())
         : allocator_(allocator)
         , data_(nullptr)
-        , size_(init.size())
+        , size_(0)
         , capacity_(init.size()) {
         if (size_ > 0) {
             data_ = allocator_allocate(capacity_);
             SizeType i = 0;
-            for (const auto& item : init) {
+            for (const ElementType& item : init) {
                 new (data_ + i) ElementType(item);
                 ++i;
             }
