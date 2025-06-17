@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <utility>
 
 #include "licht/core/core_exports.hpp"
 #include "licht/core/defines.hpp"
@@ -43,6 +44,21 @@ namespace licht {
  */
 class Memory {
 public:
+    Memory() = delete;
+    ~Memory() = delete;
+
+    template<typename T>
+    static T* new_resource(auto... args) {
+        return new T(std::forward<decltype(args)>(args)...);
+    }
+
+    template<typename T>
+    static void delete_resource(T* resource) {
+        if (resource) {
+            delete resource;
+        }
+    }
+
     /**
      * @brief Allocates a block of memory of the specified size.
      *

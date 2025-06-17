@@ -5,7 +5,7 @@
 #include "licht/platform/platform_exports.hpp"
 
 namespace licht {
-
+ 
 enum class Button : uint8 {
     Left = 1,
     Middle = 2,

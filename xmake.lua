@@ -11,7 +11,7 @@ if is_mode("debug") then
 end
 
 
-add_requires("libsdl3", "catch2")
+add_requires("libsdl3", "catch2", "vulkan-headers")
 
 
 target("licht.core")
@@ -33,8 +33,27 @@ target("licht.rhi")
     add_includedirs("source")
     add_files("source/licht/rhi/**.cpp")
     add_headerfiles("source/licht/rhi/**.hpp")
-
+    
     add_defines("LICHT_RHI_EXPORTS")
+
+
+target("licht.rhi-vulkan")
+    set_kind("shared")
+    
+    add_deps("licht.core", "licht.platform")
+
+    add_includedirs("source")
+    add_files("source/licht/rhi_vulkan/**.cpp")
+    add_headerfiles("source/licht/rhi_vulkan/**.hpp")
+
+    add_packages("vulkan-headers", { public = true })
+
+    add_defines("LICHT_RHI_VULKAN_EXPORTS")
+
+	if is_plat("windows", "mingw") then
+		add_defines("VK_USE_PLATFORM_WIN32_KHR")
+		add_syslinks("User32")
+    end
 
 
 target("licht.platform")
@@ -67,7 +86,8 @@ target("licht.core.tests")
 target("licht.demo")
     set_kind("binary")
 
-    add_deps("licht.core", "licht.platform")
+    -- TODO: Add rhi-vulkan as a dependency when the demo uses it, with an option to enable it.
+    add_deps("licht.core", "licht.platform", "licht.rhi-vulkan")
 
     add_includedirs("source")
 

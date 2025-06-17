@@ -154,9 +154,9 @@ public:
                     const AllocatorType& allocator = AllocatorType())
         : allocator_(allocator)
         , data_(nullptr)
-        , size_(0)
+        , size_(init.size())
         , capacity_(init.size()) {
-        if (size_ > 0) {
+        if (capacity_ > 0) {
             data_ = allocator_allocate(capacity_);
             SizeType i = 0;
             for (const ElementType& item : init) {

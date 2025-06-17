@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include "licht/core/defines.hpp"
+#include "licht/rhi_vulkan/rhi_vulkan_module.hpp"
 
 namespace licht::demo {
 
@@ -26,21 +27,26 @@ void DemoMessageHandler::on_key_down(Key p_key) {
 
 int32 launch(int32 p_argc, const char** p_argv) {
 
+    LLOG_INFO("[main]", "Launch application.");
+
     platform_start();
 
-    LLOG_INFO("[main]", "Startup demo module.");
-    
     Display& display = Display::get_default();
     display.set_message_handler(new_ref<DemoMessageHandler>());
     WindowHandle window_handle = display.create_window_handle({"Demo Window", 800, 600, 100, 100});
 
+    RHIVulkanModule rhi_module;
+    rhi_module.initialize();
+    
     display.show(window_handle);
 
     g_is_running = true;
     while (g_is_running) {
         display.handle_events();
     }
-    
+        
+    rhi_module.shutdown();
+
     platform_end();
 
     return EXIT_SUCCESS;

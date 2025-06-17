@@ -24,7 +24,8 @@ WindowHandle SDLDisplay::create_window_handle(const WindowStatues& p_window_stat
         p_window_statues.width,
         p_window_statues.height,
           SDL_WINDOW_RESIZABLE 
-        | SDL_WINDOW_HIDDEN
+        | SDL_WINDOW_HIDDEN 
+        | SDL_WINDOW_VULKAN
     );
 
     if (!sdl_window) {

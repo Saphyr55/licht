@@ -1,3 +1,4 @@
+#include "licht/core/memory/memory.hpp"
 #include "licht/platform/SDL/SDL_display.hpp"
 #include "licht/platform/display.hpp"
 #include "licht/platform/platform.hpp"
@@ -18,8 +19,8 @@ void platform_start() {
     }
 
     LLOG_INFO("[platform_start]", "SDL initialized successfully.");
-
-    DisplayProvider::set_display(new SDLDisplay());
+    
+    DisplayProvider::set_display(Memory::new_resource<SDLDisplay>());
 }
 
 void platform_end() {
@@ -28,14 +29,14 @@ void platform_end() {
 
     if (display) {
         LLOG_INFO("[platform_end]", "Cleaning up display resources.");
-        delete display;
+        Memory::delete_resource(display);
         DisplayProvider::set_display(nullptr);
     }
 
     SDL_Quit();
     
+    
     LLOG_INFO("[platform_end]", "SDL cleaned up successfully.");
-
 }
 
 }
