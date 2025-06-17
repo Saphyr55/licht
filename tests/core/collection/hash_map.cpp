@@ -1,5 +1,6 @@
 #include <catch2/catch_all.hpp>
-#include "core/collection/hash_map.hpp"
+
+#include "licht/core/collection/hash_map.hpp"
 
 using namespace licht;
 
@@ -58,4 +59,33 @@ TEST_CASE("Check if the hashmap can remove an element.", "[HashMap::remove]") {
 
     REQUIRE_FALSE(map.contains(5));
     REQUIRE(map.size() == 1);
+}
+
+TEST_CASE("Check is create correctly with an initiliazer list.", "[HashMap::HashMap]") {
+    HashMap<uint32, uint32> map = {
+        {1, 2},
+        {3, 20},
+        {2, 2},
+        {18, 50},
+        {12, 10},
+        {30, 20},
+        {28, 111},
+        {148, 147},
+        {91, 954},
+        {63, 454},
+        {22, 4278},
+        {198, 475},
+    };
+
+
+    REQUIRE(map.contains(22));
+    REQUIRE(map.size() == 12);
+
+    map.remove(22);
+
+    REQUIRE_FALSE(map.contains(22));
+    REQUIRE(map.size() == 11);
+
+    REQUIRE(map[30] == 20);
+
 }

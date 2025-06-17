@@ -1,0 +1,53 @@
+#include "demo.hpp"
+
+#include <cstdlib>
+#include "licht/core/defines.hpp"
+
+namespace licht::demo {
+
+static bool g_is_running = false;
+
+void DemoMessageHandler::on_window_close(WindowHandle p_window) {
+    LLOG_INFO("[DemoMessageHandler::on_window_close]", "Window closed.");
+    g_is_running = false;
+}
+
+void DemoMessageHandler::on_window_resized(WindowHandle p_window, uint32 p_width, uint32 p_height) {
+    LLOG_INFO("[DemoMessageHandler::on_window_resized]", vformat("Window resized to %dx%d", p_width, p_height));
+}
+
+void DemoMessageHandler::on_mouse_wheel(float32 p_delta) {
+    LLOG_INFO("[DemoMessageHandler::on_mouse_wheel]", vformat("Mouse wheel scrolled by %d", p_delta));
+}
+
+void DemoMessageHandler::on_key_down(Key p_key) {
+    LLOG_INFO("[DemoMessageHandler::on_key_down]", vformat("Key down: %s", key_to_string(p_key)));
+}
+
+int32 launch(int32 p_argc, const char** p_argv) {
+
+    platform_start();
+
+    LLOG_INFO("[main]", "Startup demo module.");
+    
+    Display& display = Display::get_default();
+    display.set_message_handler(new_ref<DemoMessageHandler>());
+    WindowHandle window_handle = display.create_window_handle({"Demo Window", 800, 600, 100, 100});
+
+    display.show(window_handle);
+
+    g_is_running = true;
+    while (g_is_running) {
+        display.handle_events();
+    }
+    
+    platform_end();
+
+    return EXIT_SUCCESS;
+}
+
+}
+
+int32 main(int32 p_argc, const char** p_argv) {
+    return licht::demo::launch(p_argc, p_argv);
+}

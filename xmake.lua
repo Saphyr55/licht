@@ -6,60 +6,70 @@ set_targetdir("build/bin/$(plat)_$(arch)_$(mode)")
 
 add_rules("mode.debug", "mode.release")
 
-add_requires("catch2")
-
 if is_mode("debug") then
     add_defines("LDEBUG")
 end
 
 
+add_requires("libsdl3", "catch2")
+
+
 target("licht.core")
     set_kind("shared")
 
-    add_files("core/**.cpp")
-    add_headerfiles("core/**.hpp")
-    add_includedirs(".", { public = true })
+    add_includedirs("source")
+
+    add_files("source/licht/core/**.cpp")
+    add_headerfiles("source/licht/core/**.hpp")
+
     add_defines("LICHT_CORE_EXPORTS")
 
 
-target("licht.display")
+target("licht.rhi")
     set_kind("shared")
-
+    
     add_deps("licht.core")
-    add_files("runtime/display/**.cpp")
-    add_headerfiles("runtime/display/**.hpp")
-    add_includedirs("runtime", { public = true })
-    add_defines("LICHT_DISPLAY_EXPORTS")
+
+    add_includedirs("source")
+    add_files("source/licht/rhi/**.cpp")
+    add_headerfiles("source/licht/rhi/**.hpp")
+
+    add_defines("LICHT_RHI_EXPORTS")
 
 
 target("licht.platform")
-    set_kind("static")
+    set_kind("shared")
 
-    add_deps("licht.core", "licht.display")
-    add_files("platform/**.cpp")
-    add_headerfiles("platform/**.hpp", { public = true })
-    add_includedirs("platform/")
+    add_deps("licht.core")
 
-    if is_plat("windows") then
-        add_defines("LICHT_WIN32")
-        add_defines("UNICODE", "_UNICODE")
-        -- add_ldflags("/subsystem:windows", "/entry:mainCRTStartup")
-        add_syslinks("user32", "gdi32", "kernel32")
-    end
+    add_packages("libsdl3")
 
+    add_includedirs("source")
 
-target("licht.demo")
-    set_kind("binary")
+    add_files("source/licht/platform/**.cpp")
+    add_headerfiles("source/licht/platform/**.hpp")
 
-    add_deps("licht.display", "licht.core", "licht.platform")
-    add_files("samples/demo/**.cpp")
-    add_headerfiles("samples/demo/**.hpp")
-    add_includedirs("samples/demo/")
+    add_defines("LICHT_PLATFORM_EXPORTS")
 
 
 target("licht.core.tests")
     set_kind("binary")
 
     add_deps("licht.core")
+    
     add_packages("catch2")
+
+    add_includedirs("source")
+    
     add_files("tests/core/**.cpp")
+
+
+target("licht.demo")
+    set_kind("binary")
+
+    add_deps("licht.core", "licht.platform")
+
+    add_includedirs("source")
+
+    add_files("source/licht-demo/**.cpp")
+    add_headerfiles("source/licht-demo/**.hpp")

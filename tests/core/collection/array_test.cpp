@@ -1,5 +1,6 @@
 #include <catch2/catch_all.hpp>
-#include "core/collection/array.hpp"
+
+#include "licht/core/collection/array.hpp"
 
 using namespace licht;
 
