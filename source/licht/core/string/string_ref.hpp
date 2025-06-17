@@ -32,12 +32,12 @@ public:
 
     constexpr const CharType* data() const { return data_; }
 
-    constexpr size_t size() const { return String::length(data_); }
+    constexpr size_t size() const { return string_length(data_); }
 
     constexpr bool empty() const { return size() == 0; }
 
     constexpr bool operator==(const StringRefBase& other) const {
-        return size() == other.size() && String::compare(data_, other.data_) == 0;
+        return size() == other.size() && string_compare(data_, other.data_) == 0;
     }
 
     constexpr bool operator==(const CharType* str) const {
