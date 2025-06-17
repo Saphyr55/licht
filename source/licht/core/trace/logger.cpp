@@ -6,11 +6,11 @@
 namespace licht {
 
 static const HashMap<LogSeverity, const char*> g_severity_map = {
-    {LogSeverity::INFO, "INFO"},
-    {LogSeverity::WARN, "WARN"},
-    {LogSeverity::ERROR, "ERROR"},
-    {LogSeverity::FATAL, "FATAL"},
-    {LogSeverity::DEBUG, "DEBUG"}};
+    {LogSeverity::Info, "Info"},
+    {LogSeverity::Warn, "Warn"},
+    {LogSeverity::Error, "Error"},
+    {LogSeverity::Fatal, "Fatal"},
+    {LogSeverity::Debug, "Debug"}};
 
 
 Logger& Logger::get_default() {

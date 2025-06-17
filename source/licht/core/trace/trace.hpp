@@ -10,19 +10,19 @@
     ::licht::Logger::get_default().log(LMAKE_CONTEXT_LOG_MSG(severity, channel, msg));
 
 #define LLOG_DEBUG(channel, msg) \
-    LLOG(::licht::LogSeverity::DEBUG, channel, msg)
+    LLOG(::licht::LogSeverity::Debug, channel, msg)
 
 #define LLOG_INFO(channel, msg) \
-    LLOG(::licht::LogSeverity::INFO, channel, msg)
+    LLOG(::licht::LogSeverity::Info, channel, msg)
 
 #define LLOG_WARN(channel, msg) \
-    LLOG(::licht::LogSeverity::WARN, channel, msg)
+    LLOG(::licht::LogSeverity::Warn, channel, msg)
 
 #define LLOG_ERROR(channel, msg) \
-    LLOG(licht::LogSeverity::ERROR, channel, msg)
+    LLOG(licht::LogSeverity::Error, channel, msg)
 
 #define LLOG_FATAL(channel, msg)                     \
-    LLOG(::licht::LogSeverity::FATAL, channel, msg) \
+    LLOG(::licht::LogSeverity::Fatal, channel, msg) \
     LDEBUGBREAK();
 
 #define LLOG_INFO_WHEN(cond, channel, msg) \
