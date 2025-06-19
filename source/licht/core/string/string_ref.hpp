@@ -19,6 +19,8 @@ public:
         requires std::same_as<CharType, char>
         : data_(str.data()) {}
 
+    constexpr ~StringRefBase() = default;
+
     constexpr StringRefBase(const StringRefBase& other) = default;
 
     constexpr StringRefBase& operator=(const StringRefBase& other) = default;

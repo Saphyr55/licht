@@ -37,9 +37,9 @@ target("licht.rhi")
     add_defines("LICHT_RHI_EXPORTS")
 
 
-target("licht.rhi-vulkan")
+target("licht.rhi.vulkan")
     set_kind("shared")
-    
+
     add_deps("licht.core", "licht.platform")
 
     add_includedirs("source")
@@ -86,8 +86,8 @@ target("licht.core.tests")
 target("licht.demo")
     set_kind("binary")
 
-    -- TODO: Add rhi-vulkan as a dependency when the demo uses it, with an option to enable it.
-    add_deps("licht.core", "licht.platform", "licht.rhi-vulkan")
+    -- TODO: Add licht.rhi.vulkan as a runtime dependency when the demo uses it.
+    add_deps("licht.core", "licht.platform", "licht.rhi.vulkan")
 
     add_includedirs("source")
 

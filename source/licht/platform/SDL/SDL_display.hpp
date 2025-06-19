@@ -2,6 +2,7 @@
 
 #include <SDL3/SDL.h>
 
+#include "SDL3/SDL_properties.h"
 #include "licht/core/collection/hash_map.hpp"
 #include "licht/platform/display.hpp"
 #include "licht/platform/window_handle.hpp"
@@ -36,6 +37,7 @@ public:
 private:
     SharedRef<DisplayMessageHandler> message_handler_;
     HashMap<WindowHandle, SDL_Window*> main_window_map_;
+    HashMap<WindowHandle, void*> native_window_map_;
     HashMap<WindowHandle, WindowStatues> main_window_statues_map_;
 };
 

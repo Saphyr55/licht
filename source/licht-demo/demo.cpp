@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include "licht/core/defines.hpp"
+#include "licht/core/memory/shared_ref.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_module.hpp"
 
 namespace licht::demo {
@@ -32,8 +33,11 @@ int32 launch(int32 p_argc, const char** p_argv) {
     platform_start();
 
     Display& display = Display::get_default();
-    display.set_message_handler(new_ref<DemoMessageHandler>());
+    SharedRef<DemoMessageHandler> message_handler = new_ref<DemoMessageHandler>();
+    display.set_message_handler(message_handler);
+
     WindowHandle window_handle = display.create_window_handle({"Demo Window", 800, 600, 100, 100});
+    LCHECK(window_handle == Display::MAIN_WINDOW_HANDLE)
 
     RHIVulkanModule rhi_module;
     rhi_module.initialize();

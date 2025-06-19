@@ -7,15 +7,16 @@
 
 namespace licht {
 
-struct RHIVulkanFuntions {
-    // Core Vulkan functions
+struct VulkanFuntions {
+    
+    // Core Vulkan functions.
     LICHT_DEFINE_RHI_FUNCTION(vkGetInstanceProcAddr);
     LICHT_DEFINE_RHI_FUNCTION(vkEnumerateInstanceVersion);
     LICHT_DEFINE_RHI_FUNCTION(vkEnumerateInstanceExtensionProperties);
     LICHT_DEFINE_RHI_FUNCTION(vkEnumerateInstanceLayerProperties);
     LICHT_DEFINE_RHI_FUNCTION(vkCreateInstance);
 
-    // Instance functions
+    // Instance functions.
     LICHT_DEFINE_RHI_FUNCTION(vkGetDeviceProcAddr);
     LICHT_DEFINE_RHI_FUNCTION(vkDestroyInstance);
     LICHT_DEFINE_RHI_FUNCTION(vkEnumeratePhysicalDevices);
@@ -29,11 +30,12 @@ struct RHIVulkanFuntions {
     LICHT_DEFINE_RHI_FUNCTION(vkGetPhysicalDeviceSurfaceCapabilitiesKHR);
     LICHT_DEFINE_RHI_FUNCTION(vkGetPhysicalDeviceSurfaceFormatsKHR);
     LICHT_DEFINE_RHI_FUNCTION(vkGetPhysicalDeviceSurfacePresentModesKHR);
+    LICHT_DEFINE_RHI_FUNCTION(vkGetPhysicalDeviceSurfaceSupportKHR)
     LICHT_DEFINE_RHI_FUNCTION(vkEnumerateDeviceExtensionProperties);
     LICHT_DEFINE_RHI_FUNCTION(vkCreateDevice);
     LICHT_DEFINE_RHI_FUNCTION(vkDestroySurfaceKHR);
 
-    // Device functions
+    // Device functions.
     LICHT_DEFINE_RHI_FUNCTION(vkGetDeviceQueue);
     LICHT_DEFINE_RHI_FUNCTION(vkDeviceWaitIdle);
     LICHT_DEFINE_RHI_FUNCTION(vkCreateCommandPool);

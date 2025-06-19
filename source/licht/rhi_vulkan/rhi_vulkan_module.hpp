@@ -1,13 +1,10 @@
 #pragma once
 
-#include "licht/core/defines.hpp"
-#include "licht/core/memory/shared_ref.hpp"
-#include "licht/platform/dynamic_library.hpp"
-#include "licht/platform/window_handle.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_context.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_exports.hpp"
 
 namespace licht {
+
+struct VulkanContext;
 
 class LICHT_RHI_VULKAN_API RHIVulkanModule {
 public:
@@ -16,7 +13,7 @@ public:
     void shutdown();
 
 private:
-    RHIVulkanContext* context_;
+    VulkanContext* context_;
 };
 
 }

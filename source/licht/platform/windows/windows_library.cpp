@@ -25,7 +25,7 @@ void DynamicLibraryLoader::unload(SharedRef<DynamicLibrary> p_library) {
     HMODULE handle = static_cast<HMODULE>(p_library->handle);
     LCHECK(handle != nullptr);
 
-    FreeLibrary(handle);
+    ::FreeLibrary(handle);
 }
 
 void* DynamicLibraryLoader::load_function(SharedRef<DynamicLibrary> p_library, StringRef p_function_name) {

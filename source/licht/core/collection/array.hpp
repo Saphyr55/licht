@@ -4,36 +4,25 @@
 #include "licht/core/memory/allocator.hpp"
 
 #include <algorithm>
+#include <type_traits>
 
 namespace licht {
 
 template <typename ElementType,
-          typename AllocatorType = DefaultAllocator<ElementType>>
+          typename AllocatorType = DefaultAllocator<ElementType>,
+          typename SizeType = usize>
 class Array {
 public:
-    using SizeType = size_t;
     using IteratorType = ElementType*;
 
 public:
-    void push_back(ElementType element) {
-        append(std::move(element));
-    }
-
-    void append(const ElementType& element) {
+    void append(const ElementType& p_element) {
         if (size_ >= capacity_) {
             reverse(capacity_ == 0 ? 1 : capacity_ * 2);
         }
 
-        new (data_ + size_) ElementType(element);
-        ++size_;
-    }
-
-    void append(ElementType&& element) {
-        if (size_ >= capacity_) {
-            reverse(capacity_ == 0 ? 1 : capacity_ * 2);
-        }
-
-        new (data_ + size_) ElementType(std::move(element));
+        new (data_ + size_) ElementType(p_element);
+        
         ++size_;
     }
 
@@ -45,11 +34,11 @@ public:
     }
 
     template <typename... Args>
-    void emplace(Args&&... args) {
+    void emplace(Args&&... p_args) {
         if (size_ >= capacity_) {
             reverse(capacity_ == 0 ? 1 : capacity_ * 2);
         }
-        new (data_ + size_) ElementType(std::forward<Args>(args)...);
+        new (data_ + size_) ElementType(std::forward<Args>(p_args)...);
         ++size_;
     }
 
@@ -60,14 +49,14 @@ public:
         }
     }
 
-    inline constexpr ElementType& operator[](SizeType index) {
-        LCHECK(index < size_);
-        return data_[index];
+    inline constexpr ElementType& operator[](SizeType p_index) {
+        LCHECK_MSG(p_index < size_, "Index out of bounds.");
+        return data_[p_index];
     }
 
-    inline constexpr const ElementType& operator[](SizeType index) const {
-        LCHECK(index < size_);
-        return data_[index];
+    inline constexpr const ElementType& operator[](SizeType p_index) const {
+        LCHECK_MSG(p_index < size_, "Index out of bounds.");
+        return data_[p_index];
     }
 
     inline constexpr SizeType size() const {
@@ -89,25 +78,45 @@ public:
 
         size_ = 0;
     }
+    
+    void remove(const ElementType& p_value) {
+        remove(p_value, [](auto& p_1, auto& p_2) -> int32 {
+            if (p_1 == p_2) {
+                return 0;
+            } else if (p_1 > p_2) {
+                return 1;
+            } else {
+                return -1;                
+            }
+        });
+    }
 
-    void remove(const ElementType& value) {
-        SizeType newSize = 0;
+    void remove(const ElementType& p_value, auto&& p_comparator) {
+        SizeType new_size = 0;
         for (SizeType i = 0; i < size_; ++i) {
-            if (data_[i] != value) {
-                if (newSize != i) {
-                    new (data_ + newSize) ElementType(data_[i]);
+            if (p_comparator(data_[i], p_value) != 0) {
+                if (new_size != i) {
+                    new (data_ + new_size) ElementType(data_[i]);
                 }
-                ++newSize;
+                ++new_size;
             } else {
                 data_[i].~ElementType();
             }
         }
-        size_ = newSize;
+        size_ = new_size;
     }
 
-    void reverse(SizeType capacity) {
-        if (capacity > capacity_) {
-            allocate_resize(capacity);
+
+    void resize(SizeType p_size) {
+        reverse(p_size);
+        if (size_ != p_size) {
+            size_ = p_size;
+        }
+    }
+
+    void reverse(SizeType p_capacity) {
+        if (p_capacity > capacity_) {
+            allocate_resize(p_capacity);
         }
     }
 
@@ -117,11 +126,11 @@ public:
         }
     }
 
-    void swap(Array& other) noexcept {
-        std::swap(data_, other.data_);
-        std::swap(size_, other.size_);
-        std::swap(capacity_, other.capacity_);
-        std::swap(allocator_, other.allocator_);
+    void swap(Array& p_other) noexcept {
+        std::swap(data_, p_other.data_);
+        std::swap(size_, p_other.size_);
+        std::swap(capacity_, p_other.capacity_);
+        std::swap(allocator_, p_other.allocator_);
     }
 
     inline const ElementType* data() const {
@@ -132,8 +141,41 @@ public:
         return data_;
     }
 
+    void push_back(ElementType p_element) {
+        append(std::move(p_element));
+    }
+
+    template<typename Predicate>
+    ElementType* get_if(Predicate&& p_predicate) const {
+        for (SizeType i = 0; i < size_; ++i) {
+            if (p_predicate(data_[i])) {
+                return &data_[i];
+            }
+        }
+        return nullptr;
+    }
+
+    bool contains(const ElementType& p_element) const {
+        for (SizeType i = 0; i < size_; ++i) {
+            if (data_[i] == p_element) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    template<typename Comparator>
+    bool contains(const ElementType& p_element, Comparator&& p_comparator) const {
+        for (SizeType i = 0; i < size_; ++i) {
+            if (p_comparator(data_[i], p_element) == 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 public:
-    constexpr explicit Array(AllocatorType&& allocator = AllocatorType()) noexcept
+    constexpr Array(AllocatorType&& allocator = AllocatorType()) noexcept
         : data_(nullptr)
         , size_(0)
         , capacity_(1)
@@ -141,7 +183,7 @@ public:
         data_ = allocator_allocate(capacity_);
     }
 
-    constexpr Array(size_t capacity,
+    constexpr Array(usize capacity,
                     AllocatorType&& allocator = AllocatorType()) noexcept
         : data_(nullptr)
         , size_(capacity)
@@ -190,7 +232,7 @@ public:
         }
     }
 
-    Array& operator=(const Array& other) {
+    constexpr Array& operator=(const Array& other) {
         if (this != &other) {
             Array temp(other);
             swap(temp);
@@ -198,7 +240,7 @@ public:
         return *this;
     }
 
-    Array& operator=(Array&& other) noexcept {
+    constexpr Array& operator=(Array&& other) noexcept {
         if (this != &other) {
             clear();
 
@@ -318,8 +360,8 @@ constexpr bool operator==(const Array<ElementType, AllocatorType>& lhs,
 }
 
 template <typename ElementType, typename AllocatorType>
-inline constexpr bool operator!=(const Array<ElementType, AllocatorType>& lhs,
-                          const Array<ElementType, AllocatorType>& rhs) {
+inline constexpr bool operator!=(const Array<ElementType, AllocatorType>& lhs, 
+                                 const Array<ElementType, AllocatorType>& rhs) {
     return !(lhs == rhs);
 }
 

@@ -41,4 +41,8 @@ constexpr inline auto signum(const Real auto& r) {
     return r == decltype(r)(0) ? 0 : rabs(r) / r;
 }
 
+constexpr inline auto clamp(const Real auto& value, const Real auto& min, const Real auto& max) {
+    return (value < min) ? min : (value > max) ? max : value;
+}
+
 }  //namespace licht
