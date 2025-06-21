@@ -5,17 +5,17 @@
 
 namespace licht {
 
-StringRef vformat(StringRef format, auto... args) {
+String vformat(StringRef format, auto... args) {
     
     int32 size = ::snprintf(nullptr, 0, format.data(), args...);
     if (size < 0) {
-        return StringRef();
+        return String();
     }
 
     String buffer(size + 1);
     ::snprintf(buffer.data(), size + 1, format.data(), args...);
 
-    return buffer.data();
+    return buffer;
 }
 
 }

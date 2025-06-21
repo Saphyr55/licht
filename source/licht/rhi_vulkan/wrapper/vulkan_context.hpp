@@ -1,11 +1,12 @@
 #pragma once
 
 #include "licht/core/collection/array.hpp"
+#include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/trace/trace.hpp"
 #include "licht/core/string/format.hpp"
 #include "licht/platform/dynamic_library.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_exports.hpp"
 #include "licht/rhi_vulkan/wrapper/vulkan_functions.hpp"
+#include "licht/rhi_vulkan/wrapper/vulkan_graphics_pipeline.hpp"
 #include "licht/rhi_vulkan/wrapper/vulkan_physical_device.hpp"
 
 #include <vulkan/vulkan_core.h>
@@ -40,6 +41,18 @@ struct VulkanContext {
     VkExtent2D swapchain_extent;
     Array<VkImage> swapchain_images;
     Array<VkImageView> swapchain_image_views;
+
+    VkRenderPass render_pass;
+    SharedRef<VulkanGraphicsPipeline> graphics_pipeline;
+
+    Array<VkFramebuffer> framebuffers;
+
+    VkCommandPool command_pool;
+    VkCommandBuffer command_buffer;
+
+    VkSemaphore image_available_semaphore;
+    VkSemaphore render_finished_semaphore;
+    VkFence in_flight_fence;
 
     VkDebugUtilsMessengerEXT debug_utils_messenger = VK_NULL_HANDLE;
 };

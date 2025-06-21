@@ -85,6 +85,10 @@ bool vulkan_device_load(VulkanContext* p_context) {
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkCreateImageView);
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkDestroyImage);
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkDestroyImageView);
+    LICHT_LOAD_RHI_DEVICE_FUNCTION(vkCreateRenderPass);
+    LICHT_LOAD_RHI_DEVICE_FUNCTION(vkDestroyRenderPass);
+    LICHT_LOAD_RHI_DEVICE_FUNCTION(vkCreateFramebuffer);
+    LICHT_LOAD_RHI_DEVICE_FUNCTION(vkDestroyFramebuffer);
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkGetImageMemoryRequirements);
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkAllocateMemory);
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkFreeMemory);
@@ -92,6 +96,7 @@ bool vulkan_device_load(VulkanContext* p_context) {
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkFreeCommandBuffers);
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkBeginCommandBuffer);
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkEndCommandBuffer);
+    LICHT_LOAD_RHI_DEVICE_FUNCTION(vkResetCommandBuffer);
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkBindImageMemory);
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkCreateSemaphore);
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkDestroySemaphore);
@@ -152,6 +157,8 @@ bool vulkan_device_load(VulkanContext* p_context) {
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkCmdDraw);
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkCmdDrawIndexed);
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkCmdBindDescriptorSets);
+    LICHT_LOAD_RHI_DEVICE_FUNCTION(vkCmdBeginRenderPass);
+    LICHT_LOAD_RHI_DEVICE_FUNCTION(vkCmdEndRenderPass);
 
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkQueueSubmit);
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkQueueWaitIdle);

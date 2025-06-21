@@ -1,5 +1,6 @@
 #include "licht/core/io/platform_file_system.hpp"
 #include "licht/core/io/platform_file_handle.hpp"
+#include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/string/string_ref.hpp"
 
 #include <stdio.h>
@@ -33,11 +34,15 @@ void PlatformFileSystem::move(StringRef p_subject, StringRef p_to_path) {}
 FileOpenError<SharedRef<FileHandle>> PlatformFileSystem::open_write(StringRef p_filepath) const {
     using FileOpenErrorType = FileOpenError<SharedRef<FileHandle>>;
 
+    if (!file_exists(p_filepath)) {
+        return FileOpenErrorType::Failure(FileSystemOpenError::FileNotExist);
+    }
+
     FILE* stream;
     errno_t error = fopen_s(&stream, p_filepath, "wb");
 
     if (!stream) {
-        return FileOpenErrorType::Failure(FileSystemOpenError::UNKNOWN);
+        return FileOpenErrorType::Failure(FileSystemOpenError::Unkown);
     }
 
     SharedRef<FileHandle> file = new_ref<PlatformFileHandle>(stream);
@@ -47,12 +52,16 @@ FileOpenError<SharedRef<FileHandle>> PlatformFileSystem::open_write(StringRef p_
 
 FileOpenError<SharedRef<FileHandle>> PlatformFileSystem::open_read(StringRef p_filepath) const {
     using FileOpenErrorType = FileOpenError<SharedRef<FileHandle>>;
-    
+
+    if (!file_exists(p_filepath)) {
+        return FileOpenErrorType::Failure(FileSystemOpenError::FileNotExist);
+    }
+
     FILE* stream;
     errno_t error = fopen_s(&stream, p_filepath, "rb");
 
     if (!stream) {
-        return FileOpenErrorType::Failure(FileSystemOpenError::UNKNOWN);
+        return FileOpenErrorType::Failure(FileSystemOpenError::Unkown);
     }
 
     SharedRef<FileHandle> file = new_ref<PlatformFileHandle>(stream);

@@ -14,6 +14,8 @@ public:
 
     virtual bool read(uint8* destination, usize nbytes) override;
 
+    virtual Array<uint8> read_all_bytes() override;
+
     virtual bool write(const uint8* source, usize nbytes) override;
 
     virtual bool flush() override;

@@ -144,7 +144,7 @@ public:
         : StringBase<char>(p_capacity) {
     }
 
-    String(const wchar_t* p_str)
+    String(const char* p_str)
         : StringBase<char>(string_length(p_str) + 1) {
     }
 
@@ -160,6 +160,12 @@ public:
 };
 
 }  //namespace licht
+
+template <typename CharType>
+std::ostream& operator<<(std::ostream& os, const licht::StringBase<CharType>& str) {
+    os << str.data();
+    return os;
+}
 
 template <>
 struct LICHT_CORE_API std::hash<licht::String> {

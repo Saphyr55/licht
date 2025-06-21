@@ -10,6 +10,7 @@ if is_mode("debug") then
     add_defines("LDEBUG")
 end
 
+includes("scripts/**.lua")
 
 add_requires("libsdl3", "catch2", "vulkan-headers")
 
@@ -93,3 +94,20 @@ target("licht.demo")
 
     add_files("source/licht-demo/**.cpp")
     add_headerfiles("source/licht-demo/**.hpp")
+
+    after_build(function (target) 
+
+        import("core.base.task")
+		import("core.project.project")
+
+        local output_shaders = path.join(target:targetdir(), "shaders")
+
+        task.run("compile-shaders", { 
+            files = {
+                "shaders/main.frag",
+                "shaders/main.vert"
+            }, 
+            output = output_shaders
+        })
+
+    end)

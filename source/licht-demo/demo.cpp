@@ -47,6 +47,7 @@ int32 launch(int32 p_argc, const char** p_argv) {
     g_is_running = true;
     while (g_is_running) {
         display.handle_events();
+        rhi_module.tick();
     }
         
     rhi_module.shutdown();

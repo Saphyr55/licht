@@ -48,6 +48,10 @@ struct VulkanFuntions {
     LICHT_DEFINE_RHI_FUNCTION(vkCreateImageView);
     LICHT_DEFINE_RHI_FUNCTION(vkDestroyImage);
     LICHT_DEFINE_RHI_FUNCTION(vkDestroyImageView);
+    LICHT_DEFINE_RHI_FUNCTION(vkCreateRenderPass);
+    LICHT_DEFINE_RHI_FUNCTION(vkDestroyRenderPass);
+    LICHT_DEFINE_RHI_FUNCTION(vkCreateFramebuffer);
+    LICHT_DEFINE_RHI_FUNCTION(vkDestroyFramebuffer);
     LICHT_DEFINE_RHI_FUNCTION(vkGetImageMemoryRequirements);
     LICHT_DEFINE_RHI_FUNCTION(vkAllocateMemory);
     LICHT_DEFINE_RHI_FUNCTION(vkFreeMemory);
@@ -55,6 +59,7 @@ struct VulkanFuntions {
     LICHT_DEFINE_RHI_FUNCTION(vkFreeCommandBuffers);
     LICHT_DEFINE_RHI_FUNCTION(vkBeginCommandBuffer);
     LICHT_DEFINE_RHI_FUNCTION(vkEndCommandBuffer);
+    LICHT_DEFINE_RHI_FUNCTION(vkResetCommandBuffer);
     LICHT_DEFINE_RHI_FUNCTION(vkBindImageMemory);
     LICHT_DEFINE_RHI_FUNCTION(vkCreateSemaphore);
     LICHT_DEFINE_RHI_FUNCTION(vkDestroySemaphore);
@@ -115,6 +120,8 @@ struct VulkanFuntions {
     LICHT_DEFINE_RHI_FUNCTION(vkCmdDraw);
     LICHT_DEFINE_RHI_FUNCTION(vkCmdDrawIndexed);
     LICHT_DEFINE_RHI_FUNCTION(vkCmdBindDescriptorSets);
+    LICHT_DEFINE_RHI_FUNCTION(vkCmdBeginRenderPass);
+    LICHT_DEFINE_RHI_FUNCTION(vkCmdEndRenderPass);
 
     LICHT_DEFINE_RHI_FUNCTION(vkQueueSubmit);
     LICHT_DEFINE_RHI_FUNCTION(vkQueueWaitIdle);

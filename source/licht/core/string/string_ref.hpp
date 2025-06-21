@@ -55,6 +55,12 @@ using WStringRef = StringRefBase<wchar_t>;
 
 }  // namespace licht
 
+template <typename CharType>
+std::ostream& operator<<(std::ostream& os, const licht::StringRefBase<CharType>& str) {
+    os << str.data();
+    return os;
+}
+
 template <>
 struct LICHT_CORE_API std::hash<::licht::StringRef> {
     size_t operator()(const licht::StringRef& s) const noexcept {

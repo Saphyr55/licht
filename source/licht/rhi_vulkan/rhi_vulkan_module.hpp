@@ -10,6 +10,8 @@ class LICHT_RHI_VULKAN_API RHIVulkanModule {
 public:
     void initialize();
 
+    void tick();
+
     void shutdown();
 
 private:

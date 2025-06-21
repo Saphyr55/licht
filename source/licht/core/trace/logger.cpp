@@ -1,11 +1,12 @@
 #include "licht/core/trace/logger.hpp"
 #include "licht/core/collection/hash_map.hpp"
+#include "licht/core/string/string_ref.hpp"
 
 #include <iostream>
 
 namespace licht {
 
-static const HashMap<LogSeverity, const char*> g_severity_map = {
+static const HashMap<LogSeverity, StringRef> g_severity_map = {
     {LogSeverity::Info, "Info"},
     {LogSeverity::Warn, "Warn"},
     {LogSeverity::Error, "Error"},

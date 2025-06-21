@@ -21,7 +21,7 @@ namespace licht {
 void vulkan_instance_init(VulkanContext* p_context) {
     LCHECK(p_context)
 
-    uint32_t extension_count = 0;
+    uint32 extension_count = 0;
     LICHT_VULKAN_CHECK(p_context->rhi.licht_vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
 
     Array<VkExtensionProperties> available_extensions(extension_count);

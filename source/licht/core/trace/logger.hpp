@@ -5,6 +5,7 @@
 
 #include "licht/core/collection/array.hpp"
 #include "licht/core/core_exports.hpp"
+#include "licht/core/string/string_ref.hpp"
 
 namespace licht {
 
@@ -12,7 +13,7 @@ namespace licht {
  * @enum LogSeverity
  * @brief Defines the severity levels for log messages.
  */
-enum class LogSeverity {
+enum class LICHT_CORE_API LogSeverity {
     Info,
     Warn,
     Debug,
@@ -26,41 +27,41 @@ enum class LogSeverity {
  */
 struct LICHT_CORE_API LogMessage {
     /** Severity level of the log message. */
-    LogSeverity severity = LogSeverity::Error;
+    LogSeverity severity = LogSeverity::Debug;
     
     /** Channel or category of the log message. */
-    const char* channel = "UNKNOWN";
+    StringRef channel = "UNKNOWN";
     
     /** The actual log message. */
-    const char* message = "NO MESSAGE";
+    StringRef message = "NO MESSAGE";
 
     /** Line number where the log message was generated. */
     uint32 line = UINT32_MAX;
     
     /** Function name where the log message was generated. */
-    const char* function = "GLOBAL";
+    StringRef function = "GLOBAL";
     
     /** File name where the log message was generated. */
-    const char* file = "GLOBAL";
+    StringRef file = "GLOBAL";
     
     /** Flag indicating whether the log message is verbose. */
     bool verbose = false;
 
     LogMessage() = default;
-    LogMessage(LogSeverity severity,
-               const char* channel,
-               const char* message,
-               uint32 line,
-               const char* function,
-               const char* file,
-               bool verbose)
-        : severity(severity)
-        , channel(channel)
-        , message(message)
-        , line(line)
-        , function(function)
-        , file(file)
-        , verbose(verbose) {}
+    LogMessage(LogSeverity p_severity,
+               StringRef p_channel,
+               StringRef p_message,
+               uint32 p_line,
+               StringRef p_function,
+               StringRef p_file,
+               bool p_verbose)
+        : severity(p_severity)
+        , channel(p_channel)
+        , message(p_message)
+        , line(p_line)
+        , function(p_function)
+        , file(p_file)
+        , verbose(p_verbose) {}
 
     ~LogMessage() = default;
 };

@@ -11,7 +11,8 @@ namespace licht {
 class FileHandle;
 
 enum class FileSystemOpenError : uint8 {
-    UNKNOWN
+    Unkown,
+    FileNotExist
 };
 
 template <typename T>
@@ -30,7 +31,7 @@ public:
     virtual void rename(StringRef path, StringRef new_name) = 0;
 
     virtual void move(StringRef subject, StringRef toPath) = 0;
-
+    
     virtual FileOpenError<SharedRef<FileHandle>> open_write(StringRef filepath) const = 0;
 
     virtual FileOpenError<SharedRef<FileHandle>> open_read(StringRef filepath) const = 0;
