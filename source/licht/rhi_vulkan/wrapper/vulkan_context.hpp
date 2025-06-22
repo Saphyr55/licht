@@ -5,8 +5,8 @@
 #include "licht/core/trace/trace.hpp"
 #include "licht/core/string/format.hpp"
 #include "licht/platform/dynamic_library.hpp"
-#include "licht/rhi_vulkan/wrapper/vulkan_functions.hpp"
 #include "licht/rhi_vulkan/wrapper/vulkan_graphics_pipeline.hpp"
+#include "licht/rhi_vulkan/wrapper/vulkan_loader.hpp"
 #include "licht/rhi_vulkan/wrapper/vulkan_physical_device.hpp"
 
 #include <vulkan/vulkan_core.h>
@@ -24,7 +24,7 @@ struct VulkanContext {
     SharedRef<DynamicLibrary> library;
     VkAllocationCallbacks* allocator = nullptr;
 
-    VulkanFuntions rhi;
+    VulkanAPI api;
 
     VulkanPhysicalDevice physical_device;
     

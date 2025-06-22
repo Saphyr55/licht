@@ -38,7 +38,7 @@ void vulkan_debug_messenger_init(VulkanContext* p_context) {
     LLOG_INFO("[Vulkan]", "Initializing Vulkan debug messenger...");
 
     PFN_vkCreateDebugUtilsMessengerEXT fvkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
-        p_context->rhi.licht_vkGetInstanceProcAddr(p_context->instance, "vkCreateDebugUtilsMessengerEXT"));
+        p_context->api.licht_vkGetInstanceProcAddr(p_context->instance, "vkCreateDebugUtilsMessengerEXT"));
     LCHECK(fvkCreateDebugUtilsMessengerEXT);
 
     VkDebugUtilsMessengerCreateInfoEXT create_info = {};
@@ -70,7 +70,7 @@ void vulkan_debug_messenger_destroy(VulkanContext* p_context) {
 
     // Destroy the debug messenger
     PFN_vkDestroyDebugUtilsMessengerEXT fvkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
-        p_context->rhi.licht_vkGetInstanceProcAddr(p_context->instance, "vkDestroyDebugUtilsMessengerEXT"));
+        p_context->api.licht_vkGetInstanceProcAddr(p_context->instance, "vkDestroyDebugUtilsMessengerEXT"));
     LCHECK(fvkDestroyDebugUtilsMessengerEXT);
     
     if (p_context->debug_utils_messenger != VK_NULL_HANDLE) {

@@ -52,22 +52,22 @@ VulkanSwapchainSupportDetails vulkan_query_swapchain_support_details(VulkanConte
 
     VkPhysicalDevice physical_device = p_context->physical_device.handle;
 
-    LICHT_VULKAN_CHECK(p_context->rhi.licht_vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, p_context->surface, &swapchain_support_details.capabilities));
+    LICHT_VULKAN_CHECK(p_context->api.licht_vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, p_context->surface, &swapchain_support_details.capabilities));
 
     uint32 format_count = 0;
-    LICHT_VULKAN_CHECK(p_context->rhi.licht_vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, p_context->surface, &format_count, nullptr));
+    LICHT_VULKAN_CHECK(p_context->api.licht_vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, p_context->surface, &format_count, nullptr));
 
     if (format_count != 0) {
         swapchain_support_details.surface_formats.resize(format_count);
-        LICHT_VULKAN_CHECK(p_context->rhi.licht_vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, p_context->surface, &format_count, swapchain_support_details.surface_formats.data()));
+        LICHT_VULKAN_CHECK(p_context->api.licht_vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, p_context->surface, &format_count, swapchain_support_details.surface_formats.data()));
     }
 
     uint32 present_mode_count = 0;
-    LICHT_VULKAN_CHECK(p_context->rhi.licht_vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, p_context->surface, &present_mode_count, nullptr));
+    LICHT_VULKAN_CHECK(p_context->api.licht_vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, p_context->surface, &present_mode_count, nullptr));
 
     if (present_mode_count != 0) {
         swapchain_support_details.present_modes.resize(present_mode_count);
-        LICHT_VULKAN_CHECK(p_context->rhi.licht_vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, p_context->surface, &present_mode_count, swapchain_support_details.present_modes.data()));
+        LICHT_VULKAN_CHECK(p_context->api.licht_vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, p_context->surface, &present_mode_count, swapchain_support_details.present_modes.data()));
     }
 
     return swapchain_support_details;
@@ -90,7 +90,7 @@ void vulkan_context_swapchain_image_views_init(VulkanContext* p_context) {
         image_view_create_info.subresourceRange.levelCount = 1;
         image_view_create_info.subresourceRange.baseArrayLayer = 0;
         image_view_create_info.subresourceRange.layerCount = 1;
-        LICHT_VULKAN_CHECK(p_context->rhi.licht_vkCreateImageView(p_context->device, &image_view_create_info, p_context->allocator, &p_context->swapchain_image_views[i]))
+        LICHT_VULKAN_CHECK(p_context->api.licht_vkCreateImageView(p_context->device, &image_view_create_info, p_context->allocator, &p_context->swapchain_image_views[i]))
     }
 }
 
@@ -158,12 +158,12 @@ void vulkan_swapchain_init(VulkanContext* p_context) {
     swapchain_create_info.clipped = VK_TRUE;
     swapchain_create_info.oldSwapchain = VK_NULL_HANDLE;
 
-    LICHT_VULKAN_CHECK(p_context->rhi.licht_vkCreateSwapchainKHR(p_context->device, &swapchain_create_info, p_context->allocator, &p_context->swapchain));
+    LICHT_VULKAN_CHECK(p_context->api.licht_vkCreateSwapchainKHR(p_context->device, &swapchain_create_info, p_context->allocator, &p_context->swapchain));
     
     image_count = 0;
-    p_context->rhi.licht_vkGetSwapchainImagesKHR(p_context->device, p_context->swapchain, &image_count, nullptr);
+    p_context->api.licht_vkGetSwapchainImagesKHR(p_context->device, p_context->swapchain, &image_count, nullptr);
     p_context->swapchain_images.resize(image_count);
-    p_context->rhi.licht_vkGetSwapchainImagesKHR(p_context->device, p_context->swapchain, &image_count, p_context->swapchain_images.data());
+    p_context->api.licht_vkGetSwapchainImagesKHR(p_context->device, p_context->swapchain, &image_count, p_context->swapchain_images.data());
 
     p_context->swapchain_extent = extent;
     p_context->swapchain_format = surface_format.format;
@@ -179,14 +179,14 @@ void vulkan_swapchain_destroy(VulkanContext* p_context) {
 
     LLOG_INFO("[Vulkan]", "Destroying Swapchain Image Views...");
     for (const VkImageView& image_view : p_context->swapchain_image_views) {
-        p_context->rhi.licht_vkDestroyImageView(p_context->device, image_view, p_context->allocator);
+        p_context->api.licht_vkDestroyImageView(p_context->device, image_view, p_context->allocator);
     }
     p_context->swapchain_image_views.clear();
     LLOG_INFO("[Vulkan]", "Swapchain Image Views destroyed.");
 
 
     LLOG_INFO("[Vulkan]", "Destroying Vulkan Swapchain...");
-    p_context->rhi.licht_vkDestroySwapchainKHR(p_context->device, p_context->swapchain, p_context->allocator);
+    p_context->api.licht_vkDestroySwapchainKHR(p_context->device, p_context->swapchain, p_context->allocator);
     LLOG_INFO("[Vulkan]", "Swapchain destroyed.");
 }
 

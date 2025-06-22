@@ -22,10 +22,10 @@ void vulkan_instance_init(VulkanContext* p_context) {
     LCHECK(p_context)
 
     uint32 extension_count = 0;
-    LICHT_VULKAN_CHECK(p_context->rhi.licht_vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    LICHT_VULKAN_CHECK(p_context->api.licht_vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
 
     Array<VkExtensionProperties> available_extensions(extension_count);
-    LICHT_VULKAN_CHECK(p_context->rhi.licht_vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, available_extensions.data()));
+    LICHT_VULKAN_CHECK(p_context->api.licht_vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, available_extensions.data()));
 
     Array<const char*> desired_extensions = {
         VK_KHR_SURFACE_EXTENSION_NAME,
@@ -71,7 +71,7 @@ void vulkan_instance_init(VulkanContext* p_context) {
         LLOG_INFO("[Vulkan]", vformat("  - %s", layer));
     }
 
-    LICHT_VULKAN_CHECK(p_context->rhi.licht_vkCreateInstance(&create_info, p_context->allocator, &p_context->instance));
+    LICHT_VULKAN_CHECK(p_context->api.licht_vkCreateInstance(&create_info, p_context->allocator, &p_context->instance));
 
     LLOG_INFO("[Vulkan]", "Vulkan instance created successfully.");
 }
@@ -80,7 +80,7 @@ void vulkan_instance_destroy(VulkanContext* p_context) {
     LCHECK(p_context)
 
     LLOG_INFO("[Vulkan]", "Destroying Vulkan instance...");
-    p_context->rhi.licht_vkDestroyInstance(p_context->instance, p_context->allocator);
+    p_context->api.licht_vkDestroyInstance(p_context->instance, p_context->allocator);
     p_context->instance = VK_NULL_HANDLE;
     LLOG_INFO("[Vulkan]", "Vulkan instance destroyed.");
 }

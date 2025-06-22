@@ -5,20 +5,20 @@
 #include "licht/platform/dynamic_library.hpp"
 
 #define LICHT_LOAD_RHI_CORE_FUNCTION(Name)                                                                                               \
-    p_context->rhi.licht_##Name = reinterpret_cast<PFN_##Name>(::licht::DynamicLibraryLoader::load_function(p_context->library, #Name)); \
-    if (p_context->rhi.licht_##Name == nullptr) {                                                                                        \
+    p_context->api.licht_##Name = reinterpret_cast<PFN_##Name>(::licht::DynamicLibraryLoader::load_function(p_context->library, #Name)); \
+    if (p_context->api.licht_##Name == nullptr) {                                                                                        \
         LLOG_ERROR("[Vulkan]", "Failed to load Vulkan function: " #Name);                                          \
     }
 
 #define LICHT_LOAD_RHI_INSTANCE_FUNCTION(Name)                                                                        \
-    p_context->rhi.licht_##Name = (PFN_##Name)p_context->rhi.licht_vkGetInstanceProcAddr(p_context->instance, #Name); \
-    if (p_context->rhi.licht_##Name == nullptr) {                                                                     \
+    p_context->api.licht_##Name = (PFN_##Name)p_context->api.licht_vkGetInstanceProcAddr(p_context->instance, #Name); \
+    if (p_context->api.licht_##Name == nullptr) {                                                                     \
         LLOG_ERROR("[Vulkan]", "Failed to load Vulkan instance function: " #Name);              \
     }
 
 #define LICHT_LOAD_RHI_DEVICE_FUNCTION(Name)                                                                                        \
-    p_context->rhi.licht_##Name = reinterpret_cast<PFN_##Name>(p_context->rhi.licht_vkGetDeviceProcAddr(p_context->device, #Name)); \
-    if (p_context->rhi.licht_##Name == nullptr) {                                                                 \
+    p_context->api.licht_##Name = reinterpret_cast<PFN_##Name>(p_context->api.licht_vkGetDeviceProcAddr(p_context->device, #Name)); \
+    if (p_context->api.licht_##Name == nullptr) {                                                                 \
         LLOG_ERROR("[Vulkan]", "Failed to load Vulkan device function: " #Name);            \
     }                                                                                           
 

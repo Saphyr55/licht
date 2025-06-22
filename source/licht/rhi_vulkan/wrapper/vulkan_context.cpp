@@ -83,9 +83,9 @@ VulkanContext* vulkan_context_create(void* p_window_handle) {
     VkFenceCreateInfo fence_create_info{};
     fence_create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 
-    LICHT_VULKAN_CHECK(context->rhi.licht_vkCreateSemaphore(context->device, &semaphore_create_info, context->allocator, &context->image_available_semaphore));
-    LICHT_VULKAN_CHECK(context->rhi.licht_vkCreateSemaphore(context->device, &semaphore_create_info, context->allocator, &context->render_finished_semaphore));
-    LICHT_VULKAN_CHECK(context->rhi.licht_vkCreateFence(context->device, &fence_create_info, context->allocator, &context->in_flight_fence));
+    LICHT_VULKAN_CHECK(context->api.licht_vkCreateSemaphore(context->device, &semaphore_create_info, context->allocator, &context->image_available_semaphore));
+    LICHT_VULKAN_CHECK(context->api.licht_vkCreateSemaphore(context->device, &semaphore_create_info, context->allocator, &context->render_finished_semaphore));
+    LICHT_VULKAN_CHECK(context->api.licht_vkCreateFence(context->device, &fence_create_info, context->allocator, &context->in_flight_fence));
 
     return context;
 }
@@ -95,9 +95,9 @@ void vulkan_context_destroy(VulkanContext* p_context) {
 
     LLOG_INFO("[Vulkan]", "Destroying Vulkan RHI context...");
 
-    p_context->rhi.licht_vkDestroySemaphore(p_context->device, p_context->image_available_semaphore, p_context->allocator);
-    p_context->rhi.licht_vkDestroySemaphore(p_context->device, p_context->render_finished_semaphore, p_context->allocator);
-    p_context->rhi.licht_vkDestroyFence(p_context->device, p_context->in_flight_fence, p_context->allocator);
+    p_context->api.licht_vkDestroySemaphore(p_context->device, p_context->image_available_semaphore, p_context->allocator);
+    p_context->api.licht_vkDestroySemaphore(p_context->device, p_context->render_finished_semaphore, p_context->allocator);
+    p_context->api.licht_vkDestroyFence(p_context->device, p_context->in_flight_fence, p_context->allocator);
 
     vulkan_command_pool_destroy(p_context);
 

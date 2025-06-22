@@ -10,11 +10,11 @@ void vulkan_command_pool_init(VulkanContext* p_context) {
     command_pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     command_pool_create_info.queueFamilyIndex = p_context->physical_device.graphics_queue_index;
 
-    LICHT_VULKAN_CHECK(p_context->rhi.licht_vkCreateCommandPool(p_context->device, &command_pool_create_info, p_context->allocator, &p_context->command_pool));
+    LICHT_VULKAN_CHECK(p_context->api.licht_vkCreateCommandPool(p_context->device, &command_pool_create_info, p_context->allocator, &p_context->command_pool));
 }
 
 void vulkan_command_pool_destroy(VulkanContext* p_context) {
-    p_context->rhi.licht_vkDestroyCommandPool(p_context->device, p_context->command_pool, p_context->allocator);
+    p_context->api.licht_vkDestroyCommandPool(p_context->device, p_context->command_pool, p_context->allocator);
 }
 
 }

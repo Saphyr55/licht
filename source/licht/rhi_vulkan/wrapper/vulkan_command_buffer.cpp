@@ -13,7 +13,7 @@ void vulkan_command_buffer_init(VulkanContext* p_context) {
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     command_buffer_allocate_info.commandBufferCount = 1;
 
-    LICHT_VULKAN_CHECK(p_context->rhi.licht_vkAllocateCommandBuffers(p_context->device, &command_buffer_allocate_info, &p_context->command_buffer));
+    LICHT_VULKAN_CHECK(p_context->api.licht_vkAllocateCommandBuffers(p_context->device, &command_buffer_allocate_info, &p_context->command_buffer));
 }
 
 void vulkan_command_buffer_begin(VulkanContext* p_context, VkCommandBuffer p_command_buffer) {
@@ -24,20 +24,20 @@ void vulkan_command_buffer_begin(VulkanContext* p_context, VkCommandBuffer p_com
     command_buffer_begin_info.flags = 0; // Optional
     command_buffer_begin_info.pInheritanceInfo = nullptr; // Optional
 
-    LICHT_VULKAN_CHECK(p_context->rhi.licht_vkBeginCommandBuffer(p_command_buffer, &command_buffer_begin_info)); 
+    LICHT_VULKAN_CHECK(p_context->api.licht_vkBeginCommandBuffer(p_command_buffer, &command_buffer_begin_info)); 
     
 }
 
 void vulkan_command_buffer_draw(VulkanContext *p_context, VkCommandBuffer p_command_buffer, uint32 p_vertex_count, uint32 p_instance_count, uint32 p_first_vertex, uint32 p_first_instance) {
     LCHECK(p_context)
 
-    p_context->rhi.licht_vkCmdDraw(p_command_buffer, p_vertex_count, p_instance_count, p_first_vertex, p_first_instance);
+    p_context->api.licht_vkCmdDraw(p_command_buffer, p_vertex_count, p_instance_count, p_first_vertex, p_first_instance);
 }
 
 void vulkan_command_buffer_end(VulkanContext* p_context, VkCommandBuffer p_command_buffer) {
     LCHECK(p_context)
 
-    LICHT_VULKAN_CHECK(p_context->rhi.licht_vkEndCommandBuffer(p_command_buffer));
+    LICHT_VULKAN_CHECK(p_context->api.licht_vkEndCommandBuffer(p_command_buffer));
 }
 
 }

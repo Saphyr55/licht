@@ -24,16 +24,16 @@ void RHIVulkanModule::initialize() {
 }
 
 void RHIVulkanModule::tick() {
-    LICHT_VULKAN_CHECK(context_->rhi.licht_vkResetFences(context_->device, 1, &context_->in_flight_fence));
+    LICHT_VULKAN_CHECK(context_->api.licht_vkResetFences(context_->device, 1, &context_->in_flight_fence));
 
     VkFenceCreateInfo fence_create_info = {};
     fence_create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fence_create_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
     uint32 image_index = 0;
-    LICHT_VULKAN_CHECK(context_->rhi.licht_vkAcquireNextImageKHR(context_->device, context_->swapchain, UINT64_MAX, context_->image_available_semaphore, VK_NULL_HANDLE, &image_index));
+    LICHT_VULKAN_CHECK(context_->api.licht_vkAcquireNextImageKHR(context_->device, context_->swapchain, UINT64_MAX, context_->image_available_semaphore, VK_NULL_HANDLE, &image_index));
 
-    context_->rhi.licht_vkResetCommandBuffer(context_->command_buffer, 0);
+    context_->api.licht_vkResetCommandBuffer(context_->command_buffer, 0);
     
     vulkan_command_buffer_begin(context_, context_->command_buffer);
     vulkan_render_pass_begin(context_, context_->command_buffer, image_index);
@@ -46,12 +46,12 @@ void RHIVulkanModule::tick() {
         viewport.height = static_cast<float32>(context_->swapchain_extent.height);
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
-        context_->rhi.licht_vkCmdSetViewport(context_->command_buffer, 0, 1, &viewport);
+        context_->api.licht_vkCmdSetViewport(context_->command_buffer, 0, 1, &viewport);
 
         VkRect2D scissor{};
         scissor.offset = {0, 0};
         scissor.extent = context_->swapchain_extent;
-        context_->rhi.licht_vkCmdSetScissor(context_->command_buffer, 0, 1, &scissor);
+        context_->api.licht_vkCmdSetScissor(context_->command_buffer, 0, 1, &scissor);
 
         vulkan_command_buffer_draw(context_, context_->command_buffer, 3, 1, 0, 0);
     }
@@ -74,7 +74,7 @@ void RHIVulkanModule::tick() {
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = signal_semaphores;
 
-    LICHT_VULKAN_CHECK(context_->rhi.licht_vkQueueSubmit(context_->graphics_queue, 1, &submit_info, context_->in_flight_fence));
+    LICHT_VULKAN_CHECK(context_->api.licht_vkQueueSubmit(context_->graphics_queue, 1, &submit_info, context_->in_flight_fence));
 
     VkSwapchainKHR swapchains[] = {context_->swapchain};
 
@@ -87,12 +87,12 @@ void RHIVulkanModule::tick() {
     present_info.pImageIndices = &image_index;
     present_info.pResults = nullptr; // Optional
 
-    LICHT_VULKAN_CHECK(context_->rhi.licht_vkQueuePresentKHR(context_->present_queue, &present_info));
-    LICHT_VULKAN_CHECK(context_->rhi.licht_vkWaitForFences(context_->device, 1, &context_->in_flight_fence, VK_TRUE, UINT64_MAX));
+    LICHT_VULKAN_CHECK(context_->api.licht_vkQueuePresentKHR(context_->present_queue, &present_info));
+    LICHT_VULKAN_CHECK(context_->api.licht_vkWaitForFences(context_->device, 1, &context_->in_flight_fence, VK_TRUE, UINT64_MAX));
 }
 
 void RHIVulkanModule::shutdown() {
-    LICHT_VULKAN_CHECK(context_->rhi.licht_vkDeviceWaitIdle(context_->device));
+    LICHT_VULKAN_CHECK(context_->api.licht_vkDeviceWaitIdle(context_->device));
 
     vulkan_context_destroy(context_);
 
