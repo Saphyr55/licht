@@ -7,13 +7,15 @@ namespace licht {
 void vulkan_command_buffer_init(VulkanContext* p_context) {
     LCHECK(p_context)
 
+    p_context->command_buffers.resize(VulkanContext::MaxFrame);
+
     VkCommandBufferAllocateInfo command_buffer_allocate_info = {};
     command_buffer_allocate_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     command_buffer_allocate_info.commandPool = p_context->command_pool;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    command_buffer_allocate_info.commandBufferCount = 1;
+    command_buffer_allocate_info.commandBufferCount = static_cast<uint32>(p_context->command_buffers.size());
 
-    LICHT_VULKAN_CHECK(p_context->api.licht_vkAllocateCommandBuffers(p_context->device, &command_buffer_allocate_info, &p_context->command_buffer));
+    LICHT_VULKAN_CHECK(p_context->api.licht_vkAllocateCommandBuffers(p_context->device, &command_buffer_allocate_info, p_context->command_buffers.data()));
 }
 
 void vulkan_command_buffer_begin(VulkanContext* p_context, VkCommandBuffer p_command_buffer) {

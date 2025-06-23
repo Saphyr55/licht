@@ -4,6 +4,7 @@
 #include "licht/platform/display.hpp"
 #include "licht/rhi_vulkan/wrapper/vulkan_command_buffer.hpp"
 #include "licht/rhi_vulkan/wrapper/vulkan_context.hpp"
+#include "licht/rhi_vulkan/wrapper/vulkan_swapchain.hpp"
 #include "licht/rhi_vulkan/wrapper/vulkan_graphics_pipeline.hpp"
 #include "licht/rhi_vulkan/wrapper/vulkan_loader.hpp"
 #include "licht/rhi_vulkan/wrapper/vulkan_render_pass.hpp"
@@ -24,21 +25,29 @@ void RHIVulkanModule::initialize() {
 }
 
 void RHIVulkanModule::tick() {
-    LICHT_VULKAN_CHECK(context_->api.licht_vkResetFences(context_->device, 1, &context_->in_flight_fence));
-
+    
     VkFenceCreateInfo fence_create_info = {};
     fence_create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fence_create_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
     uint32 image_index = 0;
-    LICHT_VULKAN_CHECK(context_->api.licht_vkAcquireNextImageKHR(context_->device, context_->swapchain, UINT64_MAX, context_->image_available_semaphore, VK_NULL_HANDLE, &image_index));
+    VkResult acquire_next_image_result = context_->api.licht_vkAcquireNextImageKHR(context_->device, context_->swapchain, UINT64_MAX, context_->image_available_semaphores[context_->current_frame], VK_NULL_HANDLE, &image_index);
+    if (acquire_next_image_result == VK_ERROR_OUT_OF_DATE_KHR || acquire_next_image_result == VK_SUBOPTIMAL_KHR || window_resized_) {
+        vulkan_swapchain_recreate(context_);
+        window_resized_ = false;
+        return;
+    } else if (acquire_next_image_result != VK_SUBOPTIMAL_KHR) {
+        LICHT_VULKAN_CHECK(acquire_next_image_result)
+    }
 
-    context_->api.licht_vkResetCommandBuffer(context_->command_buffer, 0);
+    LICHT_VULKAN_CHECK(context_->api.licht_vkResetFences(context_->device, 1, &context_->in_flight_fences[context_->current_frame]));
+
+    context_->api.licht_vkResetCommandBuffer(context_->command_buffers[context_->current_frame], 0);
     
-    vulkan_command_buffer_begin(context_, context_->command_buffer);
-    vulkan_render_pass_begin(context_, context_->command_buffer, image_index);
+    vulkan_command_buffer_begin(context_, context_->command_buffers[context_->current_frame]);
+    vulkan_render_pass_begin(context_, context_->command_buffers[context_->current_frame], image_index);
     {
-        vulkan_pipeline_bind(context_, context_->command_buffer);
+        vulkan_pipeline_bind(context_, context_->command_buffers[context_->current_frame]);
         VkViewport viewport{};
         viewport.x = 0.0f;
         viewport.y = 0.0f;
@@ -46,35 +55,35 @@ void RHIVulkanModule::tick() {
         viewport.height = static_cast<float32>(context_->swapchain_extent.height);
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
-        context_->api.licht_vkCmdSetViewport(context_->command_buffer, 0, 1, &viewport);
+        context_->api.licht_vkCmdSetViewport(context_->command_buffers[context_->current_frame], 0, 1, &viewport);
 
         VkRect2D scissor{};
         scissor.offset = {0, 0};
         scissor.extent = context_->swapchain_extent;
-        context_->api.licht_vkCmdSetScissor(context_->command_buffer, 0, 1, &scissor);
+        context_->api.licht_vkCmdSetScissor(context_->command_buffers[context_->current_frame], 0, 1, &scissor);
 
-        vulkan_command_buffer_draw(context_, context_->command_buffer, 3, 1, 0, 0);
+        vulkan_command_buffer_draw(context_, context_->command_buffers[context_->current_frame], 3, 1, 0, 0);
     }
-    vulkan_render_pass_end(context_, context_->command_buffer);
+    vulkan_render_pass_end(context_, context_->command_buffers[context_->current_frame]);
 
-    vulkan_command_buffer_end(context_, context_->command_buffer);
+    vulkan_command_buffer_end(context_, context_->command_buffers[context_->current_frame]);
 
     VkSubmitInfo submit_info = {};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    VkSemaphore wait_semaphores[] = {context_->image_available_semaphore};
+    VkSemaphore wait_semaphores[] = {context_->image_available_semaphores[context_->current_frame]};
     VkPipelineStageFlags pipeline_stages_flags[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     submit_info.waitSemaphoreCount = 1;
     submit_info.pWaitSemaphores = wait_semaphores;
     submit_info.pWaitDstStageMask = pipeline_stages_flags;
     submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &context_->command_buffer;
+    submit_info.pCommandBuffers = &context_->command_buffers[context_->current_frame];
 
-    VkSemaphore signal_semaphores[] = {context_->render_finished_semaphore};
+    VkSemaphore signal_semaphores[] = {context_->render_finished_semaphores[context_->current_frame]};
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = signal_semaphores;
 
-    LICHT_VULKAN_CHECK(context_->api.licht_vkQueueSubmit(context_->graphics_queue, 1, &submit_info, context_->in_flight_fence));
+    LICHT_VULKAN_CHECK(context_->api.licht_vkQueueSubmit(context_->graphics_queue, 1, &submit_info, context_->in_flight_fences[context_->current_frame]));
 
     VkSwapchainKHR swapchains[] = {context_->swapchain};
 
@@ -88,7 +97,9 @@ void RHIVulkanModule::tick() {
     present_info.pResults = nullptr; // Optional
 
     LICHT_VULKAN_CHECK(context_->api.licht_vkQueuePresentKHR(context_->present_queue, &present_info));
-    LICHT_VULKAN_CHECK(context_->api.licht_vkWaitForFences(context_->device, 1, &context_->in_flight_fence, VK_TRUE, UINT64_MAX));
+    LICHT_VULKAN_CHECK(context_->api.licht_vkWaitForFences(context_->device, 1, &context_->in_flight_fences[context_->current_frame], VK_TRUE, UINT64_MAX));
+
+    context_->current_frame = (context_->current_frame  + 1) % VulkanContext::MaxFrame;
 }
 
 void RHIVulkanModule::shutdown() {

@@ -2,6 +2,7 @@
 #include "licht/core/collection/array.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/rhi_vulkan/wrapper/vulkan_context.hpp"
+#include "licht/rhi_vulkan/wrapper/vulkan_framebuffer.hpp"
 #include "vulkan/vulkan_core.h"
 
 namespace licht {
@@ -97,25 +98,7 @@ void vulkan_context_swapchain_image_views_init(VulkanContext* p_context) {
 void vulkan_swapchain_init(VulkanContext* p_context) {
     LCHECK(p_context)
 
-    LLOG_INFO("[Vulkan]", "Initializing Vulkan Swapchain...");
-
     VulkanSwapchainSupportDetails swapchain_support_details = vulkan_query_swapchain_support_details(p_context);
-
-    LLOG_INFO("[Vulkan]", "Swapchain Support Details:");
-    LLOG_INFO("[Vulkan]", "Capabilities:");
-    LLOG_INFO("[Vulkan]", vformat("  Min Image Count: %d", swapchain_support_details.capabilities.minImageCount));
-    LLOG_INFO("[Vulkan]", vformat("  Max Image Count: %d", swapchain_support_details.capabilities.maxImageCount));
-    LLOG_INFO("[Vulkan]", vformat("  Current Extent: %dx%d", swapchain_support_details.capabilities.currentExtent.width, swapchain_support_details.capabilities.currentExtent.height));
-
-    LLOG_INFO("[Vulkan]", "Surface Formats:");
-    for (const VkSurfaceFormatKHR& format : swapchain_support_details.surface_formats) {
-        LLOG_INFO("[Vulkan]", vformat("  Format: %d, Color Space: %d", format.format, format.colorSpace));
-    }
-    
-    LLOG_INFO("[Vulkan]", "Present Modes:");
-    for (const VkPresentModeKHR& present_mode : swapchain_support_details.present_modes) {
-        LLOG_INFO("[Vulkan]", vformat("  Present Mode: %s", vulkan_string_of_present_mode(present_mode)));
-    }
 
     bool swapchain_adequate = !swapchain_support_details.surface_formats.empty() && !swapchain_support_details.present_modes.empty();
 
@@ -123,11 +106,6 @@ void vulkan_swapchain_init(VulkanContext* p_context) {
     VkPresentModeKHR present_mode = vulkan_choose_swap_present_mode(swapchain_support_details.present_modes);
     VkExtent2D extent = vulkan_choose_swap_extent(swapchain_support_details.capabilities);
     uint32 image_count = vulkan_swapchain_count_image(swapchain_support_details.capabilities);
-
-    LLOG_INFO("[Vulkan]", vformat("Selected Surface Format: Format: %d, Color Space: %d", surface_format.format, surface_format.colorSpace));
-    LLOG_INFO("[Vulkan]", vformat("Selected Present Mode: %s", vulkan_string_of_present_mode(present_mode)));
-    LLOG_INFO("[Vulkan]", vformat("Selected Extent: %dx%d", extent.width, extent.height));
-    LLOG_INFO("[Vulkan]", vformat("Selected Image Count: %d", image_count));
 
     VkSwapchainCreateInfoKHR swapchain_create_info = {};
     swapchain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -159,7 +137,7 @@ void vulkan_swapchain_init(VulkanContext* p_context) {
     swapchain_create_info.oldSwapchain = VK_NULL_HANDLE;
 
     LICHT_VULKAN_CHECK(p_context->api.licht_vkCreateSwapchainKHR(p_context->device, &swapchain_create_info, p_context->allocator, &p_context->swapchain));
-    
+
     image_count = 0;
     p_context->api.licht_vkGetSwapchainImagesKHR(p_context->device, p_context->swapchain, &image_count, nullptr);
     p_context->swapchain_images.resize(image_count);
@@ -168,26 +146,31 @@ void vulkan_swapchain_init(VulkanContext* p_context) {
     p_context->swapchain_extent = extent;
     p_context->swapchain_format = surface_format.format;
 
-    LLOG_INFO("[Vulkan]", vformat("Swapchain created."));
-
-    LLOG_INFO("[Vulkan]", vformat("Swapchain Images Count: %d", p_context->swapchain_images.size()));
     vulkan_context_swapchain_image_views_init(p_context);
-    LLOG_INFO("[Vulkan]", "Swapchain Image Views initialized.");
+}
+
+void vulkan_swapchain_recreate(VulkanContext* p_context) {
+    LCHECK(p_context);
+    
+    LICHT_VULKAN_CHECK(p_context->api.licht_vkDeviceWaitIdle(p_context->device));
+
+    vulkan_framebuffers_destroy(p_context);
+
+    vulkan_swapchain_destroy(p_context);
+    vulkan_swapchain_init(p_context);
+
+    vulkan_framebuffers_init(p_context);
 }
 
 void vulkan_swapchain_destroy(VulkanContext* p_context) {
+    LCHECK(p_context);
 
-    LLOG_INFO("[Vulkan]", "Destroying Swapchain Image Views...");
     for (const VkImageView& image_view : p_context->swapchain_image_views) {
         p_context->api.licht_vkDestroyImageView(p_context->device, image_view, p_context->allocator);
     }
+
     p_context->swapchain_image_views.clear();
-    LLOG_INFO("[Vulkan]", "Swapchain Image Views destroyed.");
-
-
-    LLOG_INFO("[Vulkan]", "Destroying Vulkan Swapchain...");
     p_context->api.licht_vkDestroySwapchainKHR(p_context->device, p_context->swapchain, p_context->allocator);
-    LLOG_INFO("[Vulkan]", "Swapchain destroyed.");
 }
 
 }  //namespace licht

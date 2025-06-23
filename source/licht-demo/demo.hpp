@@ -14,6 +14,7 @@
 #include <licht/platform/display.hpp>
 #include <licht/platform/platform.hpp>
 #include <licht/platform/display_message_handler.hpp>
+#include "licht/rhi_vulkan/rhi_vulkan_module.hpp"
 
 namespace licht::demo {
 
@@ -26,6 +27,13 @@ public:
     virtual void on_mouse_wheel(float32 p_delta) override;
 
     virtual void on_key_down(Key p_key) override;
+
+    inline void set_rhi_module(RHIVulkanModule* p_rhi_module) {
+        rhi_module_ = p_rhi_module;
+    }
+
+private:
+    RHIVulkanModule* rhi_module_;
 };
 
 }

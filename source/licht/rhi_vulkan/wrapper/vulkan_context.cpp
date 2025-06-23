@@ -2,12 +2,12 @@
 
 #include "licht/core/collection/array.hpp"
 #include "licht/core/defines.hpp"
+#include "licht/core/io/file_handle.hpp"
+#include "licht/core/io/file_system.hpp"
 #include "licht/core/memory/memory.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/trace/trace.hpp"
 #include "licht/platform/dynamic_library.hpp"
-#include "licht/core/io/file_system.hpp"
-#include "licht/core/io/file_handle.hpp"
 #include "licht/rhi_vulkan/wrapper/vulkan_command_buffer.hpp"
 #include "licht/rhi_vulkan/wrapper/vulkan_command_pool.hpp"
 #include "licht/rhi_vulkan/wrapper/vulkan_debug_messenger.hpp"
@@ -25,6 +25,8 @@
 #include <vulkan/vulkan_core.h>
 
 namespace licht {
+
+uint32 VulkanContext::MaxFrame = 2;
 
 VulkanContext* vulkan_context_create(void* p_window_handle) {
     LLOG_INFO("[Vulkan]", "Initializing Vulkan RHI context...");
@@ -79,13 +81,19 @@ VulkanContext* vulkan_context_create(void* p_window_handle) {
 
     VkSemaphoreCreateInfo semaphore_create_info = {};
     semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    
+
     VkFenceCreateInfo fence_create_info{};
     fence_create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 
-    LICHT_VULKAN_CHECK(context->api.licht_vkCreateSemaphore(context->device, &semaphore_create_info, context->allocator, &context->image_available_semaphore));
-    LICHT_VULKAN_CHECK(context->api.licht_vkCreateSemaphore(context->device, &semaphore_create_info, context->allocator, &context->render_finished_semaphore));
-    LICHT_VULKAN_CHECK(context->api.licht_vkCreateFence(context->device, &fence_create_info, context->allocator, &context->in_flight_fence));
+    context->image_available_semaphores.resize(VulkanContext::MaxFrame);
+    context->render_finished_semaphores.resize(VulkanContext::MaxFrame);
+    context->in_flight_fences.resize(VulkanContext::MaxFrame);
+
+    for (usize i = 0; i < VulkanContext::MaxFrame; i++) {
+        LICHT_VULKAN_CHECK(context->api.licht_vkCreateSemaphore(context->device, &semaphore_create_info, context->allocator, &context->image_available_semaphores[i]));
+        LICHT_VULKAN_CHECK(context->api.licht_vkCreateSemaphore(context->device, &semaphore_create_info, context->allocator, &context->render_finished_semaphores[i]));
+        LICHT_VULKAN_CHECK(context->api.licht_vkCreateFence(context->device, &fence_create_info, context->allocator, &context->in_flight_fences[i]));
+    }
 
     return context;
 }
@@ -94,10 +102,11 @@ void vulkan_context_destroy(VulkanContext* p_context) {
     LCHECK(p_context)
 
     LLOG_INFO("[Vulkan]", "Destroying Vulkan RHI context...");
-
-    p_context->api.licht_vkDestroySemaphore(p_context->device, p_context->image_available_semaphore, p_context->allocator);
-    p_context->api.licht_vkDestroySemaphore(p_context->device, p_context->render_finished_semaphore, p_context->allocator);
-    p_context->api.licht_vkDestroyFence(p_context->device, p_context->in_flight_fence, p_context->allocator);
+    for (usize i = 0; i < VulkanContext::MaxFrame; i++) {
+        p_context->api.licht_vkDestroySemaphore(p_context->device, p_context->image_available_semaphores[i], p_context->allocator);
+        p_context->api.licht_vkDestroySemaphore(p_context->device, p_context->render_finished_semaphores[i], p_context->allocator);
+        p_context->api.licht_vkDestroyFence(p_context->device, p_context->in_flight_fences[i], p_context->allocator);
+    }
 
     vulkan_command_pool_destroy(p_context);
 

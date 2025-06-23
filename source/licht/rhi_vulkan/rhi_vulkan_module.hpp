@@ -14,8 +14,13 @@ public:
 
     void shutdown();
 
+    inline void update_resized() {
+        window_resized_ = true;
+    }
+
 private:
     VulkanContext* context_;
+    bool window_resized_ = false;
 };
 
 }

@@ -16,6 +16,11 @@ void DemoMessageHandler::on_window_close(WindowHandle p_window) {
 
 void DemoMessageHandler::on_window_resized(WindowHandle p_window, uint32 p_width, uint32 p_height) {
     LLOG_INFO("[DemoMessageHandler::on_window_resized]", vformat("Window resized to %dx%d", p_width, p_height));
+
+    if (rhi_module_) {
+        rhi_module_->update_resized();
+    }
+
 }
 
 void DemoMessageHandler::on_mouse_wheel(float32 p_delta) {
@@ -40,8 +45,9 @@ int32 launch(int32 p_argc, const char** p_argv) {
     LCHECK(window_handle == Display::MAIN_WINDOW_HANDLE)
 
     RHIVulkanModule rhi_module;
+    message_handler->set_rhi_module(&rhi_module);
     rhi_module.initialize();
-    
+
     display.show(window_handle);
 
     g_is_running = true;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "licht/core/collection/array.hpp"
+#include "licht/core/defines.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/trace/trace.hpp"
 #include "licht/core/string/format.hpp"
@@ -21,6 +22,8 @@
 namespace licht {
 
 struct VulkanContext {
+    static uint32 MaxFrame;
+
     SharedRef<DynamicLibrary> library;
     VkAllocationCallbacks* allocator = nullptr;
 
@@ -48,11 +51,13 @@ struct VulkanContext {
     Array<VkFramebuffer> framebuffers;
 
     VkCommandPool command_pool;
-    VkCommandBuffer command_buffer;
+    Array<VkCommandBuffer> command_buffers;
 
-    VkSemaphore image_available_semaphore;
-    VkSemaphore render_finished_semaphore;
-    VkFence in_flight_fence;
+    Array<VkSemaphore> image_available_semaphores;
+    Array<VkSemaphore> render_finished_semaphores;
+    Array<VkFence> in_flight_fences;
+
+    uint32 current_frame;
 
     VkDebugUtilsMessengerEXT debug_utils_messenger = VK_NULL_HANDLE;
 };
