@@ -2,7 +2,7 @@
 
 #include <vulkan/vulkan_core.h>
 #include "licht/core/string/string_ref.hpp"
-#include "licht/rhi_vulkan/wrapper/vulkan_shader_module.hpp"
+#include "licht/rhi_vulkan/vulkan_shader_module.hpp"
 
 namespace licht {
 

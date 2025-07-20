@@ -2,12 +2,12 @@
 #include "licht/core/defines.hpp"
 #include "licht/core/trace/trace.hpp"
 #include "licht/platform/display.hpp"
-#include "licht/rhi_vulkan/wrapper/vulkan_command_buffer.hpp"
-#include "licht/rhi_vulkan/wrapper/vulkan_context.hpp"
-#include "licht/rhi_vulkan/wrapper/vulkan_swapchain.hpp"
-#include "licht/rhi_vulkan/wrapper/vulkan_graphics_pipeline.hpp"
-#include "licht/rhi_vulkan/wrapper/vulkan_loader.hpp"
-#include "licht/rhi_vulkan/wrapper/vulkan_render_pass.hpp"
+#include "licht/rhi_vulkan/vulkan_command_buffer.hpp"
+#include "licht/rhi_vulkan/vulkan_context.hpp"
+#include "licht/rhi_vulkan/vulkan_swapchain.hpp"
+#include "licht/rhi_vulkan/vulkan_graphics_pipeline.hpp"
+#include "licht/rhi_vulkan/vulkan_loader.hpp"
+#include "licht/rhi_vulkan/vulkan_render_pass.hpp"
 #include "vulkan/vulkan_core.h"
 
 namespace licht {

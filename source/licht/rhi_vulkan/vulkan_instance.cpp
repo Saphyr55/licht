@@ -4,7 +4,7 @@
 #include "licht/core/defines.hpp"
 #include "licht/core/string/format.hpp"
 
-#include "licht/rhi_vulkan/wrapper/vulkan_context.hpp"
+#include "licht/rhi_vulkan/vulkan_context.hpp"
 
 #include <vulkan/vulkan_core.h>
 

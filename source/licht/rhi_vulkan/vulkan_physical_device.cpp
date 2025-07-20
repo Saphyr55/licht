@@ -6,8 +6,8 @@
 #include "licht/core/string/string_ref.hpp"
 #include "licht/core/trace/trace.hpp"
 
-#include "licht/rhi_vulkan/wrapper/vulkan_context.hpp"
-#include "licht/rhi_vulkan/wrapper/vulkan_logical_device.hpp"
+#include "licht/rhi_vulkan/vulkan_context.hpp"
+#include "licht/rhi_vulkan/vulkan_logical_device.hpp"
 
 #include <vulkan/vulkan_core.h>
 

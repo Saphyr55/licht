@@ -9,7 +9,7 @@
 #include "licht/core/string/format.hpp"
 #include "licht/core/memory/allocator.hpp"
 #include "licht/core/string/string_ref.hpp"
-#include "licht/rhi_vulkan/wrapper/vulkan_context.hpp"
+#include "licht/rhi_vulkan/vulkan_context.hpp"
 
 namespace licht {
 

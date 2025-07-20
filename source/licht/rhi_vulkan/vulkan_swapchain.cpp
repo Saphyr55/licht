@@ -1,8 +1,8 @@
 #include "vulkan_swapchain.hpp"
 #include "licht/core/collection/array.hpp"
 #include "licht/core/defines.hpp"
-#include "licht/rhi_vulkan/wrapper/vulkan_context.hpp"
-#include "licht/rhi_vulkan/wrapper/vulkan_framebuffer.hpp"
+#include "licht/rhi_vulkan/vulkan_context.hpp"
+#include "licht/rhi_vulkan/vulkan_framebuffer.hpp"
 #include "vulkan/vulkan_core.h"
 
 namespace licht {

@@ -1,7 +1,7 @@
 #include "vulkan_loader.hpp"
 
 #include "licht/core/defines.hpp"
-#include "licht/rhi_vulkan/wrapper/vulkan_context.hpp"
+#include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/platform/dynamic_library.hpp"
 
 #define LICHT_LOAD_RHI_CORE_FUNCTION(Name)                                                                                               \

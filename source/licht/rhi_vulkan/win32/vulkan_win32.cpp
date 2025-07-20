@@ -8,7 +8,7 @@
 #include <vulkan/vulkan_win32.h>
 
 #include "licht/core/trace/trace.hpp"
-#include "licht/rhi_vulkan/wrapper/vulkan_context.hpp"
+#include "licht/rhi_vulkan/vulkan_context.hpp"
 
 namespace licht {
 

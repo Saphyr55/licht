@@ -6,9 +6,9 @@
 #include "licht/core/trace/trace.hpp"
 #include "licht/core/string/format.hpp"
 #include "licht/platform/dynamic_library.hpp"
-#include "licht/rhi_vulkan/wrapper/vulkan_graphics_pipeline.hpp"
-#include "licht/rhi_vulkan/wrapper/vulkan_loader.hpp"
-#include "licht/rhi_vulkan/wrapper/vulkan_physical_device.hpp"
+#include "licht/rhi_vulkan/vulkan_graphics_pipeline.hpp"
+#include "licht/rhi_vulkan/vulkan_loader.hpp"
+#include "licht/rhi_vulkan/vulkan_physical_device.hpp"
 
 #include <vulkan/vulkan_core.h>
 
