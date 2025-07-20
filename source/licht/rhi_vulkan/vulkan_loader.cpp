@@ -1,28 +1,151 @@
 #include "vulkan_loader.hpp"
 
 #include "licht/core/defines.hpp"
-#include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/platform/dynamic_library.hpp"
+#include "licht/rhi_vulkan/vulkan_context.hpp"
 
-#define LICHT_LOAD_RHI_CORE_FUNCTION(Name)                                                                                               \
-    p_context->api.licht_##Name = reinterpret_cast<PFN_##Name>(::licht::DynamicLibraryLoader::load_function(p_context->library, #Name)); \
-    if (p_context->api.licht_##Name == nullptr) {                                                                                        \
-        LLOG_ERROR("[Vulkan]", "Failed to load Vulkan function: " #Name);                                          \
+#define LICHT_LOAD_RHI_CORE_FUNCTION(Name)                                        \
+    VulkanAPI::LICHT_DEFINE_RHI_VULKAN_FUNCTION_NAME(Name) = reinterpret_cast<    \
+        LICHT_DEFINE_RHI_VULKAN_FUNCTION_TYPE(Name)>(                             \
+        ::licht::DynamicLibraryLoader::load_function(p_context->library, #Name)); \
+    if (VulkanAPI::l##Name == nullptr) {                                          \
+        LLOG_ERROR("[Vulkan]", "Failed to load Vulkan function: " #Name);         \
     }
 
-#define LICHT_LOAD_RHI_INSTANCE_FUNCTION(Name)                                                                        \
-    p_context->api.licht_##Name = (PFN_##Name)p_context->api.licht_vkGetInstanceProcAddr(p_context->instance, #Name); \
-    if (p_context->api.licht_##Name == nullptr) {                                                                     \
-        LLOG_ERROR("[Vulkan]", "Failed to load Vulkan instance function: " #Name);              \
+#define LICHT_LOAD_RHI_INSTANCE_FUNCTION(Name)                                                             \
+    VulkanAPI::LICHT_DEFINE_RHI_VULKAN_FUNCTION_NAME(Name) = (LICHT_DEFINE_RHI_VULKAN_FUNCTION_TYPE(Name)) \
+        VulkanAPI::lvkGetInstanceProcAddr(p_context->instance, #Name);                                     \
+    if (VulkanAPI::LICHT_DEFINE_RHI_VULKAN_FUNCTION_NAME(Name) == nullptr) {                               \
+        LLOG_ERROR("[Vulkan]", "Failed to load Vulkan instance function: " #Name);                         \
     }
 
-#define LICHT_LOAD_RHI_DEVICE_FUNCTION(Name)                                                                                        \
-    p_context->api.licht_##Name = reinterpret_cast<PFN_##Name>(p_context->api.licht_vkGetDeviceProcAddr(p_context->device, #Name)); \
-    if (p_context->api.licht_##Name == nullptr) {                                                                 \
-        LLOG_ERROR("[Vulkan]", "Failed to load Vulkan device function: " #Name);            \
-    }                                                                                           
+#define LICHT_LOAD_RHI_DEVICE_FUNCTION(Name)                                     \
+    VulkanAPI::LICHT_DEFINE_RHI_VULKAN_FUNCTION_NAME(Name) = reinterpret_cast<   \
+        LICHT_DEFINE_RHI_VULKAN_FUNCTION_TYPE(Name)>(                            \
+        VulkanAPI::lvkGetDeviceProcAddr(p_context->device, #Name));              \
+    if (VulkanAPI::LICHT_DEFINE_RHI_VULKAN_FUNCTION_NAME(Name) == nullptr) {     \
+        LLOG_ERROR("[Vulkan]", "Failed to load Vulkan device function: " #Name); \
+    }
 
 namespace licht {
+
+// Core Vulkan functions.
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkGetInstanceProcAddr);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkEnumerateInstanceVersion);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkEnumerateInstanceExtensionProperties);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkEnumerateInstanceLayerProperties);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCreateInstance);
+
+// Instance functions.
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkGetDeviceProcAddr);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkDestroyInstance);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkEnumeratePhysicalDevices);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkGetPhysicalDeviceProperties);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkGetPhysicalDeviceProperties2);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkGetPhysicalDeviceFeatures);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkGetPhysicalDeviceFeatures2);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkGetPhysicalDeviceMemoryProperties);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkGetPhysicalDeviceQueueFamilyProperties);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkGetPhysicalDeviceFormatProperties);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkGetPhysicalDeviceSurfaceCapabilitiesKHR);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkGetPhysicalDeviceSurfaceFormatsKHR);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkGetPhysicalDeviceSurfacePresentModesKHR);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkGetPhysicalDeviceSurfaceSupportKHR)
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkEnumerateDeviceExtensionProperties);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCreateDevice);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkDestroySurfaceKHR);
+
+// Device functions.
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkGetDeviceQueue);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkDeviceWaitIdle);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCreateCommandPool);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkDestroyCommandPool);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkDestroyDevice);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCreateSwapchainKHR);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkDestroySwapchainKHR);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkGetSwapchainImagesKHR);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCreateImage);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCreateImageView);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkDestroyImage);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkDestroyImageView);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCreateRenderPass);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkDestroyRenderPass);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCreateFramebuffer);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkDestroyFramebuffer);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkGetImageMemoryRequirements);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkAllocateMemory);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkFreeMemory);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkAllocateCommandBuffers);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkFreeCommandBuffers);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkBeginCommandBuffer);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkEndCommandBuffer);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkResetCommandBuffer);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkBindImageMemory);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCreateSemaphore);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkDestroySemaphore);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCreateFence);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkDestroyFence);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkWaitForFences);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkAcquireNextImageKHR);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkResetFences);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCreateDescriptorSetLayout);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkDestroyDescriptorSetLayout);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCreateDescriptorPool);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkDestroyDescriptorPool);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCreateShaderModule);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkDestroyShaderModule);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCreateSampler);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkDestroySampler);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCreateBuffer);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkDestroyBuffer);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkGetBufferMemoryRequirements);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkBindBufferMemory);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkMapMemory);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkUnmapMemory);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkFlushMappedMemoryRanges);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCreatePipelineLayout);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkDestroyPipelineLayout);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCreateGraphicsPipelines);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkDestroyPipeline);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdBindPipeline);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkAllocateDescriptorSets);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkFreeDescriptorSets);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkUpdateDescriptorSets);
+
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdPipelineBarrier);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdBlitImage);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdCopyBuffer);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdCopyBufferToImage);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdCopyImageToBuffer);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdExecuteCommands);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdSetViewport);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdSetScissor);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdSetFrontFace);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdSetCullMode);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdSetStencilTestEnable);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdSetDepthTestEnable);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdSetDepthWriteEnable);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdSetStencilReference);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdSetStencilOp);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdBeginRendering);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdEndRendering);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdSetStencilCompareMask);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdSetStencilWriteMask);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdClearColorImage);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdClearDepthStencilImage);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdSetPrimitiveTopology);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdPushConstants);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdBindVertexBuffers);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdBindIndexBuffer);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdDraw);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdDrawIndexed);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdBindDescriptorSets);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdBeginRenderPass);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkCmdEndRenderPass);
+
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkQueueSubmit);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkQueueWaitIdle);
+LICHT_DEFINE_RHI_FUNCTION_IMPL(vkQueuePresentKHR);
 
 bool vulkan_library_load(VulkanContext* p_context) {
     LCHECK(p_context)
@@ -166,6 +289,5 @@ bool vulkan_device_load(VulkanContext* p_context) {
 
     return true;
 }
-
 
 }  //namespace licht

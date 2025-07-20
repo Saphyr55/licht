@@ -1,16 +1,24 @@
 #pragma once
 
 #include <vulkan/vulkan_core.h>
+#include "licht/rhi_vulkan/rhi_vulkan_exports.hpp"
+
+#define LICHT_DEFINE_RHI_VULKAN_FUNCTION_NAME(Name) l##Name
+
+#define LICHT_DEFINE_RHI_VULKAN_FUNCTION_TYPE(Name) PFN_##Name
 
 #define LICHT_DEFINE_RHI_FUNCTION(Name) \
-    PFN_##Name licht_##Name;
+    static LICHT_RHI_VULKAN_API LICHT_DEFINE_RHI_VULKAN_FUNCTION_TYPE(Name) LICHT_DEFINE_RHI_VULKAN_FUNCTION_NAME(Name);
+
+#define LICHT_DEFINE_RHI_FUNCTION_IMPL(Name) \
+    LICHT_DEFINE_RHI_VULKAN_FUNCTION_TYPE(Name) VulkanAPI::LICHT_DEFINE_RHI_VULKAN_FUNCTION_NAME(Name) = nullptr;
 
 namespace licht {
 
 struct VulkanContext;
 
-struct VulkanAPI {
-    
+class VulkanAPI {
+public:
     // Core Vulkan functions.
     LICHT_DEFINE_RHI_FUNCTION(vkGetInstanceProcAddr);
     LICHT_DEFINE_RHI_FUNCTION(vkEnumerateInstanceVersion);

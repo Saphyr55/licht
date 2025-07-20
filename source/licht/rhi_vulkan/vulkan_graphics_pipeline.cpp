@@ -121,7 +121,7 @@ void VulkanGraphicsPipeline::init(VulkanContext* p_context) {
     pipeline_layout_create_info.pushConstantRangeCount = 0;     // Optional
     pipeline_layout_create_info.pPushConstantRanges = nullptr;  // Optional
 
-    LICHT_VULKAN_CHECK(p_context->api.licht_vkCreatePipelineLayout(p_context->device, &pipeline_layout_create_info, p_context->allocator, &pipeline_layout_));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreatePipelineLayout(p_context->device, &pipeline_layout_create_info, p_context->allocator, &pipeline_layout_));
 
     VkGraphicsPipelineCreateInfo graphics_pipeline_create_info = {};
     graphics_pipeline_create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -141,7 +141,7 @@ void VulkanGraphicsPipeline::init(VulkanContext* p_context) {
     graphics_pipeline_create_info.basePipelineHandle = VK_NULL_HANDLE;  // Optional
     graphics_pipeline_create_info.basePipelineIndex = -1;               // Optional
 
-    LICHT_VULKAN_CHECK(p_context->api.licht_vkCreateGraphicsPipelines(p_context->device, VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, p_context->allocator, &graphics_pipeline_));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateGraphicsPipelines(p_context->device, VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, p_context->allocator, &graphics_pipeline_));
 
     vertex_shader_module_.destroy(p_context);
     fragment_shader_module_.destroy(p_context);
@@ -150,12 +150,12 @@ void VulkanGraphicsPipeline::init(VulkanContext* p_context) {
 void VulkanGraphicsPipeline::destroy(VulkanContext* p_context) {
     LCHECK(p_context)
 
-    p_context->api.licht_vkDestroyPipeline(p_context->device, graphics_pipeline_, p_context->allocator);
-    p_context->api.licht_vkDestroyPipelineLayout(p_context->device, pipeline_layout_, p_context->allocator);
+    VulkanAPI::lvkDestroyPipeline(p_context->device, graphics_pipeline_, p_context->allocator);
+    VulkanAPI::lvkDestroyPipelineLayout(p_context->device, pipeline_layout_, p_context->allocator);
 }
 
 void vulkan_pipeline_bind(VulkanContext* p_context, VkCommandBuffer p_command_buffer) {
-    p_context->api.licht_vkCmdBindPipeline(p_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, p_context->graphics_pipeline->pipeline());
+    VulkanAPI::lvkCmdBindPipeline(p_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, p_context->graphics_pipeline->pipeline());
 }
 
 }  //namespace licht

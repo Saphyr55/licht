@@ -90,9 +90,9 @@ VulkanContext* vulkan_context_create(void* p_window_handle) {
     context->in_flight_fences.resize(VulkanContext::MaxFrame);
 
     for (usize i = 0; i < VulkanContext::MaxFrame; i++) {
-        LICHT_VULKAN_CHECK(context->api.licht_vkCreateSemaphore(context->device, &semaphore_create_info, context->allocator, &context->image_available_semaphores[i]));
-        LICHT_VULKAN_CHECK(context->api.licht_vkCreateSemaphore(context->device, &semaphore_create_info, context->allocator, &context->render_finished_semaphores[i]));
-        LICHT_VULKAN_CHECK(context->api.licht_vkCreateFence(context->device, &fence_create_info, context->allocator, &context->in_flight_fences[i]));
+        LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateSemaphore(context->device, &semaphore_create_info, context->allocator, &context->image_available_semaphores[i]));
+        LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateSemaphore(context->device, &semaphore_create_info, context->allocator, &context->render_finished_semaphores[i]));
+        LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateFence(context->device, &fence_create_info, context->allocator, &context->in_flight_fences[i]));
     }
 
     return context;
@@ -103,9 +103,9 @@ void vulkan_context_destroy(VulkanContext* p_context) {
 
     LLOG_INFO("[Vulkan]", "Destroying Vulkan RHI context...");
     for (usize i = 0; i < VulkanContext::MaxFrame; i++) {
-        p_context->api.licht_vkDestroySemaphore(p_context->device, p_context->image_available_semaphores[i], p_context->allocator);
-        p_context->api.licht_vkDestroySemaphore(p_context->device, p_context->render_finished_semaphores[i], p_context->allocator);
-        p_context->api.licht_vkDestroyFence(p_context->device, p_context->in_flight_fences[i], p_context->allocator);
+        VulkanAPI::lvkDestroySemaphore(p_context->device, p_context->image_available_semaphores[i], p_context->allocator);
+        VulkanAPI::lvkDestroySemaphore(p_context->device, p_context->render_finished_semaphores[i], p_context->allocator);
+        VulkanAPI::lvkDestroyFence(p_context->device, p_context->in_flight_fences[i], p_context->allocator);
     }
 
     vulkan_command_pool_destroy(p_context);

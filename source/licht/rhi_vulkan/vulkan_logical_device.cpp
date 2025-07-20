@@ -65,7 +65,7 @@ void vulkan_logical_device_init(VulkanContext* p_context) {
         LLOG_INFO("[Vulkan]", vformat("Extension: %s", physical_device_extensions[i]));
     }
 
-    LICHT_VULKAN_CHECK(p_context->api.licht_vkCreateDevice(p_context->physical_device.handle, &device_create_info, p_context->allocator, &p_context->device));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateDevice(p_context->physical_device.handle, &device_create_info, p_context->allocator, &p_context->device));
 }
 
 void vulkan_queues_init(VulkanContext* p_context) {
@@ -74,8 +74,8 @@ void vulkan_queues_init(VulkanContext* p_context) {
     uint32 graphics_queue_index = p_context->physical_device.graphics_queue_index;
     uint32 present_queue_index = p_context->physical_device.present_queue_index;
     
-    p_context->api.licht_vkGetDeviceQueue(p_context->device, graphics_queue_index, 0, &p_context->graphics_queue);
-    p_context->api.licht_vkGetDeviceQueue(p_context->device, present_queue_index, 0, &p_context->present_queue);
+    VulkanAPI::lvkGetDeviceQueue(p_context->device, graphics_queue_index, 0, &p_context->graphics_queue);
+    VulkanAPI::lvkGetDeviceQueue(p_context->device, present_queue_index, 0, &p_context->present_queue);
 }
 
 void vulkan_logical_device_destroy(VulkanContext* p_context) {
@@ -83,7 +83,7 @@ void vulkan_logical_device_destroy(VulkanContext* p_context) {
 
     LLOG_INFO("[Vulkan]", "Destroying Vulkan logical device.");
     
-    p_context->api.licht_vkDestroyDevice(p_context->device, p_context->allocator);
+    VulkanAPI::lvkDestroyDevice(p_context->device, p_context->allocator);
     p_context->device = VK_NULL_HANDLE;
 
     LLOG_INFO("[Vulkan]", "Vulkan logical device destroyed.");

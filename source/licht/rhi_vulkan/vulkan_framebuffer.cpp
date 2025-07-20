@@ -21,14 +21,14 @@ void vulkan_framebuffers_init(VulkanContext* p_context) {
         framebuffer_create_info.height = p_context->swapchain_extent.height;
         framebuffer_create_info.layers = 1;
 
-        LICHT_VULKAN_CHECK(p_context->api.licht_vkCreateFramebuffer(p_context->device, &framebuffer_create_info, p_context->allocator, &p_context->framebuffers[i]));
+        LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateFramebuffer(p_context->device, &framebuffer_create_info, p_context->allocator, &p_context->framebuffers[i]));
     }
 
 }
 
 void vulkan_framebuffers_destroy(VulkanContext* p_context) {
     for (VkFramebuffer framebuffer : p_context->framebuffers) {
-        p_context->api.licht_vkDestroyFramebuffer(p_context->device, framebuffer, p_context->allocator);
+        VulkanAPI::lvkDestroyFramebuffer(p_context->device, framebuffer, p_context->allocator);
     }
 }
 
