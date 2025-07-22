@@ -18,9 +18,7 @@
 
 namespace licht {
 
-void vulkan_instance_init(VulkanContext* p_context) {
-    LCHECK(p_context)
-
+void VulkanInstance::initialize(const VkApplicationInfo& p_info, const VkInstanceCreateInfo& p_create_info) {
     uint32 extension_count = 0;
     LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
 
@@ -38,7 +36,8 @@ void vulkan_instance_init(VulkanContext* p_context) {
     for (const char* required_extension : desired_extensions) {
         LCHECK_MSG(desired_extensions.contains(required_extension, [](const char* a, const char* b) -> int32 {
             return string_compare(a, b);
-        }), vformat("Required Vulkan extension '%s' is not available.", required_extension));
+        }),
+                   vformat("Required Vulkan extension '%s' is not available.", required_extension));
     }
 
     Array<const char*> validation_layers = {"VK_LAYER_KHRONOS_validation"};
@@ -61,27 +60,25 @@ void vulkan_instance_init(VulkanContext* p_context) {
     create_info.enabledExtensionCount = static_cast<uint32>(desired_extensions.size());
     create_info.ppEnabledExtensionNames = desired_extensions.data();
 
-    LLOG_INFO("[Vulkan]","Creating Vulkan instance with the following extensions:");
+    LLOG_INFO("[Vulkan]", "Creating Vulkan instance with the following extensions:");
     for (const char* extension : desired_extensions) {
         LLOG_INFO("[Vulkan]", vformat("  - %s", extension));
     }
 
-    LLOG_INFO("[Vulkan]","Using the following validation layers:");
+    LLOG_INFO("[Vulkan]", "Using the following validation layers:");
     for (const char* layer : validation_layers) {
         LLOG_INFO("[Vulkan]", vformat("  - %s", layer));
     }
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateInstance(&create_info, p_context->allocator, &p_context->instance));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateInstance(&create_info, allocator_, &handle_));
 
     LLOG_INFO("[Vulkan]", "Vulkan instance created successfully.");
 }
 
-void vulkan_instance_destroy(VulkanContext* p_context) {
-    LCHECK(p_context)
-
+void VulkanInstance::destroy() {
     LLOG_INFO("[Vulkan]", "Destroying Vulkan instance...");
-    VulkanAPI::lvkDestroyInstance(p_context->instance, p_context->allocator);
-    p_context->instance = VK_NULL_HANDLE;
+    VulkanAPI::lvkDestroyInstance(handle_, allocator_);
+    handle_ = VK_NULL_HANDLE;
     LLOG_INFO("[Vulkan]", "Vulkan instance destroyed.");
 }
 

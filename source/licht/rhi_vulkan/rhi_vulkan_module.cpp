@@ -25,7 +25,7 @@ void RHIVulkanModule::initialize() {
 }
 
 void RHIVulkanModule::tick() {
-    
+
     VkFenceCreateInfo fence_create_info = {};
     fence_create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fence_create_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;

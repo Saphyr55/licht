@@ -13,18 +13,40 @@
 
 namespace licht {
 
-bool physical_device_check_extension_support(VulkanContext* p_context,
-                                             VulkanPhysicalDevice* p_physical_device,
-                                             const Array<StringRef>& p_physical_device_extensions) {
-    LCHECK(p_context)
+VulkanPhysicalDevice::VulkanPhysicalDevice(VkInstance p_instance,
+                                           VkSurfaceKHR p_surfarce,
+                                           const Array<StringRef>& p_extensions)
+    : instance_(p_instance)
+    , surface_(p_surfarce)
+    , extensions_(p_extensions) {
+}
 
+VkPhysicalDeviceProperties VulkanPhysicalDevice::query_properties() {
+    VulkanAPI::lvkGetPhysicalDeviceProperties(handle_, &info_.properties);
+    return info_.properties;
+}
+
+VkPhysicalDeviceFeatures VulkanPhysicalDevice::query_features() {
+    VulkanAPI::lvkGetPhysicalDeviceFeatures(handle_, &info_.features);
+    return info_.features;
+}
+
+bool VulkanPhysicalDevice::is_properties_suitable() const {
+    return info_.properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && info_.properties.limits.maxImageDimension2D >= 4096;
+}
+
+bool VulkanPhysicalDevice::is_features_suitable() const {
+    return info_.features.geometryShader && info_.features.samplerAnisotropy;
+}
+
+bool VulkanPhysicalDevice::check_extension_support(const Array<StringRef>& p_extensions) {
     uint32 extension_count;
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumerateDeviceExtensionProperties(p_physical_device->handle, nullptr, &extension_count, nullptr));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumerateDeviceExtensionProperties(handle_, nullptr, &extension_count, nullptr));
 
     Array<VkExtensionProperties> available_extensions(extension_count);
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumerateDeviceExtensionProperties(p_physical_device->handle, nullptr, &extension_count, available_extensions.data()));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumerateDeviceExtensionProperties(handle_, nullptr, &extension_count, available_extensions.data()));
 
-    Array<StringRef> physical_device_extensions = p_physical_device_extensions;
+    Array<StringRef> physical_device_extensions = p_extensions;
 
     for (const VkExtensionProperties& extension : available_extensions) {
         physical_device_extensions.remove(extension.extensionName);
@@ -33,45 +55,32 @@ bool physical_device_check_extension_support(VulkanContext* p_context,
     return physical_device_extensions.empty();
 }
 
-bool physical_device_query_device_properties(VulkanContext* p_context, VulkanPhysicalDevice* p_physical_device) {
-    LCHECK(p_context && p_physical_device)
-
-    VulkanAPI::lvkGetPhysicalDeviceProperties(p_physical_device->handle, &p_physical_device->properties);
-    bool is_suitable = p_physical_device->properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-                       p_physical_device->properties.limits.maxImageDimension2D >= 4096;
-    return is_suitable;
-}
-
-bool physical_device_query_device_features(VulkanContext* p_context, VulkanPhysicalDevice* p_physical_device) {
-    LCHECK(p_context && p_physical_device)
-
-    VulkanAPI::lvkGetPhysicalDeviceFeatures(p_physical_device->handle, &p_physical_device->features);
-    bool is_suitable = p_physical_device->features.geometryShader &&
-           p_physical_device->features.samplerAnisotropy;
-    return is_suitable;
-}
-
-bool physical_device_query_queue_families(VulkanContext* p_context, VulkanPhysicalDevice* p_physical_device) {
-    LCHECK(p_context && p_physical_device)
-
+Array<VkQueueFamilyProperties> VulkanPhysicalDevice::query_queue_families() {
     uint32 queue_family_count = 0;
-    VulkanAPI::lvkGetPhysicalDeviceQueueFamilyProperties(p_physical_device->handle, &queue_family_count, nullptr);
+    VulkanAPI::lvkGetPhysicalDeviceQueueFamilyProperties(handle_, &queue_family_count, nullptr);
     if (queue_family_count == 0) {
         return false;
     }
 
-    p_physical_device->queue_families.resize(queue_family_count);
-    VulkanAPI::lvkGetPhysicalDeviceQueueFamilyProperties(p_physical_device->handle, &queue_family_count, p_physical_device->queue_families.data());
+    info_.queue_families.resize(queue_family_count);
+    VulkanAPI::lvkGetPhysicalDeviceQueueFamilyProperties(handle_, &queue_family_count, info_.queue_families.data());
 
-    for (uint32 i = 0; i < queue_family_count; i++) {
-        const VkQueueFamilyProperties& queue_family = p_physical_device->queue_families[i];
+    return info_.queue_families;
+}
 
-        VkBool32 is_present_support = false;
-        LICHT_VULKAN_CHECK(VulkanAPI::lvkGetPhysicalDeviceSurfaceSupportKHR(p_physical_device->handle, i, p_context->surface, &is_present_support));
+bool VulkanPhysicalDevice::is_valid_queue_family(const VkQueueFamilyProperties& p_queue_family_properties, int32 p_queue_family_index) {
+    VkBool32 is_present_support = false;
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkGetPhysicalDeviceSurfaceSupportKHR(handle_, p_queue_family_index, surface_, &is_present_support));
+    return (p_queue_family_properties.queueFlags & VK_QUEUE_GRAPHICS_BIT) && is_present_support == VK_TRUE;
+}
 
-        if ((queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) && is_present_support == VK_TRUE) {
-            p_physical_device->graphics_queue_index = i;
-            p_physical_device->present_queue_index = i;
+bool VulkanPhysicalDevice::select_queue_families() {
+    for (uint32 queue_family_index = 0; queue_family_index < info_.queue_families.size(); queue_family_index++) {
+        const VkQueueFamilyProperties& queue_family = info_.queue_families[queue_family_index];
+
+        if (is_valid_queue_family(queue_family, queue_family_index)) {
+            info_.graphics_queue_index = queue_family_index;
+            info_.present_queue_index = queue_family_index;
             return true;
         }
     }
@@ -79,67 +88,63 @@ bool physical_device_query_queue_families(VulkanContext* p_context, VulkanPhysic
     return false;
 }
 
-bool physical_device_select(VulkanContext* p_context, VulkanPhysicalDevice* p_physical_device) {
-    LCHECK(p_context && p_physical_device)
+const VulkanPhysicalDeviceInformation& VulkanPhysicalDevice::query_info() {
+    query_properties();
+    bool is_suitable_device_properties = is_properties_suitable();
 
+    query_features();
+    bool is_suitable_device_features = is_features_suitable();
+
+    query_queue_families();
+    bool is_suitable_queue_families = select_queue_families();
+
+    bool is_suitable_extension_support = check_extension_support(g_physical_device_extensions);
+
+    info_.is_suitable =
+        is_suitable_device_properties &&
+        is_suitable_device_features &&
+        is_suitable_queue_families &&
+        is_suitable_extension_support;
+
+    return info_;
+}
+
+bool VulkanPhysicalDevice::select_physical_device() {
     uint32 device_count = 0;
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumeratePhysicalDevices(p_context->instance, &device_count, nullptr));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumeratePhysicalDevices(instance_, &device_count, nullptr));
     if (device_count == 0) {
         LLOG_ERROR("[Vulkan]", "No physical devices found.");
         return false;
     }
 
     Array<VkPhysicalDevice> devices(device_count);
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumeratePhysicalDevices(p_context->instance, &device_count, devices.data()));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumeratePhysicalDevices(instance_, &device_count, devices.data()));
 
     for (const VkPhysicalDevice& physical_device : devices) {
-        p_physical_device->handle = physical_device;
+        handle_ = physical_device;
 
-        // Query device properties.
-        bool is_suitable_device_properties = physical_device_query_device_properties(p_context, p_physical_device);
-        bool is_suitable_device_features = physical_device_query_device_features(p_context, p_physical_device);
-        bool is_suitable_queue_families = physical_device_query_queue_families(p_context, p_physical_device);
-        bool is_suitable_extension_support = physical_device_check_extension_support(p_context, p_physical_device, g_physical_device_extensions);
-
-        p_physical_device->is_suitable =
-            is_suitable_device_properties &&
-            is_suitable_device_features &&
-            is_suitable_queue_families &&
-            is_suitable_extension_support;
+        query_info();
 
         // Check if the device meets the requirements
-        if (p_physical_device->is_suitable) {
+        if (info_.is_suitable) {
             LLOG_INFO("[Vulkan]", "Physical device selected successfully.");
+            LLOG_ERROR("[Vulkan]", "No suitable physical device found.");
+
+            LLOG_INFO("[Vulkan]", "Selected Physical Device Properties:");
+            LLOG_INFO("[Vulkan]", vformat("Device Name: %s", info_.properties.deviceName));
+            LLOG_INFO("[Vulkan]", vformat("API Version: %u.%u.%u",
+                                          VK_VERSION_MAJOR(info_.properties.apiVersion),
+                                          VK_VERSION_MINOR(info_.properties.apiVersion),
+                                          VK_VERSION_PATCH(info_.properties.apiVersion)));
+            LLOG_INFO("[Vulkan]", vformat("Driver Version: %u", info_.properties.driverVersion));
+            LLOG_INFO("[Vulkan]", vformat("Vendor ID: %u", info_.properties.vendorID));
+            LLOG_INFO("[Vulkan]", vformat("Device ID: %u", info_.properties.deviceID));
+            LLOG_INFO("[Vulkan]", vformat("Device Type: %d", info_.properties.deviceType));
             return true;
         }
     }
 
-    LLOG_ERROR("[Vulkan]", "No suitable physical device found.");
     return false;
-}
-
-bool vulkan_physical_device_init(VulkanContext* p_context) {
-    LCHECK(p_context)
-
-    bool seleted = physical_device_select(p_context, &p_context->physical_device);
-
-    if (!seleted) {
-        return false;
-    }
-
-    const VkPhysicalDeviceProperties& properties = p_context->physical_device.properties;
-    LLOG_INFO("[Vulkan]", "Selected Physical Device Properties:");
-    LLOG_INFO("[Vulkan]", vformat("Device Name: %s", properties.deviceName));
-    LLOG_INFO("[Vulkan]", vformat("API Version: %u.%u.%u",
-                                  VK_VERSION_MAJOR(properties.apiVersion),
-                                  VK_VERSION_MINOR(properties.apiVersion),
-                                  VK_VERSION_PATCH(properties.apiVersion)));
-    LLOG_INFO("[Vulkan]", vformat("Driver Version: %u", properties.driverVersion));
-    LLOG_INFO("[Vulkan]", vformat("Vendor ID: %u", properties.vendorID));
-    LLOG_INFO("[Vulkan]", vformat("Device ID: %u", properties.deviceID));
-    LLOG_INFO("[Vulkan]", vformat("Device Type: %d", properties.deviceType));
-
-    return true;
 }
 
 }  //namespace licht

@@ -10,7 +10,7 @@ void MemoryTrace::global_add_allocate_bytes(uint64 size) {
     get_default().add_allocate_bytes(size);
 }
 
-size_t MemoryTrace::global_get_memory_usage() {
+usize MemoryTrace::global_get_memory_usage() {
     return get_default().get_memory_usage();
 }
 
@@ -27,7 +27,7 @@ void MemoryTrace::add_allocate_bytes(uint64 size) {
     memory_usage_ += size;
 }
 
-size_t MemoryTrace::get_memory_usage() const {
+usize MemoryTrace::get_memory_usage() const {
     return memory_usage_;
 }
 

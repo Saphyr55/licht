@@ -6,7 +6,9 @@
 #include "licht/core/trace/trace.hpp"
 #include "licht/core/string/format.hpp"
 #include "licht/platform/dynamic_library.hpp"
+#include "licht/rhi_vulkan/vulkan_device.hpp"
 #include "licht/rhi_vulkan/vulkan_graphics_pipeline.hpp"
+#include "licht/rhi_vulkan/vulkan_instance.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
 #include "licht/rhi_vulkan/vulkan_physical_device.hpp"
 
@@ -21,24 +23,25 @@
 
 namespace licht {
 
-struct VulkanContext {
+class VulkanExtensions {
+
+};
+
+class VulkanContext {
+public:
     static uint32 MaxFrame;
 
     SharedRef<DynamicLibrary> library;
-    VkAllocationCallbacks* allocator = nullptr;
-
-    VulkanAPI api;
-
-    VulkanPhysicalDevice physical_device;
     
-    VkInstance instance = VK_NULL_HANDLE;
-    VkDevice device = VK_NULL_HANDLE;
+    VulkanInstance instance;
+    VulkanDevice device;
+
     VkSurfaceKHR surface = VK_NULL_HANDLE;
 
     // Queues
     VkQueue graphics_queue = VK_NULL_HANDLE;
     VkQueue present_queue = VK_NULL_HANDLE;
-    
+
     VkSwapchainKHR swapchain = VK_NULL_HANDLE;
     VkFormat swapchain_format;
     VkExtent2D swapchain_extent;

@@ -18,8 +18,11 @@ enum class FileSystemOpenError : uint8 {
 template <typename T>
 using FileOpenError = Result<T, FileSystemOpenError>;
 
+using FileHandleResult = FileOpenError<SharedRef<FileHandle>>;
+
 class LICHT_CORE_API FileSystem {
 public:
+
     static FileSystem& get_platform();
 
     virtual bool file_exists(StringRef filepath) const = 0;
@@ -32,9 +35,9 @@ public:
 
     virtual void move(StringRef subject, StringRef toPath) = 0;
     
-    virtual FileOpenError<SharedRef<FileHandle>> open_write(StringRef filepath) const = 0;
+    virtual FileHandleResult open_write(StringRef filepath) const = 0;
 
-    virtual FileOpenError<SharedRef<FileHandle>> open_read(StringRef filepath) const = 0;
+    virtual FileHandleResult open_read(StringRef filepath) const = 0;
 
 public:
     virtual ~FileSystem() = default;

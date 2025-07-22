@@ -5,26 +5,30 @@
 #include "licht/core/collection/array.hpp"
 #include "licht/core/collection/hash_map.hpp"
 #include "licht/core/defines.hpp"
-#include "licht/core/trace/trace.hpp"
-#include "licht/core/string/format.hpp"
 #include "licht/core/memory/allocator.hpp"
+#include "licht/core/string/format.hpp"
 #include "licht/core/string/string_ref.hpp"
+#include "licht/core/trace/trace.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
+#include "licht/rhi_vulkan/vulkan_physical_device.hpp"
 
 namespace licht {
 
-void vulkan_logical_device_init(VulkanContext* p_context) {
+VulkanLogicalDevice::VulkanLogicalDevice(VulkanDevice& p_device, VulkanPhysicalDevice& p_physical_device)
+    : device_(p_device)
+    , physical_device_(p_physical_device) {
+}
 
-    LCHECK(p_context)
-    LCHECK_MSG(p_context->physical_device.is_suitable, "Physical device is not suitable for Vulkan operations.")
+void VulkanLogicalDevice::initialize() {
+    LCHECK_MSG(physical_device_.get_info().is_suitable, "Physical device is not suitable for Vulkan operations.")
 
     float32 queue_priority = 1.0f;  // [0.0, 1.0]
 
-    uint32 graphics_queue_index = p_context->physical_device.graphics_queue_index;
-    uint32 present_queue_index = p_context->physical_device.present_queue_index;
+    uint32 graphics_queue_index = physical_device_.get_info().graphics_queue_index;
+    uint32 present_queue_index = physical_device_.get_info().present_queue_index;
 
     // TODO: Use a hash set.
-    HashMap<uint32, uint32> queue_famillies = { {graphics_queue_index, 0}, {present_queue_index, 0} };
+    HashMap<uint32, uint32> queue_famillies = {{graphics_queue_index, 0}, {present_queue_index, 0}};
 
     Array<VkDeviceQueueCreateInfo> device_queue_create_infos;
     for (auto& [queue_index, _] : queue_famillies) {
@@ -65,26 +69,15 @@ void vulkan_logical_device_init(VulkanContext* p_context) {
         LLOG_INFO("[Vulkan]", vformat("Extension: %s", physical_device_extensions[i]));
     }
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateDevice(p_context->physical_device.handle, &device_create_info, p_context->allocator, &p_context->device));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateDevice(physical_device_.get_handle(), &device_create_info, device_.get_allocator(), &handle_));
 }
 
-void vulkan_queues_init(VulkanContext* p_context) {
-    LCHECK(p_context)
-
-    uint32 graphics_queue_index = p_context->physical_device.graphics_queue_index;
-    uint32 present_queue_index = p_context->physical_device.present_queue_index;
-    
-    VulkanAPI::lvkGetDeviceQueue(p_context->device, graphics_queue_index, 0, &p_context->graphics_queue);
-    VulkanAPI::lvkGetDeviceQueue(p_context->device, present_queue_index, 0, &p_context->present_queue);
-}
-
-void vulkan_logical_device_destroy(VulkanContext* p_context) {
-    LCHECK(p_context)
+void VulkanLogicalDevice::destroy() {
 
     LLOG_INFO("[Vulkan]", "Destroying Vulkan logical device.");
-    
-    VulkanAPI::lvkDestroyDevice(p_context->device, p_context->allocator);
-    p_context->device = VK_NULL_HANDLE;
+
+    VulkanAPI::lvkDestroyDevice(handle_, device_.get_allocator());
+    handle_ = VK_NULL_HANDLE;
 
     LLOG_INFO("[Vulkan]", "Vulkan logical device destroyed.");
 }

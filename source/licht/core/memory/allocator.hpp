@@ -5,7 +5,7 @@
 namespace licht {
 
 template <typename AllocatorType, typename ResourceType>
-concept IsAllocator = requires(AllocatorType t, ResourceType* r, size_t n) {
+concept IsAllocator = requires(AllocatorType t, ResourceType* r, usize n) {
     { t.allocate(n) } -> std::same_as<ResourceType*>;
     { t.deallocate(r, n) } -> std::same_as<void>;
 };
@@ -13,11 +13,11 @@ concept IsAllocator = requires(AllocatorType t, ResourceType* r, size_t n) {
 template <typename ResourceType>
 class DefaultAllocator {
 public:
-    ResourceType* allocate(const size_t n) {
+    ResourceType* allocate(const usize n) {
         return static_cast<ResourceType*>(Memory::allocate(n * sizeof(ResourceType)));
     }
 
-    void deallocate(ResourceType* resource, const size_t n) {
+    void deallocate(ResourceType* resource, const usize n) {
         if (resource) {
             Memory::free(resource, n * sizeof(ResourceType));
         }

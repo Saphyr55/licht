@@ -51,7 +51,7 @@ VulkanSwapchainSupportDetails vulkan_query_swapchain_support_details(VulkanConte
 
     VulkanSwapchainSupportDetails swapchain_support_details = {};
 
-    VkPhysicalDevice physical_device = p_context->physical_device.handle;
+    VkPhysicalDevice physical_device = p_context->physical_device.get_handle();
 
     LICHT_VULKAN_CHECK(VulkanAPI::lvkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, p_context->surface, &swapchain_support_details.capabilities));
 
@@ -118,7 +118,9 @@ void vulkan_swapchain_init(VulkanContext* p_context) {
     // TODO: use VK_IMAGE_USAGE_TRANSFER_DST_BIT mask for post-processing thing in the future
     swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    uint32 queue_famillies[] = { p_context->physical_device.graphics_queue_index, p_context->physical_device.present_queue_index }; 
+    uint32 graphics_queue_index = p_context->physical_device.get_info().graphics_queue_index;
+    uint32 present_queue_index = p_context->physical_device.get_info().present_queue_index;
+    uint32 queue_famillies[] = { graphics_queue_index, present_queue_index }; 
 
     if (queue_famillies[0] != queue_famillies[1]) {
         swapchain_create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;

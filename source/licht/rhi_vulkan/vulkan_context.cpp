@@ -39,17 +39,14 @@ VulkanContext* vulkan_context_create(void* p_window_handle) {
     bool core_functions_loaded = vulkan_core_load(context);
     LLOG_FATAL_WHEN(!core_functions_loaded, "[Vulkan]", "Failed to load Vulkan RHI core functions.");
 
-    context->instance = VK_NULL_HANDLE;
-    context->device = VK_NULL_HANDLE;
+    context->instance.initialize();
 
-    vulkan_instance_init(context);
     vulkan_instance_load(context);
 
     vulkan_debug_messenger_init(context);
     vulkan_surface_init(context, p_window_handle);
 
-    vulkan_physical_device_init(context);
-    vulkan_logical_device_init(context);
+    context->device.initialize();
 
     vulkan_device_load(context);
     vulkan_queues_init(context);
@@ -58,12 +55,12 @@ VulkanContext* vulkan_context_create(void* p_window_handle) {
 
     vulkan_render_pass_init(context);
 
-    FileOpenError<SharedRef<FileHandle>> vertex_file_open_error = FileSystem::get_platform().open_read("shaders/main.vert.spv");
+    FileHandleResult vertex_file_open_error = FileSystem::get_platform().open_read("shaders/main.vert.spv");
     LCHECK(vertex_file_open_error.has_value())
     SharedRef<FileHandle> vertex_file_handle = vertex_file_open_error.value();
     Array<uint8> vertex_code = vertex_file_handle->read_all_bytes();
 
-    FileOpenError<SharedRef<FileHandle>> fragment_file_open_error = FileSystem::get_platform().open_read("shaders/main.frag.spv");
+    FileHandleResult fragment_file_open_error = FileSystem::get_platform().open_read("shaders/main.frag.spv");
     LCHECK(fragment_file_open_error.has_value())
     SharedRef<FileHandle> fragment_file_handle = fragment_file_open_error.value();
     Array<uint8> fragment_code = fragment_file_handle->read_all_bytes();
