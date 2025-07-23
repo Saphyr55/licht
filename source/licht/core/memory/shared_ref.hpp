@@ -59,7 +59,8 @@ public:
         , reference_counter_(nullptr) {}
 
     explicit SharedRef(ResourceType* resource) noexcept
-        : resource_(resource) {
+        : resource_(resource)
+        , reference_counter_(nullptr) {
         if (resource_) {
             reference_counter_ = new_default_reference_counter<ResourceType>(resource_);
         }
@@ -101,7 +102,7 @@ public:
 
     template <typename DerivedType>
         requires std::derived_from<DerivedType, ResourceType>
-    SharedRef(const SharedRef<DerivedType>& other)
+    SharedRef(const SharedRef<DerivedType>& other) noexcept
         : resource_(other.resource_)
         , reference_counter_(other.reference_counter_) {
         if (reference_counter_) {
@@ -109,7 +110,7 @@ public:
         }
     }
 
-    SharedRef& operator=(const SharedRef& other) {
+    SharedRef& operator=(const SharedRef& other) noexcept {
         release_shared_reference();
 
         resource_ = static_cast<ResourceType*>(other.resource_);
@@ -124,7 +125,7 @@ public:
 
     template <typename DerivedType>
         requires std::derived_from<DerivedType, ResourceType>
-    SharedRef& operator=(const SharedRef<DerivedType>& other) {
+    SharedRef& operator=(const SharedRef<DerivedType>& other) noexcept {
         release_shared_reference();
 
         resource_ = static_cast<ResourceType*>(other.resource_);
@@ -160,6 +161,7 @@ public:
         reference_counter_ = other.reference_counter_;
         other.resource_ = nullptr;
         other.reference_counter_ = nullptr;
+
         return *this;
     }
 
@@ -175,25 +177,25 @@ public:
         return *this;
     }
 
-    SharedRef& operator=(ResourceType* new_ptr) {
+    SharedRef& operator=(ResourceType* new_ptr) noexcept {
         reset(new_ptr);
         return *this;
     }
 
     template <typename DerivedType>
         requires std::derived_from<DerivedType, ResourceType>
-    SharedRef& operator=(DerivedType* new_ptr) {
+    SharedRef& operator=(DerivedType* new_ptr) noexcept {
         reset(new_ptr);
         return *this;
     }
 
-    ~SharedRef() {
+    ~SharedRef() noexcept {
         release_shared_reference();
     }
 
 public:
     void release_shared_reference() {
-        if (reference_counter_) {
+        if (reference_counter_ && is_valid()) {
             reference_counter_->release_shared_reference();
         }
     }
@@ -202,8 +204,8 @@ public:
     friend class SharedRef;
 
 private:
-    ResourceType* resource_ = nullptr;
-    ReferenceCounter* reference_counter_ = nullptr;
+    ResourceType* resource_;
+    ReferenceCounter* reference_counter_;
 };
 
 template <typename ResourceType, typename... Args>

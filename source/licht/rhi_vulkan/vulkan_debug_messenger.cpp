@@ -38,7 +38,7 @@ void vulkan_debug_messenger_init(VulkanContext* p_context) {
     LLOG_INFO("[Vulkan]", "Initializing Vulkan debug messenger...");
 
     PFN_vkCreateDebugUtilsMessengerEXT fvkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
-        VulkanAPI::lvkGetInstanceProcAddr(p_context->instance, "vkCreateDebugUtilsMessengerEXT"));
+        VulkanAPI::lvkGetInstanceProcAddr(p_context->instance->get_handle(), "vkCreateDebugUtilsMessengerEXT"));
     LCHECK(fvkCreateDebugUtilsMessengerEXT);
 
     VkDebugUtilsMessengerCreateInfoEXT create_info = {};
@@ -57,7 +57,7 @@ void vulkan_debug_messenger_init(VulkanContext* p_context) {
     create_info.pfnUserCallback = &debug_messenger_callback;
     create_info.pUserData = nullptr;
 
-    fvkCreateDebugUtilsMessengerEXT(p_context->instance, &create_info, p_context->allocator, &p_context->debug_utils_messenger);
+    fvkCreateDebugUtilsMessengerEXT(p_context->instance->get_handle(), &create_info, p_context->allocator, &p_context->debug_utils_messenger);
     LCHECK(p_context->debug_utils_messenger != VK_NULL_HANDLE);
 
     LLOG_INFO("[Vulkan]", "Vulkan debug messenger initialized.");
@@ -70,11 +70,11 @@ void vulkan_debug_messenger_destroy(VulkanContext* p_context) {
 
     // Destroy the debug messenger
     PFN_vkDestroyDebugUtilsMessengerEXT fvkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
-        VulkanAPI::lvkGetInstanceProcAddr(p_context->instance, "vkDestroyDebugUtilsMessengerEXT"));
+        VulkanAPI::lvkGetInstanceProcAddr(p_context->instance->get_handle(), "vkDestroyDebugUtilsMessengerEXT"));
     LCHECK(fvkDestroyDebugUtilsMessengerEXT);
     
     if (p_context->debug_utils_messenger != VK_NULL_HANDLE) {
-        fvkDestroyDebugUtilsMessengerEXT(p_context->instance, p_context->debug_utils_messenger, p_context->allocator);
+        fvkDestroyDebugUtilsMessengerEXT(p_context->instance->get_handle(), p_context->debug_utils_messenger, p_context->allocator);
         p_context->debug_utils_messenger = VK_NULL_HANDLE;
         LLOG_INFO("[Vulkan]", "Vulkan debug messenger destroyed.");
     } else {

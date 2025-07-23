@@ -45,7 +45,7 @@ void vulkan_render_pass_init(VulkanContext* p_context) {
     render_pass_info_create_info.dependencyCount = 1;
     render_pass_info_create_info.pDependencies = &subpass_dependency;
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateRenderPass(p_context->device, &render_pass_info_create_info, p_context->allocator, &p_context->render_pass))
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateRenderPass(p_context->device->get_handle(), &render_pass_info_create_info, p_context->allocator, &p_context->render_pass))
 }
 
 void vulkan_render_pass_begin(VulkanContext* p_context, VkCommandBuffer p_command_buffer, uint32 p_image_index) {
@@ -74,7 +74,7 @@ void vulkan_render_pass_end(VulkanContext* p_context, VkCommandBuffer p_command_
 void vulkan_render_pass_destroy(VulkanContext* p_context) {
     LCHECK(p_context);
 
-    VulkanAPI::lvkDestroyRenderPass(p_context->device, p_context->render_pass, p_context->allocator);
+    VulkanAPI::lvkDestroyRenderPass(p_context->device->get_handle(), p_context->render_pass, p_context->allocator);
 }
 
 }  //namespace licht

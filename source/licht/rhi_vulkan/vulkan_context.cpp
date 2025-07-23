@@ -17,6 +17,7 @@
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
 #include "licht/rhi_vulkan/vulkan_logical_device.hpp"
 #include "licht/rhi_vulkan/vulkan_physical_device.hpp"
+#include "licht/rhi_vulkan/vulkan_queue.hpp"
 #include "licht/rhi_vulkan/vulkan_render_pass.hpp"
 #include "licht/rhi_vulkan/vulkan_shader_module.hpp"
 #include "licht/rhi_vulkan/vulkan_surface.hpp"
@@ -33,24 +34,28 @@ VulkanContext* vulkan_context_create(void* p_window_handle) {
 
     VulkanContext* context = Memory::new_resource<VulkanContext>();
 
-    bool library_loaded = vulkan_library_load(context);
-    LLOG_FATAL_WHEN(!library_loaded, "[Vulkan]", "Failed to load Vulkan RHI library.");
-
-    bool core_functions_loaded = vulkan_core_load(context);
+    context->library = vulkan_library_load();
+    LLOG_FATAL_WHEN(!context->library, "[Vulkan]", "Failed to load Vulkan RHI library.");
+    
+    bool core_functions_loaded = vulkan_core_load(context->library);
     LLOG_FATAL_WHEN(!core_functions_loaded, "[Vulkan]", "Failed to load Vulkan RHI core functions.");
 
-    context->instance.initialize();
+    context->instance = new_ref<VulkanInstance>();
+    context->instance->initialize();
+    context->instance->set_allocator(context->allocator);
 
-    vulkan_instance_load(context);
+    vulkan_instance_load(*context->instance);
 
     vulkan_debug_messenger_init(context);
     vulkan_surface_init(context, p_window_handle);
 
-    context->device.initialize();
+    context->device = new_ref<VulkanDevice>(*context->instance, context->surface, g_physical_device_extensions);
+    context->device->initialize();
+    vulkan_device_load(*context->device);
 
-    vulkan_device_load(context);
-    vulkan_queues_init(context);
-
+    VulkanQueue& gqueue = context->device->query_queue(VulkanQueueFamilyType::Graphics);
+    VulkanQueue& pqueue = context->device->query_queue(VulkanQueueFamilyType::Present);
+    
     vulkan_swapchain_init(context);
 
     vulkan_render_pass_init(context);
@@ -69,7 +74,7 @@ VulkanContext* vulkan_context_create(void* p_window_handle) {
     VulkanShaderModule fragment_shader_module(fragment_code);
 
     context->graphics_pipeline = new_ref<VulkanGraphicsPipeline>("main", vertex_shader_module, fragment_shader_module);
-    context->graphics_pipeline->init(context);
+    context->graphics_pipeline->initialize(context);
 
     vulkan_framebuffers_init(context);
 
@@ -87,9 +92,9 @@ VulkanContext* vulkan_context_create(void* p_window_handle) {
     context->in_flight_fences.resize(VulkanContext::MaxFrame);
 
     for (usize i = 0; i < VulkanContext::MaxFrame; i++) {
-        LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateSemaphore(context->device, &semaphore_create_info, context->allocator, &context->image_available_semaphores[i]));
-        LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateSemaphore(context->device, &semaphore_create_info, context->allocator, &context->render_finished_semaphores[i]));
-        LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateFence(context->device, &fence_create_info, context->allocator, &context->in_flight_fences[i]));
+        LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateSemaphore(context->device->get_handle(), &semaphore_create_info, context->allocator, &context->image_available_semaphores[i]));
+        LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateSemaphore(context->device->get_handle(), &semaphore_create_info, context->allocator, &context->render_finished_semaphores[i]));
+        LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateFence(context->device->get_handle(), &fence_create_info, context->allocator, &context->in_flight_fences[i]));
     }
 
     return context;
@@ -100,9 +105,9 @@ void vulkan_context_destroy(VulkanContext* p_context) {
 
     LLOG_INFO("[Vulkan]", "Destroying Vulkan RHI context...");
     for (usize i = 0; i < VulkanContext::MaxFrame; i++) {
-        VulkanAPI::lvkDestroySemaphore(p_context->device, p_context->image_available_semaphores[i], p_context->allocator);
-        VulkanAPI::lvkDestroySemaphore(p_context->device, p_context->render_finished_semaphores[i], p_context->allocator);
-        VulkanAPI::lvkDestroyFence(p_context->device, p_context->in_flight_fences[i], p_context->allocator);
+        VulkanAPI::lvkDestroySemaphore(p_context->device->get_handle(), p_context->image_available_semaphores[i], p_context->allocator);
+        VulkanAPI::lvkDestroySemaphore(p_context->device->get_handle(), p_context->render_finished_semaphores[i], p_context->allocator);
+        VulkanAPI::lvkDestroyFence(p_context->device->get_handle(), p_context->in_flight_fences[i], p_context->allocator);
     }
 
     vulkan_command_pool_destroy(p_context);
@@ -114,10 +119,10 @@ void vulkan_context_destroy(VulkanContext* p_context) {
     vulkan_render_pass_destroy(p_context);
 
     vulkan_swapchain_destroy(p_context);
-    vulkan_logical_device_destroy(p_context);
+    p_context->device->destroy();
     vulkan_surface_destroy(p_context);
     vulkan_debug_messenger_destroy(p_context);
-    vulkan_instance_destroy(p_context);
+    p_context->instance->destroy();
 
     if (p_context->library) {
         DynamicLibraryLoader::unload(p_context->library);

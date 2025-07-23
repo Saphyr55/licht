@@ -19,7 +19,7 @@ void vulkan_surface_init(VulkanContext* p_context, void* p_window_handle) {
     LLOG_INFO("[Vulkan]", "Initializing Vulkan surface...");
 
     PFN_vkCreateWin32SurfaceKHR licht_vkCreateWin32SurfaceKHR = reinterpret_cast<PFN_vkCreateWin32SurfaceKHR>(
-        VulkanAPI::lvkGetInstanceProcAddr(p_context->instance, "vkCreateWin32SurfaceKHR"));
+        VulkanAPI::lvkGetInstanceProcAddr(p_context->instance->get_handle(), "vkCreateWin32SurfaceKHR"));
 
     VkWin32SurfaceCreateInfoKHR surface_create_info = {};
     surface_create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
@@ -28,7 +28,7 @@ void vulkan_surface_init(VulkanContext* p_context, void* p_window_handle) {
     surface_create_info.hwnd = (HWND) p_window_handle;
     surface_create_info.flags = 0;
     
-    LICHT_VULKAN_CHECK(licht_vkCreateWin32SurfaceKHR(p_context->instance, &surface_create_info, p_context->allocator, &p_context->surface));
+    LICHT_VULKAN_CHECK(licht_vkCreateWin32SurfaceKHR(p_context->instance->get_handle(), &surface_create_info, p_context->allocator, &p_context->surface));
 }
 
 void vulkan_surface_destroy(VulkanContext* p_context) {
@@ -37,7 +37,7 @@ void vulkan_surface_destroy(VulkanContext* p_context) {
     LLOG_INFO("[Vulkan]", "Destroying Vulkan surface...");
 
     if (p_context->surface != VK_NULL_HANDLE) {
-        VulkanAPI::lvkDestroySurfaceKHR(p_context->instance, p_context->surface, p_context->allocator);
+        VulkanAPI::lvkDestroySurfaceKHR(p_context->instance->get_handle(), p_context->surface, p_context->allocator);
         p_context->surface = VK_NULL_HANDLE;
         LLOG_INFO("[Vulkan]", "Vulkan surface destroyed.");
     }

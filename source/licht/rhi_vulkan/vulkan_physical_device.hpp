@@ -11,7 +11,7 @@
 
 namespace licht {
 
-struct VulkanContext;
+class VulkanInstance;
 
 struct VulkanPhysicalDeviceInformation {
     VkPhysicalDeviceProperties properties;
@@ -60,7 +60,7 @@ public:
     }
 
 public:
-    VulkanPhysicalDevice(VkInstance p_instance, VkSurfaceKHR p_surfarce, const Array<StringRef>& p_extensions);
+    VulkanPhysicalDevice(VulkanInstance& p_instance, VkSurfaceKHR p_surfarce, const Array<StringRef>& p_extensions);
     ~VulkanPhysicalDevice() = default;
 
 private:
@@ -68,7 +68,7 @@ private:
     VulkanPhysicalDeviceInformation info_;
     VkPhysicalDevice handle_;
     VkSurfaceKHR surface_;
-    VkInstance instance_;
+    VulkanInstance& instance_;
 };
 
 } // namespace licht

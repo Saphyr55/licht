@@ -15,7 +15,7 @@ void vulkan_command_buffer_init(VulkanContext* p_context) {
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     command_buffer_allocate_info.commandBufferCount = static_cast<uint32>(p_context->command_buffers.size());
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkAllocateCommandBuffers(p_context->device, &command_buffer_allocate_info, p_context->command_buffers.data()));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkAllocateCommandBuffers(p_context->device->get_handle(), &command_buffer_allocate_info, p_context->command_buffers.data()));
 }
 
 void vulkan_command_buffer_begin(VulkanContext* p_context, VkCommandBuffer p_command_buffer) {

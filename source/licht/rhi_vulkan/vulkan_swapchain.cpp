@@ -51,7 +51,7 @@ VulkanSwapchainSupportDetails vulkan_query_swapchain_support_details(VulkanConte
 
     VulkanSwapchainSupportDetails swapchain_support_details = {};
 
-    VkPhysicalDevice physical_device = p_context->physical_device.get_handle();
+    VkPhysicalDevice physical_device = p_context->device->get_physical_device_handle();
 
     LICHT_VULKAN_CHECK(VulkanAPI::lvkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, p_context->surface, &swapchain_support_details.capabilities));
 
@@ -91,7 +91,7 @@ void vulkan_context_swapchain_image_views_init(VulkanContext* p_context) {
         image_view_create_info.subresourceRange.levelCount = 1;
         image_view_create_info.subresourceRange.baseArrayLayer = 0;
         image_view_create_info.subresourceRange.layerCount = 1;
-        LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateImageView(p_context->device, &image_view_create_info, p_context->allocator, &p_context->swapchain_image_views[i]))
+        LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateImageView(p_context->device->get_handle(), &image_view_create_info, p_context->allocator, &p_context->swapchain_image_views[i]))
     }
 }
 
@@ -118,8 +118,8 @@ void vulkan_swapchain_init(VulkanContext* p_context) {
     // TODO: use VK_IMAGE_USAGE_TRANSFER_DST_BIT mask for post-processing thing in the future
     swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    uint32 graphics_queue_index = p_context->physical_device.get_info().graphics_queue_index;
-    uint32 present_queue_index = p_context->physical_device.get_info().present_queue_index;
+    uint32 graphics_queue_index = p_context->device->get_info().graphics_queue_index;
+    uint32 present_queue_index = p_context->device->get_info().present_queue_index;
     uint32 queue_famillies[] = { graphics_queue_index, present_queue_index }; 
 
     if (queue_famillies[0] != queue_famillies[1]) {
@@ -138,12 +138,12 @@ void vulkan_swapchain_init(VulkanContext* p_context) {
     swapchain_create_info.clipped = VK_TRUE;
     swapchain_create_info.oldSwapchain = VK_NULL_HANDLE;
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateSwapchainKHR(p_context->device, &swapchain_create_info, p_context->allocator, &p_context->swapchain));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateSwapchainKHR(p_context->device->get_handle(), &swapchain_create_info, p_context->allocator, &p_context->swapchain));
 
     image_count = 0;
-    VulkanAPI::lvkGetSwapchainImagesKHR(p_context->device, p_context->swapchain, &image_count, nullptr);
+    VulkanAPI::lvkGetSwapchainImagesKHR(p_context->device->get_handle(), p_context->swapchain, &image_count, nullptr);
     p_context->swapchain_images.resize(image_count);
-    VulkanAPI::lvkGetSwapchainImagesKHR(p_context->device, p_context->swapchain, &image_count, p_context->swapchain_images.data());
+    VulkanAPI::lvkGetSwapchainImagesKHR(p_context->device->get_handle(), p_context->swapchain, &image_count, p_context->swapchain_images.data());
 
     p_context->swapchain_extent = extent;
     p_context->swapchain_format = surface_format.format;
@@ -154,7 +154,7 @@ void vulkan_swapchain_init(VulkanContext* p_context) {
 void vulkan_swapchain_recreate(VulkanContext* p_context) {
     LCHECK(p_context);
     
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkDeviceWaitIdle(p_context->device));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkDeviceWaitIdle(p_context->device->get_handle()));
 
     vulkan_framebuffers_destroy(p_context);
 
@@ -168,11 +168,11 @@ void vulkan_swapchain_destroy(VulkanContext* p_context) {
     LCHECK(p_context);
 
     for (const VkImageView& image_view : p_context->swapchain_image_views) {
-        VulkanAPI::lvkDestroyImageView(p_context->device, image_view, p_context->allocator);
+        VulkanAPI::lvkDestroyImageView(p_context->device->get_handle(), image_view, p_context->allocator);
     }
 
     p_context->swapchain_image_views.clear();
-    VulkanAPI::lvkDestroySwapchainKHR(p_context->device, p_context->swapchain, p_context->allocator);
+    VulkanAPI::lvkDestroySwapchainKHR(p_context->device->get_handle(), p_context->swapchain, p_context->allocator);
 }
 
 }  //namespace licht

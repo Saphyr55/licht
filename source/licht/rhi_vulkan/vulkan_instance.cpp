@@ -18,7 +18,7 @@
 
 namespace licht {
 
-void VulkanInstance::initialize(const VkApplicationInfo& p_info, const VkInstanceCreateInfo& p_create_info) {
+void VulkanInstance::initialize() {
     uint32 extension_count = 0;
     LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
 

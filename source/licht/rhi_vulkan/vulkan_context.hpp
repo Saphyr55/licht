@@ -11,6 +11,7 @@
 #include "licht/rhi_vulkan/vulkan_instance.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
 #include "licht/rhi_vulkan/vulkan_physical_device.hpp"
+#include "licht/rhi_vulkan/vulkan_queue.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -32,15 +33,12 @@ public:
     static uint32 MaxFrame;
 
     SharedRef<DynamicLibrary> library;
-    
-    VulkanInstance instance;
-    VulkanDevice device;
+
+    SharedRef<VulkanInstance> instance;
+    SharedRef<VulkanDevice> device;
+    VkAllocationCallbacks* allocator = nullptr;
 
     VkSurfaceKHR surface = VK_NULL_HANDLE;
-
-    // Queues
-    VkQueue graphics_queue = VK_NULL_HANDLE;
-    VkQueue present_queue = VK_NULL_HANDLE;
 
     VkSwapchainKHR swapchain = VK_NULL_HANDLE;
     VkFormat swapchain_format;

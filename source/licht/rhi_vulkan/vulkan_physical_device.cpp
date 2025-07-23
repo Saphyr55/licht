@@ -7,13 +7,14 @@
 #include "licht/core/trace/trace.hpp"
 
 #include "licht/rhi_vulkan/vulkan_context.hpp"
+#include "licht/rhi_vulkan/vulkan_instance.hpp"
 #include "licht/rhi_vulkan/vulkan_logical_device.hpp"
 
 #include <vulkan/vulkan_core.h>
 
 namespace licht {
 
-VulkanPhysicalDevice::VulkanPhysicalDevice(VkInstance p_instance,
+VulkanPhysicalDevice::VulkanPhysicalDevice(VulkanInstance& p_instance,
                                            VkSurfaceKHR p_surfarce,
                                            const Array<StringRef>& p_extensions)
     : instance_(p_instance)
@@ -111,14 +112,14 @@ const VulkanPhysicalDeviceInformation& VulkanPhysicalDevice::query_info() {
 
 bool VulkanPhysicalDevice::select_physical_device() {
     uint32 device_count = 0;
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumeratePhysicalDevices(instance_, &device_count, nullptr));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumeratePhysicalDevices(instance_.get_handle(), &device_count, nullptr));
     if (device_count == 0) {
         LLOG_ERROR("[Vulkan]", "No physical devices found.");
         return false;
     }
 
     Array<VkPhysicalDevice> devices(device_count);
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumeratePhysicalDevices(instance_, &device_count, devices.data()));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumeratePhysicalDevices(instance_.get_handle(), &device_count, devices.data()));
 
     for (const VkPhysicalDevice& physical_device : devices) {
         handle_ = physical_device;

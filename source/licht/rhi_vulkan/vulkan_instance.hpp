@@ -9,7 +9,7 @@ struct VulkanContext;
 class VulkanInstance {
 public:
 
-    void initialize(const VkApplicationInfo& p_info, const VkInstanceCreateInfo& p_create_info);
+    void initialize();
 
     void destroy();
 

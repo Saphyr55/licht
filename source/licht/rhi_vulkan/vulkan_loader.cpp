@@ -1,20 +1,21 @@
 #include "vulkan_loader.hpp"
 
 #include "licht/core/defines.hpp"
+#include "licht/core/memory/shared_ref.hpp"
 #include "licht/platform/dynamic_library.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 
 #define LICHT_LOAD_RHI_CORE_FUNCTION(Name)                                        \
     VulkanAPI::LICHT_DEFINE_RHI_VULKAN_FUNCTION_NAME(Name) = reinterpret_cast<    \
         LICHT_DEFINE_RHI_VULKAN_FUNCTION_TYPE(Name)>(                             \
-        ::licht::DynamicLibraryLoader::load_function(p_context->library, #Name)); \
+        ::licht::DynamicLibraryLoader::load_function(p_library, #Name)); \
     if (VulkanAPI::l##Name == nullptr) {                                          \
         LLOG_ERROR("[Vulkan]", "Failed to load Vulkan function: " #Name);         \
     }
 
 #define LICHT_LOAD_RHI_INSTANCE_FUNCTION(Name)                                                             \
     VulkanAPI::LICHT_DEFINE_RHI_VULKAN_FUNCTION_NAME(Name) = (LICHT_DEFINE_RHI_VULKAN_FUNCTION_TYPE(Name)) \
-        VulkanAPI::lvkGetInstanceProcAddr(p_context->instance, #Name);                                     \
+        VulkanAPI::lvkGetInstanceProcAddr(p_instance.get_handle(), #Name);                                     \
     if (VulkanAPI::LICHT_DEFINE_RHI_VULKAN_FUNCTION_NAME(Name) == nullptr) {                               \
         LLOG_ERROR("[Vulkan]", "Failed to load Vulkan instance function: " #Name);                         \
     }
@@ -22,7 +23,7 @@
 #define LICHT_LOAD_RHI_DEVICE_FUNCTION(Name)                                     \
     VulkanAPI::LICHT_DEFINE_RHI_VULKAN_FUNCTION_NAME(Name) = reinterpret_cast<   \
         LICHT_DEFINE_RHI_VULKAN_FUNCTION_TYPE(Name)>(                            \
-        VulkanAPI::lvkGetDeviceProcAddr(p_context->device, #Name));              \
+        VulkanAPI::lvkGetDeviceProcAddr(p_device.get_handle(), #Name));              \
     if (VulkanAPI::LICHT_DEFINE_RHI_VULKAN_FUNCTION_NAME(Name) == nullptr) {     \
         LLOG_ERROR("[Vulkan]", "Failed to load Vulkan device function: " #Name); \
     }
@@ -147,19 +148,16 @@ LICHT_DEFINE_RHI_FUNCTION_IMPL(vkQueueSubmit);
 LICHT_DEFINE_RHI_FUNCTION_IMPL(vkQueueWaitIdle);
 LICHT_DEFINE_RHI_FUNCTION_IMPL(vkQueuePresentKHR);
 
-bool vulkan_library_load(VulkanContext* p_context) {
-    LCHECK(p_context)
+SharedRef<DynamicLibrary> vulkan_library_load() {
 
 #if defined(_WIN32)
-    p_context->library = DynamicLibraryLoader::load("vulkan-1.dll");
+    return DynamicLibraryLoader::load("vulkan-1.dll");
 #endif
 
-    return bool(p_context->library);
+    return SharedRef<DynamicLibrary>(nullptr);
 }
 
-bool vulkan_core_load(VulkanContext* p_context) {
-    LCHECK(p_context);
-
+bool vulkan_core_load(SharedRef<DynamicLibrary> p_library) {
     LICHT_LOAD_RHI_CORE_FUNCTION(vkGetInstanceProcAddr);
     LICHT_LOAD_RHI_CORE_FUNCTION(vkEnumerateInstanceVersion);
     LICHT_LOAD_RHI_CORE_FUNCTION(vkEnumerateInstanceExtensionProperties);
@@ -169,9 +167,7 @@ bool vulkan_core_load(VulkanContext* p_context) {
     return true;
 }
 
-bool vulkan_instance_load(VulkanContext* p_context) {
-    LCHECK(p_context);
-
+bool vulkan_instance_load(VulkanInstance& p_instance) {
     LICHT_LOAD_RHI_INSTANCE_FUNCTION(vkGetDeviceProcAddr);
     LICHT_LOAD_RHI_INSTANCE_FUNCTION(vkDestroyInstance);
     LICHT_LOAD_RHI_INSTANCE_FUNCTION(vkEnumeratePhysicalDevices);
@@ -193,9 +189,7 @@ bool vulkan_instance_load(VulkanContext* p_context) {
     return true;
 }
 
-bool vulkan_device_load(VulkanContext* p_context) {
-    LCHECK(p_context);
-
+bool vulkan_device_load(VulkanDevice& p_device) {
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkGetDeviceQueue);
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkDeviceWaitIdle);
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkCreateCommandPool);

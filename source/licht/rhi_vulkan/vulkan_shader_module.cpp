@@ -24,12 +24,12 @@ void VulkanShaderModule::init(VulkanContext* p_context) {
     shader_module_create_info.codeSize = code_.size();
     shader_module_create_info.pCode = reinterpret_cast<const uint32*>(code_.data());
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateShaderModule(p_context->device, &shader_module_create_info, p_context->allocator, &handle_));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateShaderModule(p_context->device->get_handle(), &shader_module_create_info, p_context->allocator, &handle_));
 }
 
 void VulkanShaderModule::destroy(VulkanContext* p_context) {
     LCHECK(p_context)
-    VulkanAPI::lvkDestroyShaderModule(p_context->device, handle_, p_context->allocator);
+    VulkanAPI::lvkDestroyShaderModule(p_context->device->get_handle(), handle_, p_context->allocator);
 }
 
 VkShaderModule VulkanShaderModule::handle() {

@@ -4,6 +4,7 @@
 #include "licht/core/hash/hasher.hpp"
 #include "licht/core/memory/allocator.hpp"
 #include "licht/core/memory/memory.hpp"
+#include "licht/core/string/format.hpp"
 
 #include <initializer_list>
 #include <type_traits>
@@ -17,9 +18,9 @@ struct HashMapEntry {
 
     HashMapEntry() = default;
 
-    HashMapEntry(const KeyType& in_key, const ValueType& in_value)
-        : key(in_key)
-        , value(in_value) {}
+    HashMapEntry(const KeyType& p_key, const ValueType& p_value)
+        : key(p_key)
+        , value(p_value) {}
 };
 
 template <typename KeyType, typename ValueType>
@@ -29,8 +30,8 @@ struct HashMapElement {
 
     HashMapElement() = default;
 
-    HashMapElement(const KeyType& key, const ValueType& value)
-        : entry(key, value)
+    HashMapElement(const KeyType& p_key, const ValueType& p_value)
+        : entry(p_key, p_value)
         , next(nullptr) {}
 };
 

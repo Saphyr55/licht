@@ -9,8 +9,4 @@ VulkanQueue::VulkanQueue(VulkanQueueFamilyType p_type, uint32 p_queue_family_ind
     , queue_family_index_(p_queue_family_index) {
 }
 
-void VulkanQueue::initialize(VkDevice p_device) {
-    VulkanAPI::lvkGetDeviceQueue(p_device, queue_family_index_, 0, &handle_);
-}
-
 }

@@ -4,6 +4,7 @@
 #include "licht/platform/display.hpp"
 #include "licht/rhi_vulkan/vulkan_command_buffer.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
+#include "licht/rhi_vulkan/vulkan_queue.hpp"
 #include "licht/rhi_vulkan/vulkan_swapchain.hpp"
 #include "licht/rhi_vulkan/vulkan_graphics_pipeline.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
@@ -26,12 +27,15 @@ void RHIVulkanModule::initialize() {
 
 void RHIVulkanModule::tick() {
 
+    VulkanQueue& graphics_queue = context_->device->query_queue(VulkanQueueFamilyType::Graphics);
+    VulkanQueue& present_queue = context_->device->query_queue(VulkanQueueFamilyType::Present);
+
     VkFenceCreateInfo fence_create_info = {};
     fence_create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fence_create_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
     uint32 image_index = 0;
-    VkResult acquire_next_image_result = VulkanAPI::lvkAcquireNextImageKHR(context_->device, context_->swapchain, UINT64_MAX, context_->image_available_semaphores[context_->current_frame], VK_NULL_HANDLE, &image_index);
+    VkResult acquire_next_image_result = VulkanAPI::lvkAcquireNextImageKHR(context_->device->get_handle(), context_->swapchain, UINT64_MAX, context_->image_available_semaphores[context_->current_frame], VK_NULL_HANDLE, &image_index);
     if (acquire_next_image_result == VK_ERROR_OUT_OF_DATE_KHR || acquire_next_image_result == VK_SUBOPTIMAL_KHR || window_resized_) {
         vulkan_swapchain_recreate(context_);
         window_resized_ = false;
@@ -40,7 +44,7 @@ void RHIVulkanModule::tick() {
         LICHT_VULKAN_CHECK(acquire_next_image_result)
     }
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkResetFences(context_->device, 1, &context_->in_flight_fences[context_->current_frame]));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkResetFences(context_->device->get_handle(), 1, &context_->in_flight_fences[context_->current_frame]));
 
     VulkanAPI::lvkResetCommandBuffer(context_->command_buffers[context_->current_frame], 0);
     
@@ -83,7 +87,7 @@ void RHIVulkanModule::tick() {
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = signal_semaphores;
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkQueueSubmit(context_->graphics_queue, 1, &submit_info, context_->in_flight_fences[context_->current_frame]));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkQueueSubmit(graphics_queue.get_handle(), 1, &submit_info, context_->in_flight_fences[context_->current_frame]));
 
     VkSwapchainKHR swapchains[] = {context_->swapchain};
 
@@ -96,14 +100,14 @@ void RHIVulkanModule::tick() {
     present_info.pImageIndices = &image_index;
     present_info.pResults = nullptr; // Optional
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkQueuePresentKHR(context_->present_queue, &present_info));
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkWaitForFences(context_->device, 1, &context_->in_flight_fences[context_->current_frame], VK_TRUE, UINT64_MAX));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkQueuePresentKHR(present_queue.get_handle(), &present_info));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkWaitForFences(context_->device->get_handle(), 1, &context_->in_flight_fences[context_->current_frame], VK_TRUE, UINT64_MAX));
 
     context_->current_frame = (context_->current_frame  + 1) % VulkanContext::MaxFrame;
 }
 
 void RHIVulkanModule::shutdown() {
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkDeviceWaitIdle(context_->device));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkDeviceWaitIdle(context_->device->get_handle()));
 
     vulkan_context_destroy(context_);
 

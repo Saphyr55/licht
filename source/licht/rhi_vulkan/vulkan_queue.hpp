@@ -14,14 +14,11 @@ enum class VulkanQueueFamilyType {
 
 class VulkanQueue {
 public:
-    void initialize(VkDevice p_device);
-
-public:
     inline VulkanQueueFamilyType get_type() {
         return type_;
     }
 
-    inline uint32 get_queue_family_index_() {
+    inline uint32 get_queue_family_index() {
         return queue_family_index_;
     }
 
@@ -35,8 +32,12 @@ public:
 
 public:
     VulkanQueue(VulkanQueueFamilyType p_type, uint32 p_queue_family_index);
-
+    VulkanQueue() = default;
+    ~VulkanQueue() = default;
+    
 private:
+    friend class VulkanDevice;
+
     VulkanQueueFamilyType type_ = VulkanQueueFamilyType::Unknown;
     VkQueue handle_ = VK_NULL_HANDLE;
     uint32 queue_family_index_ = 0;

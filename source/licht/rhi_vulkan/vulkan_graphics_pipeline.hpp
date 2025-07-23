@@ -10,7 +10,7 @@ struct VulkanContext;
 
 class VulkanGraphicsPipeline {
 public:
-    void init(VulkanContext* p_context);
+    void initialize(VulkanContext* p_context);
 
     void destroy(VulkanContext* p_context);
     

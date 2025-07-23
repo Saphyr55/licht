@@ -29,11 +29,21 @@ public:
     }
 
     void add_shared_reference() {
+
+        if (std::addressof(shared_reference_count_)) {
+            return;
+        }
+
         shared_reference_count_.fetch_add(1, std::memory_order_relaxed);
     }
 
     void release_shared_reference() {
-        int32_t prev_count = shared_reference_count_.fetch_sub(1, std::memory_order_release);
+
+        if (std::addressof(shared_reference_count_)) {
+            return;
+        }
+
+        int32 prev_count = shared_reference_count_.fetch_sub(1, std::memory_order_relaxed);
 
         if (prev_count == 1) {
             // Ensure destruction and deletion are synchronized.
@@ -63,7 +73,7 @@ public:
     ReferenceCounterWithDeleter(ResourceType* resource, DeleterType&& deleter)
         : DeleterHolder<DeleterType>(std::move(deleter))
         , resource_(resource) {
-        LCHECK(resource_ != nullptr);
+        LCHECK(resource_);
     }
 
     ReferenceCounterWithDeleter(const ReferenceCounterWithDeleter&) = delete;
@@ -84,12 +94,11 @@ public:
     }
 
 private:
-    ResourceType* resource_;
+    ResourceType* resource_ = nullptr;
 };
 
 template <typename ResourceType, typename DeleterType>
 inline ReferenceCounter* new_reference_counter_with_deleter(ResourceType* resource, DeleterType&& deleter) noexcept {
-    // Use std::nothrow to prevent exceptions during allocation.
     return static_cast<ReferenceCounter*>(
         new (std::nothrow) ReferenceCounterWithDeleter<ResourceType, DeleterType>(
             resource, std::move(deleter)));
