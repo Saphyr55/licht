@@ -25,7 +25,7 @@ public:
 
     constexpr StringRefBase& operator=(const StringRefBase& other) = default;
 
-    constexpr const CharType& operator[](size_t index) const {
+    constexpr const CharType& operator[](usize index) const {
         LCHECK(index >= size())
         return data_[index];
     }
@@ -34,7 +34,7 @@ public:
 
     constexpr const CharType* data() const { return data_; }
 
-    constexpr size_t size() const { return string_length(data_); }
+    constexpr usize size() const { return string_length(data_); }
 
     constexpr bool empty() const { return size() == 0; }
 

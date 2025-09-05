@@ -1,6 +1,7 @@
 #include <catch2/catch_all.hpp>
 
 #include "licht/core/collection/array.hpp"
+#include "licht/core/function/function.hpp"
 #include "licht/core/string/string.hpp"
 #include "licht/core/string/string_ref.hpp"
 #include "licht/core/memory/memory.hpp"
@@ -9,7 +10,7 @@ using namespace licht;
 
 TEST_CASE("Append elements to an array.", "[Array::append]") {
 
-	Array<uint32> items;
+    Array<uint32> items;
     REQUIRE(items.size() == 0);
     REQUIRE(items.empty());
         

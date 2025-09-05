@@ -2,6 +2,7 @@
 #include "licht/core/defines.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/core/trace/trace.hpp"
+#include "licht/rhi_vulkan/vulkan_loader.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -12,8 +13,7 @@ VulkanShaderModule::VulkanShaderModule(const Array<uint8>& p_code)
     , handle_(VK_NULL_HANDLE) {
 }
 
-void VulkanShaderModule::init(VulkanContext* p_context) {
-    LCHECK(p_context)
+void VulkanShaderModule::initialize(VulkanContext& context) {
 
     if (handle_ != VK_NULL_HANDLE) {
         return;
@@ -24,12 +24,11 @@ void VulkanShaderModule::init(VulkanContext* p_context) {
     shader_module_create_info.codeSize = code_.size();
     shader_module_create_info.pCode = reinterpret_cast<const uint32*>(code_.data());
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateShaderModule(p_context->device->get_handle(), &shader_module_create_info, p_context->allocator, &handle_));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateShaderModule(context.device, &shader_module_create_info, context.allocator, &handle_));
 }
 
-void VulkanShaderModule::destroy(VulkanContext* p_context) {
-    LCHECK(p_context)
-    VulkanAPI::lvkDestroyShaderModule(p_context->device->get_handle(), handle_, p_context->allocator);
+void VulkanShaderModule::destroy(VulkanContext& context) {
+    VulkanAPI::lvkDestroyShaderModule(context.device, handle_, context.allocator);
 }
 
 VkShaderModule VulkanShaderModule::handle() {

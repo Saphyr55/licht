@@ -11,7 +11,7 @@ TEST_CASE("Construct correctely.", "[SharedRef::SharedRef]") {
     REQUIRE(ptr);
     REQUIRE(ptr.get_shared_reference_count() == 1);
     REQUIRE(*ptr == 9);
-    
+
     ptr = new_ref<uint32>(2);
     REQUIRE(ptr.is_valid());
     REQUIRE(ptr);
@@ -21,7 +21,7 @@ TEST_CASE("Construct correctely.", "[SharedRef::SharedRef]") {
     SharedRef<uint32> ptr2 = ptr;
     REQUIRE(ptr2.is_valid());
     REQUIRE(ptr2);
-    REQUIRE(ptr2.get_shared_reference_count() == 2);
+    REQUIRE(ptr2.get_shared_reference_count() == 2); // X
     REQUIRE(*ptr2 == 2);
 
     {
@@ -59,7 +59,7 @@ TEST_CASE("Construct correctely devired from.", "[SharedRef::SharedRef]") {
     SharedRef<Base> ptr2 = ptr;
     REQUIRE(ptr2.is_valid());
     REQUIRE(ptr2);
-    REQUIRE(ptr2.get_shared_reference_count() == 2);
+    REQUIRE(ptr2.get_shared_reference_count() == 2); // X
 
     {
         SharedRef<Base> ptr3 = ptr;

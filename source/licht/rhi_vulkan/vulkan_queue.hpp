@@ -7,8 +7,9 @@
 namespace licht {
 
 enum class VulkanQueueFamilyType {
-    Present,
     Graphics,
+    Compute,
+    Present,
     Unknown,
 };
 
@@ -31,15 +32,16 @@ public:
     }
 
 public:
-    VulkanQueue(VulkanQueueFamilyType p_type, uint32 p_queue_family_index);
+    VulkanQueue(VulkanQueueFamilyType type, uint32 queue_family_index);
     VulkanQueue() = default;
     ~VulkanQueue() = default;
     
 private:
     friend class VulkanDevice;
 
-    VulkanQueueFamilyType type_ = VulkanQueueFamilyType::Unknown;
     VkQueue handle_ = VK_NULL_HANDLE;
+
+    VulkanQueueFamilyType type_ = VulkanQueueFamilyType::Unknown;
     uint32 queue_family_index_ = 0;
 };
 

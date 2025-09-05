@@ -16,19 +16,29 @@ public:
     using IteratorType = ElementType*;
 
 public:
+
+    template <typename OtherType>
+    Array<OtherType> map(auto&& mapper) const {
+        Array<OtherType> other;
+        for (SizeType i = 0; i < size_; i++) {
+            other.append(mapper(data_[i]));
+        }
+        return other;
+    }
+
     void append(const ElementType& p_element) {
         if (size_ >= capacity_) {
             reverse(capacity_ == 0 ? 1 : capacity_ * 2);
         }
 
         new (data_ + size_) ElementType(p_element);
-        
+
         ++size_;
     }
 
-    template<typename OtherAllocatorType>
+    template <typename OtherAllocatorType>
     void append_all(const Array<ElementType, OtherAllocatorType>& array) {
-        for (const ElementType& element: array) {
+        for (const ElementType& element : array) {
             append(element);
         }
     }
@@ -78,7 +88,7 @@ public:
 
         size_ = 0;
     }
-    
+
     void remove(const ElementType& p_value) {
         remove(p_value, [](auto& p_1, auto& p_2) -> int32 {
             if (p_1 == p_2) {
@@ -86,7 +96,7 @@ public:
             } else if (p_1 > p_2) {
                 return 1;
             } else {
-                return -1;                
+                return -1;
             }
         });
     }
@@ -105,7 +115,6 @@ public:
         }
         size_ = new_size;
     }
-
 
     void resize(SizeType p_size) {
         reverse(p_size);
@@ -145,7 +154,7 @@ public:
         append(std::move(p_element));
     }
 
-    template<typename Predicate>
+    template <typename Predicate>
     ElementType* get_if(Predicate&& p_predicate) const {
         for (SizeType i = 0; i < size_; ++i) {
             if (p_predicate(data_[i])) {
@@ -164,8 +173,7 @@ public:
         return false;
     }
 
-    template<typename Comparator>
-    bool contains(const ElementType& p_element, Comparator&& p_comparator) const {
+    bool contains(const ElementType& p_element, auto&& p_comparator) const {
         for (SizeType i = 0; i < size_; ++i) {
             if (p_comparator(data_[i], p_element) == 0) {
                 return true;
@@ -325,7 +333,7 @@ private:
             size_ = new_capacity;
         }
     }
-    
+
     inline ElementType* allocator_allocate(SizeType n) {
         return allocator_.allocate(n);
     }
@@ -360,7 +368,7 @@ constexpr bool operator==(const Array<ElementType, AllocatorType>& lhs,
 }
 
 template <typename ElementType, typename AllocatorType>
-inline constexpr bool operator!=(const Array<ElementType, AllocatorType>& lhs, 
+inline constexpr bool operator!=(const Array<ElementType, AllocatorType>& lhs,
                                  const Array<ElementType, AllocatorType>& rhs) {
     return !(lhs == rhs);
 }

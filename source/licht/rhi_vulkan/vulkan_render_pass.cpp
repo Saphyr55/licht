@@ -18,7 +18,7 @@ void vulkan_render_pass_init(VulkanContext* p_context) {
     subpass_dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
     VkAttachmentDescription color_attachment_description = {};
-    color_attachment_description.format = p_context->swapchain_format;
+    color_attachment_description.format = p_context->swapchain->get_format();
     color_attachment_description.samples = VK_SAMPLE_COUNT_1_BIT;
     color_attachment_description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     color_attachment_description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -56,7 +56,7 @@ void vulkan_render_pass_begin(VulkanContext* p_context, VkCommandBuffer p_comman
     render_pass_begin_info.renderPass = p_context->render_pass;
     render_pass_begin_info.framebuffer = p_context->framebuffers[p_image_index];
     render_pass_begin_info.renderArea.offset = {0, 0};
-    render_pass_begin_info.renderArea.extent = p_context->swapchain_extent;
+    render_pass_begin_info.renderArea.extent = p_context->swapchain->get_extent();
 
     VkClearValue clear_color = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
     render_pass_begin_info.clearValueCount = 1;

@@ -2,29 +2,26 @@
 #include "licht/core/string/format.hpp"
 #include "licht/core/trace/trace.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
-#include "licht/rhi_vulkan/vulkan_instance.hpp"
+#include "licht/rhi_vulkan/vulkan_framebuffer.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
-#include "licht/rhi_vulkan/vulkan_logical_device.hpp"
 #include "licht/rhi_vulkan/vulkan_physical_device.hpp"
 #include "licht/rhi_vulkan/vulkan_queue.hpp"
-#include "vulkan/vulkan_core.h"
+
+#include <vulkan/vulkan_core.h>
 
 namespace licht {
 
-VulkanDevice::VulkanDevice(VulkanInstance& p_instance, VkSurfaceKHR p_surfarce, const Array<StringRef>& p_extensions)
-    : physical_device_(p_instance, p_surfarce, p_extensions)
-    , device_allocator_(nullptr) {
-}
+void vulkan_device_initialize(VulkanContext& context, VulkanPhysicalDeviceSelector& physical_device_selector) {
 
-void VulkanDevice::initialize() {
-    physical_device_.select_physical_device();
+    physical_device_selector.select_physical_device();
+    context.physical_device_info = physical_device_selector.get_info();
 
-    LCHECK_MSG(physical_device_.get_info().is_suitable, "Physical device is not suitable for Vulkan operations.")
+    LCHECK_MSG(context.physical_device_info.is_suitable, "Physical device is not suitable for Vulkan operations.")
 
     float32 queue_priority = 1.0f;  // [0.0, 1.0]
 
-    uint32 graphics_queue_index = physical_device_.get_info().graphics_queue_index;
-    uint32 present_queue_index = physical_device_.get_info().present_queue_index;
+    uint32 graphics_queue_index = context.physical_device_info.graphics_queue_index;
+    uint32 present_queue_index = context.physical_device_info.present_queue_index;
 
     // TODO: Use a hash set.
     HashMap<uint32, uint32> queue_famillies = {{graphics_queue_index, 0}, {present_queue_index, 0}};
@@ -68,45 +65,41 @@ void VulkanDevice::initialize() {
         LLOG_INFO("[Vulkan]", vformat("Extension: %s", physical_device_extensions[i]));
     }
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateDevice(physical_device_.get_handle(), &device_create_info, device_allocator_, &handle_));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateDevice(context.physical_device, &device_create_info, context.allocator, &context.device));
+
+    vulkan_device_api_load(context.device);
 }
 
-void VulkanDevice::destroy() {
+void vulkan_device_destroy(VulkanContext& context) {
     LLOG_INFO("[Vulkan]", "Destroying Vulkan logical device.");
 
-    VulkanAPI::lvkDestroyDevice(handle_, device_allocator_);
-    handle_ = VK_NULL_HANDLE;
+    VulkanAPI::lvkDestroyDevice(context.device, context.allocator);
+    context.device = VK_NULL_HANDLE;
 
     LLOG_INFO("[Vulkan]", "Vulkan logical device destroyed.");
 }
 
-uint32 VulkanDevice::query_queue_family_index(VulkanQueueFamilyType p_type) {
+uint32 vulkan_query_queue_family_index(VulkanContext& context, VulkanQueueFamilyType p_type) {
     switch (p_type) {
         case VulkanQueueFamilyType::Graphics: {
-            return physical_device_.get_info().graphics_queue_index;
+            return context.physical_device_info.graphics_queue_index;
         }
         case VulkanQueueFamilyType::Present: {
-            return physical_device_.get_info().present_queue_index;
+            return context.physical_device_info.present_queue_index;
         }
+        case VulkanQueueFamilyType::Compute:  // TODO: Handle compute case.
         case VulkanQueueFamilyType::Unknown: {
             return 0;
         }
     }
+    return 0;
 }
 
-VulkanQueue& VulkanDevice::query_queue(VulkanQueueFamilyType p_type) {
-    
-    if (queues_.contains(p_type)) {
-        return queues_[p_type];
-    }
-
-    uint32 queue_family_index = query_queue_family_index(p_type);
-    VulkanQueue queue(p_type, queue_family_index);
-    VulkanAPI::lvkGetDeviceQueue(get_handle(), queue_family_index, 0, &queue.handle_);
-
-    queues_.insert(p_type, std::move(queue));
-
-    return queues_[p_type];
+VkQueue vulkan_query_queue(VulkanContext& context, VulkanQueueFamilyType p_type) {
+    VkQueue queue;
+    uint32 queue_family_index = vulkan_query_queue_family_index(context, p_type);
+    VulkanAPI::lvkGetDeviceQueue(context.device, queue_family_index, 0, &queue);
+    return queue;
 }
 
 }  //namespace licht

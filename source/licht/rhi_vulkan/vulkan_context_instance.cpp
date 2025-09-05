@@ -1,10 +1,12 @@
-#include "vulkan_instance.hpp"
 
 #include "licht/core/collection/array.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/string/format.hpp"
-
+#include "licht/core/string/string_ref.hpp"
+#include "licht/core/trace/trace.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
+#include "licht/rhi_vulkan/vulkan_loader.hpp"
+#include "licht/rhi_vulkan/vulkan_rhi.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -18,12 +20,7 @@
 
 namespace licht {
 
-void VulkanInstance::initialize() {
-    uint32 extension_count = 0;
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
-
-    Array<VkExtensionProperties> available_extensions(extension_count);
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumerateInstanceExtensionProperties(nullptr, &extension_count, available_extensions.data()));
+void vulkan_instance_initialize(VulkanContext& context) {
 
     Array<const char*> desired_extensions = {
         VK_KHR_SURFACE_EXTENSION_NAME,
@@ -33,11 +30,18 @@ void VulkanInstance::initialize() {
         VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
     };
 
-    for (const char* required_extension : desired_extensions) {
-        LCHECK_MSG(desired_extensions.contains(required_extension, [](const char* a, const char* b) -> int32 {
-            return string_compare(a, b);
-        }),
-                   vformat("Required Vulkan extension '%s' is not available.", required_extension));
+    Array<VkExtensionProperties> available_extensions = VulkanRHI::get_instance_extension_properties();
+    Array<StringRef> available_extension_names = available_extensions
+                                                     .map<StringRef>([](const VkExtensionProperties& properties) {
+                                                         return properties.extensionName;
+                                                     });
+
+    for (StringRef ext : available_extension_names) {
+        LLOG_DEBUG("Ext", ext);
+    }
+
+    for (StringRef required_extension : desired_extensions) {
+        LCHECK_MSG(available_extension_names.contains(required_extension), vformat("Required Vulkan extension '%s' is not available.", required_extension));
     }
 
     Array<const char*> validation_layers = {"VK_LAYER_KHRONOS_validation"};
@@ -45,9 +49,9 @@ void VulkanInstance::initialize() {
     VkApplicationInfo app_info{};
     app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     app_info.pNext = nullptr;
-    app_info.pApplicationName = "licht";
+    app_info.pApplicationName = "licht application";
     app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    app_info.pEngineName = "licht";
+    app_info.pEngineName = "licht engine";
     app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     app_info.apiVersion = VK_API_VERSION_1_3;
 
@@ -70,15 +74,18 @@ void VulkanInstance::initialize() {
         LLOG_INFO("[Vulkan]", vformat("  - %s", layer));
     }
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateInstance(&create_info, allocator_, &handle_));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateInstance(&create_info, context.allocator, &context.instance));
 
     LLOG_INFO("[Vulkan]", "Vulkan instance created successfully.");
+
+    vulkan_instance_api_load(context.instance);
 }
 
-void VulkanInstance::destroy() {
+void vulkan_instance_destroy(VulkanContext& context) {
+
     LLOG_INFO("[Vulkan]", "Destroying Vulkan instance...");
-    VulkanAPI::lvkDestroyInstance(handle_, allocator_);
-    handle_ = VK_NULL_HANDLE;
+    VulkanAPI::lvkDestroyInstance(context.instance, context.allocator);
+    context.instance = VK_NULL_HANDLE;
     LLOG_INFO("[Vulkan]", "Vulkan instance destroyed.");
 }
 

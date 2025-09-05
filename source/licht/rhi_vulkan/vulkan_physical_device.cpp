@@ -1,53 +1,43 @@
-#include "vulkan_physical_device.hpp"
-#include "licht/core/collection/array.hpp"
-#include "licht/core/defines.hpp"
-#include "licht/core/string/format.hpp"
-#include "licht/core/string/string.hpp"
-#include "licht/core/string/string_ref.hpp"
+
 #include "licht/core/trace/trace.hpp"
 
+#include "licht/rhi_vulkan/rhi_vulkan_render_surface.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
-#include "licht/rhi_vulkan/vulkan_instance.hpp"
-#include "licht/rhi_vulkan/vulkan_logical_device.hpp"
+#include "licht/rhi_vulkan/vulkan_loader.hpp"
 
 #include <vulkan/vulkan_core.h>
 
 namespace licht {
 
-VulkanPhysicalDevice::VulkanPhysicalDevice(VulkanInstance& p_instance,
-                                           VkSurfaceKHR p_surfarce,
-                                           const Array<StringRef>& p_extensions)
-    : instance_(p_instance)
-    , surface_(p_surfarce)
-    , extensions_(p_extensions) {
-}
+VulkanPhysicalDeviceSelector::VulkanPhysicalDeviceSelector(VulkanContext& context, const Array<StringRef>& extensions)
+    : context_(context), extensions_(extensions) {}
 
-VkPhysicalDeviceProperties VulkanPhysicalDevice::query_properties() {
-    VulkanAPI::lvkGetPhysicalDeviceProperties(handle_, &info_.properties);
+VkPhysicalDeviceProperties VulkanPhysicalDeviceSelector::query_properties() {
+    VulkanAPI::lvkGetPhysicalDeviceProperties(context_.physical_device, &info_.properties);
     return info_.properties;
 }
 
-VkPhysicalDeviceFeatures VulkanPhysicalDevice::query_features() {
-    VulkanAPI::lvkGetPhysicalDeviceFeatures(handle_, &info_.features);
+VkPhysicalDeviceFeatures VulkanPhysicalDeviceSelector::query_features() {
+    VulkanAPI::lvkGetPhysicalDeviceFeatures(context_.physical_device, &info_.features);
     return info_.features;
 }
 
-bool VulkanPhysicalDevice::is_properties_suitable() const {
+bool VulkanPhysicalDeviceSelector::is_properties_suitable() const {
     return info_.properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && info_.properties.limits.maxImageDimension2D >= 4096;
 }
 
-bool VulkanPhysicalDevice::is_features_suitable() const {
+bool VulkanPhysicalDeviceSelector::is_features_suitable() const {
     return info_.features.geometryShader && info_.features.samplerAnisotropy;
 }
 
-bool VulkanPhysicalDevice::check_extension_support(const Array<StringRef>& p_extensions) {
+bool VulkanPhysicalDeviceSelector::check_extension_support(const Array<StringRef>& extensions) {
     uint32 extension_count;
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumerateDeviceExtensionProperties(handle_, nullptr, &extension_count, nullptr));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumerateDeviceExtensionProperties(context_.physical_device, nullptr, &extension_count, nullptr));
 
     Array<VkExtensionProperties> available_extensions(extension_count);
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumerateDeviceExtensionProperties(handle_, nullptr, &extension_count, available_extensions.data()));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumerateDeviceExtensionProperties(context_.physical_device, nullptr, &extension_count, available_extensions.data()));
 
-    Array<StringRef> physical_device_extensions = p_extensions;
+    Array<StringRef> physical_device_extensions = extensions;
 
     for (const VkExtensionProperties& extension : available_extensions) {
         physical_device_extensions.remove(extension.extensionName);
@@ -56,26 +46,26 @@ bool VulkanPhysicalDevice::check_extension_support(const Array<StringRef>& p_ext
     return physical_device_extensions.empty();
 }
 
-Array<VkQueueFamilyProperties> VulkanPhysicalDevice::query_queue_families() {
+Array<VkQueueFamilyProperties> VulkanPhysicalDeviceSelector::query_queue_families() {
     uint32 queue_family_count = 0;
-    VulkanAPI::lvkGetPhysicalDeviceQueueFamilyProperties(handle_, &queue_family_count, nullptr);
+    VulkanAPI::lvkGetPhysicalDeviceQueueFamilyProperties(context_.physical_device, &queue_family_count, nullptr);
     if (queue_family_count == 0) {
         return false;
     }
 
     info_.queue_families.resize(queue_family_count);
-    VulkanAPI::lvkGetPhysicalDeviceQueueFamilyProperties(handle_, &queue_family_count, info_.queue_families.data());
+    VulkanAPI::lvkGetPhysicalDeviceQueueFamilyProperties(context_.physical_device, &queue_family_count, info_.queue_families.data());
 
     return info_.queue_families;
 }
 
-bool VulkanPhysicalDevice::is_valid_queue_family(const VkQueueFamilyProperties& p_queue_family_properties, int32 p_queue_family_index) {
+bool VulkanPhysicalDeviceSelector::is_valid_queue_family(const VkQueueFamilyProperties& queue_family_properties, int32 queue_family_index) {
     VkBool32 is_present_support = false;
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkGetPhysicalDeviceSurfaceSupportKHR(handle_, p_queue_family_index, surface_, &is_present_support));
-    return (p_queue_family_properties.queueFlags & VK_QUEUE_GRAPHICS_BIT) && is_present_support == VK_TRUE;
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkGetPhysicalDeviceSurfaceSupportKHR(context_.physical_device, queue_family_index, context_.surface->get_handle(), &is_present_support));
+    return (queue_family_properties.queueFlags & VK_QUEUE_GRAPHICS_BIT) && is_present_support == VK_TRUE;
 }
 
-bool VulkanPhysicalDevice::select_queue_families() {
+bool VulkanPhysicalDeviceSelector::select_queue_families() {
     for (uint32 queue_family_index = 0; queue_family_index < info_.queue_families.size(); queue_family_index++) {
         const VkQueueFamilyProperties& queue_family = info_.queue_families[queue_family_index];
 
@@ -89,7 +79,7 @@ bool VulkanPhysicalDevice::select_queue_families() {
     return false;
 }
 
-const VulkanPhysicalDeviceInformation& VulkanPhysicalDevice::query_info() {
+const VulkanPhysicalDeviceSelectorInformation& VulkanPhysicalDeviceSelector::query_info() {
     query_properties();
     bool is_suitable_device_properties = is_properties_suitable();
 
@@ -110,19 +100,21 @@ const VulkanPhysicalDeviceInformation& VulkanPhysicalDevice::query_info() {
     return info_;
 }
 
-bool VulkanPhysicalDevice::select_physical_device() {
+bool VulkanPhysicalDeviceSelector::select_physical_device() {
+    VkInstance instance = context_.instance;
+
     uint32 device_count = 0;
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumeratePhysicalDevices(instance_.get_handle(), &device_count, nullptr));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumeratePhysicalDevices(instance, &device_count, nullptr));
     if (device_count == 0) {
         LLOG_ERROR("[Vulkan]", "No physical devices found.");
         return false;
     }
 
     Array<VkPhysicalDevice> devices(device_count);
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumeratePhysicalDevices(instance_.get_handle(), &device_count, devices.data()));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumeratePhysicalDevices(instance, &device_count, devices.data()));
 
     for (const VkPhysicalDevice& physical_device : devices) {
-        handle_ = physical_device;
+        context_.physical_device = physical_device;
 
         query_info();
 

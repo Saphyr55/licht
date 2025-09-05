@@ -30,7 +30,7 @@ public:
 
     void add_shared_reference() {
 
-        if (std::addressof(shared_reference_count_)) {
+        if (std::addressof(shared_reference_count_) == nullptr) {
             return;
         }
 
@@ -39,7 +39,7 @@ public:
 
     void release_shared_reference() {
 
-        if (std::addressof(shared_reference_count_)) {
+        if (std::addressof(shared_reference_count_) == nullptr) {
             return;
         }
 

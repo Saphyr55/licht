@@ -1,6 +1,12 @@
 #pragma once
 
+#include "licht/core/memory/shared_ref.hpp"
+#include "licht/rhi/device.hpp"
+#include "licht/rhi/render_surface.hpp"
+#include "licht/rhi/swapchain.hpp"
+#include "licht/rhi_vulkan/rhi_vulkan_device.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_exports.hpp"
+#include "licht/rhi_vulkan/rhi_vulkan_render_surface.hpp"
 
 namespace licht {
 
@@ -19,7 +25,11 @@ public:
     }
 
 private:
-    VulkanContext* context_;
+    VulkanContext context_;
+    SharedRef<RHIVulkanRenderSurface> surface_;
+    SharedRef<RHIVulkanDevice> device_;
+    RHISwapchainHandle swapchain_;
+
     bool window_resized_ = false;
 };
 

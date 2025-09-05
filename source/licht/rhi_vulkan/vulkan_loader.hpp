@@ -3,8 +3,6 @@
 #include <vulkan/vulkan_core.h>
 #include "licht/platform/dynamic_library.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_exports.hpp"
-#include "licht/rhi_vulkan/vulkan_device.hpp"
-#include "licht/rhi_vulkan/vulkan_instance.hpp"
 
 #define LICHT_DEFINE_RHI_VULKAN_FUNCTION_NAME(Name) l##Name
 
@@ -141,12 +139,12 @@ public:
     LICHT_DEFINE_RHI_FUNCTION(vkQueuePresentKHR);
 };
 
-LICHT_RHI_VULKAN_API SharedRef<DynamicLibrary> vulkan_library_load();
+SharedRef<DynamicLibrary> vulkan_library_load();
 
-LICHT_RHI_VULKAN_API bool vulkan_core_load(SharedRef<DynamicLibrary> p_library);
+bool vulkan_core_api_load(SharedRef<DynamicLibrary> library);
 
-LICHT_RHI_VULKAN_API bool vulkan_instance_load(VulkanInstance& p_instance);
+bool vulkan_instance_api_load(VkInstance instance);
 
-LICHT_RHI_VULKAN_API bool vulkan_device_load(VulkanDevice& p_device);
+bool vulkan_device_api_load(VkDevice device);
 
 }

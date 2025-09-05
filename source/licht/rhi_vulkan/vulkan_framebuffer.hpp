@@ -1,5 +1,6 @@
 #pragma once
 
+#include "licht/core/defines.hpp"
 #include "vulkan/vulkan_core.h"
 
 namespace licht {
@@ -7,7 +8,12 @@ namespace licht {
 struct VulkanContext;
 
 class VulkanFramebuffer {
+public:
+    VulkanFramebuffer();
+    
 private:
+    VkImageView image_view_;
+    VkRenderPass render_pass_;
     VkFramebuffer handle_;
 };
 

@@ -1,17 +1,11 @@
-#include "vulkan_swapchain.hpp"
-#include "licht/core/collection/array.hpp"
-#include "licht/core/defines.hpp"
+#include "rhi_vulkan_swapchain.hpp"
+#include "licht/core/memory/shared_ref.hpp"
+#include "licht/rhi_vulkan/rhi_vulkan_device.hpp"
+#include "licht/rhi_vulkan/rhi_vulkan_render_surface.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
-#include "licht/rhi_vulkan/vulkan_framebuffer.hpp"
-#include "vulkan/vulkan_core.h"
+#include "licht/rhi_vulkan/vulkan_loader.hpp"
 
 namespace licht {
-
-struct VulkanSwapchainSupportDetails {
-    VkSurfaceCapabilitiesKHR capabilities;
-    Array<VkSurfaceFormatKHR> surface_formats;
-    Array<VkPresentModeKHR> present_modes;
-};
 
 uint32 vulkan_swapchain_count_image(const VkSurfaceCapabilitiesKHR& p_capabilities) {
     uint32 image_count = p_capabilities.minImageCount + 1;
@@ -46,42 +40,44 @@ VkSurfaceFormatKHR vulkan_choose_swap_surface_format(const Array<VkSurfaceFormat
     return p_available_surface_formats[0];
 }
 
-VulkanSwapchainSupportDetails vulkan_query_swapchain_support_details(VulkanContext* p_context) {
-    LCHECK(p_context)
+RHIVulkanSwapchain::RHIVulkanSwapchain(VulkanContext& context, SharedRef<RHIVulkanRenderSurface> surface)
+    : context_(context), surface_(surface) {
+}
 
+VulkanSwapchainSupportDetails RHIVulkanSwapchain::query_support_details() {
     VulkanSwapchainSupportDetails swapchain_support_details = {};
 
-    VkPhysicalDevice physical_device = p_context->device->get_physical_device_handle();
+    VkPhysicalDevice physical_device = context_.physical_device;
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, p_context->surface, &swapchain_support_details.capabilities));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface_->get_handle(), &swapchain_support_details.capabilities));
 
     uint32 format_count = 0;
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, p_context->surface, &format_count, nullptr));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface_->get_handle(), &format_count, nullptr));
 
     if (format_count != 0) {
         swapchain_support_details.surface_formats.resize(format_count);
-        LICHT_VULKAN_CHECK(VulkanAPI::lvkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, p_context->surface, &format_count, swapchain_support_details.surface_formats.data()));
+        LICHT_VULKAN_CHECK(VulkanAPI::lvkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface_->get_handle(), &format_count, swapchain_support_details.surface_formats.data()));
     }
 
     uint32 present_mode_count = 0;
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, p_context->surface, &present_mode_count, nullptr));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface_->get_handle(), &present_mode_count, nullptr));
 
     if (present_mode_count != 0) {
         swapchain_support_details.present_modes.resize(present_mode_count);
-        LICHT_VULKAN_CHECK(VulkanAPI::lvkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, p_context->surface, &present_mode_count, swapchain_support_details.present_modes.data()));
+        LICHT_VULKAN_CHECK(VulkanAPI::lvkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface_->get_handle(), &present_mode_count, swapchain_support_details.present_modes.data()));
     }
 
     return swapchain_support_details;
 }
 
-void vulkan_context_swapchain_image_views_init(VulkanContext* p_context) {
-    p_context->swapchain_image_views.resize(p_context->swapchain_images.size());
-    for (usize i = 0; i < p_context->swapchain_images.size(); i++) {
+void RHIVulkanSwapchain::image_views_init() {
+    image_views_.resize(images_.size());
+    for (usize i = 0; i < images_.size(); i++) {
         VkImageViewCreateInfo image_view_create_info = {};
         image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        image_view_create_info.image = p_context->swapchain_images[i];
+        image_view_create_info.image = images_[i];
         image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        image_view_create_info.format = p_context->swapchain_format;
+        image_view_create_info.format = format_;
         image_view_create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
         image_view_create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
         image_view_create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -91,14 +87,12 @@ void vulkan_context_swapchain_image_views_init(VulkanContext* p_context) {
         image_view_create_info.subresourceRange.levelCount = 1;
         image_view_create_info.subresourceRange.baseArrayLayer = 0;
         image_view_create_info.subresourceRange.layerCount = 1;
-        LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateImageView(p_context->device->get_handle(), &image_view_create_info, p_context->allocator, &p_context->swapchain_image_views[i]))
+        LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateImageView(context_.device, &image_view_create_info, context_.allocator, &image_views_[i]))
     }
 }
 
-void vulkan_swapchain_init(VulkanContext* p_context) {
-    LCHECK(p_context)
-
-    VulkanSwapchainSupportDetails swapchain_support_details = vulkan_query_swapchain_support_details(p_context);
+void RHIVulkanSwapchain::initialize() {
+    VulkanSwapchainSupportDetails swapchain_support_details = query_support_details();
 
     bool swapchain_adequate = !swapchain_support_details.surface_formats.empty() && !swapchain_support_details.present_modes.empty();
 
@@ -109,70 +103,67 @@ void vulkan_swapchain_init(VulkanContext* p_context) {
 
     VkSwapchainCreateInfoKHR swapchain_create_info = {};
     swapchain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    swapchain_create_info.surface = p_context->surface;
+    swapchain_create_info.surface = surface_->get_handle();
     swapchain_create_info.minImageCount = image_count;
     swapchain_create_info.imageFormat = surface_format.format;
     swapchain_create_info.imageColorSpace = surface_format.colorSpace;
     swapchain_create_info.imageExtent = extent;
     swapchain_create_info.imageArrayLayers = 1;
-    // TODO: use VK_IMAGE_USAGE_TRANSFER_DST_BIT mask for post-processing thing in the future
+    // TODO: use VK_IMAGE_USAGE_TRANSFER_DST_BIT mask for post-processing for the future.
     swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    uint32 graphics_queue_index = p_context->device->get_info().graphics_queue_index;
-    uint32 present_queue_index = p_context->device->get_info().present_queue_index;
-    uint32 queue_famillies[] = { graphics_queue_index, present_queue_index }; 
+    uint32 graphics_queue_index = context_.physical_device_info.graphics_queue_index;
+    uint32 present_queue_index = context_.physical_device_info.present_queue_index;
+    uint32 queue_famillies[] = {graphics_queue_index, present_queue_index};
 
     if (queue_famillies[0] != queue_famillies[1]) {
         swapchain_create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
         swapchain_create_info.queueFamilyIndexCount = 2;
-        swapchain_create_info.pQueueFamilyIndices = queue_famillies; 
+        swapchain_create_info.pQueueFamilyIndices = queue_famillies;
     } else {
         swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        swapchain_create_info.queueFamilyIndexCount = 0; // Optional
-        swapchain_create_info.pQueueFamilyIndices = nullptr; // Optional
+        swapchain_create_info.queueFamilyIndexCount = 0;      // Optional
+        swapchain_create_info.pQueueFamilyIndices = nullptr;  // Optional
     }
-    
+
     swapchain_create_info.preTransform = swapchain_support_details.capabilities.currentTransform;
     swapchain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
     swapchain_create_info.presentMode = present_mode;
     swapchain_create_info.clipped = VK_TRUE;
     swapchain_create_info.oldSwapchain = VK_NULL_HANDLE;
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateSwapchainKHR(p_context->device->get_handle(), &swapchain_create_info, p_context->allocator, &p_context->swapchain));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateSwapchainKHR(context_.device, &swapchain_create_info, context_.allocator, &handle_));
 
     image_count = 0;
-    VulkanAPI::lvkGetSwapchainImagesKHR(p_context->device->get_handle(), p_context->swapchain, &image_count, nullptr);
-    p_context->swapchain_images.resize(image_count);
-    VulkanAPI::lvkGetSwapchainImagesKHR(p_context->device->get_handle(), p_context->swapchain, &image_count, p_context->swapchain_images.data());
+    VulkanAPI::lvkGetSwapchainImagesKHR(context_.device, handle_, &image_count, nullptr);
 
-    p_context->swapchain_extent = extent;
-    p_context->swapchain_format = surface_format.format;
+    images_.resize(image_count);
+    VulkanAPI::lvkGetSwapchainImagesKHR(context_.device, handle_, &image_count, images_.data());
 
-    vulkan_context_swapchain_image_views_init(p_context);
+    extent_ = extent;
+    format_ = surface_format.format;
+
+    image_views_init();
 }
 
-void vulkan_swapchain_recreate(VulkanContext* p_context) {
-    LCHECK(p_context);
-    
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkDeviceWaitIdle(p_context->device->get_handle()));
-
-    vulkan_framebuffers_destroy(p_context);
-
-    vulkan_swapchain_destroy(p_context);
-    vulkan_swapchain_init(p_context);
-
-    vulkan_framebuffers_init(p_context);
-}
-
-void vulkan_swapchain_destroy(VulkanContext* p_context) {
-    LCHECK(p_context);
-
-    for (const VkImageView& image_view : p_context->swapchain_image_views) {
-        VulkanAPI::lvkDestroyImageView(p_context->device->get_handle(), image_view, p_context->allocator);
+void RHIVulkanSwapchain::destroy() {
+    for (const VkImageView& image_view : image_views_) {
+        VulkanAPI::lvkDestroyImageView(context_.device, image_view, context_.allocator);
     }
 
-    p_context->swapchain_image_views.clear();
-    VulkanAPI::lvkDestroySwapchainKHR(p_context->device->get_handle(), p_context->swapchain, p_context->allocator);
+    image_views_.clear();
+    VulkanAPI::lvkDestroySwapchainKHR(context_.device, handle_, context_.allocator);
+}
+
+void RHIVulkanSwapchain::present() {
+}
+
+uint32 RHIVulkanSwapchain::get_width() {
+    return extent_.width;
+}
+
+uint32 RHIVulkanSwapchain::get_height() {
+    return extent_.height;
 }
 
 }  //namespace licht

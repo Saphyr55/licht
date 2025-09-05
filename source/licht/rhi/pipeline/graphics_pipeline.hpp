@@ -1,0 +1,36 @@
+#pragma once
+
+#include "licht/core/memory/shared_ref.hpp"
+#include "licht/core/string/string_ref.hpp"
+#include "licht/rhi/pipeline/compiled_shader.hpp"
+#include "licht/rhi/pipeline/shader.hpp"
+#include "licht/rhi/render_pass.hpp"
+#include "licht/rhi/rhi.hpp"
+
+namespace licht {
+
+struct RHIPipelineShaderStageCreateInfo {
+    StringRef name;
+    SharedRef<CompiledShader> shader;
+    ShaderStageType type;
+};
+
+struct RHIPipelineViewportStateInformation {
+    Viewport viewport;
+    Rect2D scissor; 
+};
+
+struct RHIPipelineDescription {
+    RHIPipelineShaderStageCreateInfo vertex_shader_info;
+    RHIPipelineShaderStageCreateInfo fragment_shader_info;
+    RHIPipelineViewportStateInformation viewport_info;
+    RHIRenderPassHandle render_pass;
+};
+
+class RHIGraphicsPipeline {
+private:
+};
+
+using RHIGraphicsPipelineHandle = SharedRef<RHIGraphicsPipeline>;
+
+}

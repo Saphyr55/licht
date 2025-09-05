@@ -8,6 +8,7 @@
 #include "licht/core/collection/hash_map.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/string/string_ref.hpp"
+#include "licht/rhi_vulkan/rhi_vulkan_render_surface.hpp"
 
 namespace licht {
 
@@ -24,7 +25,7 @@ struct VulkanPhysicalDeviceInformation {
     bool is_suitable;
 };
 
-class VulkanPhysicalDevice {
+class VulkanPhysicalDeviceSelector {
 public:
     bool select_physical_device();
     
@@ -38,37 +39,27 @@ public:
 
     bool select_queue_families();
 
-    bool is_valid_queue_family(const VkQueueFamilyProperties& p_queue_family_properties, int32 p_queue_family_index);
+    bool is_valid_queue_family(const VkQueueFamilyProperties& queue_family_properties, int32 queue_family_index);
 
     bool is_properties_suitable() const;
 
     bool is_features_suitable() const;
 
-    bool check_extension_support(const Array<StringRef>& p_extensions);
+    bool check_extension_support(const Array<StringRef>& extensions);
 
 public:
-    inline VkPhysicalDevice get_handle() {
-        return handle_;
-    }
-
     inline const VulkanPhysicalDeviceInformation& get_info() {
         return info_;
     }
 
-    inline bool is_valid() {
-        return handle_ != VK_NULL_HANDLE;
-    }
-
 public:
-    VulkanPhysicalDevice(VulkanInstance& p_instance, VkSurfaceKHR p_surfarce, const Array<StringRef>& p_extensions);
-    ~VulkanPhysicalDevice() = default;
+    VulkanPhysicalDeviceSelector(VulkanContext& context, const Array<StringRef>& extensions);
+    ~VulkanPhysicalDeviceSelector() = default;
 
 private:
     Array<StringRef> extensions_;
     VulkanPhysicalDeviceInformation info_;
-    VkPhysicalDevice handle_;
-    VkSurfaceKHR surface_;
-    VulkanInstance& instance_;
+    VulkanContext& context_;
 };
 
 } // namespace licht

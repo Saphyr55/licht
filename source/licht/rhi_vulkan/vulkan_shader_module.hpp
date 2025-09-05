@@ -13,9 +13,9 @@ class VulkanShaderModule {
 public:
     void set_code(const Array<uint8>& p_code) { code_ = p_code; }
 
-    void init(VulkanContext* p_context);
+    void initialize(VulkanContext& p_context);
 
-    void destroy(VulkanContext* p_context);
+    void destroy(VulkanContext& p_context);
 
     VkShaderModule handle();
 
