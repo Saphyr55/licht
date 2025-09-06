@@ -11,7 +11,7 @@ namespace licht {
 
 struct RHIPipelineShaderStageCreateInfo {
     StringRef name;
-    SharedRef<CompiledShader> shader;
+    CompiledShader* shader;
     ShaderStageType type;
 };
 
@@ -27,10 +27,10 @@ struct RHIPipelineDescription {
     RHIRenderPassHandle render_pass;
 };
 
-class RHIGraphicsPipeline {
-private:
+class RHIPipeline {
+public:
 };
 
-using RHIGraphicsPipelineHandle = SharedRef<RHIGraphicsPipeline>;
+using RHIPipelineHandle = SharedRef<RHIPipeline>;
 
 }

@@ -35,4 +35,6 @@ protected:
     void* window_handle_;
 };
 
+using RHIVulkanRenderSurfaceRef = SharedRef<RHIVulkanRenderSurface>;
+
 }

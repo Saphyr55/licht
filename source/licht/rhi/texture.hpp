@@ -1,7 +1,7 @@
 #pragma once
 
 #include "licht/core/memory/shared_ref.hpp"
-#include "licht/rhi/resource.hpp"
+#include "licht/rhi/rhi.hpp"
 
 namespace licht {
     
@@ -11,16 +11,27 @@ enum class RHITextureFormat {
     Depth24Stencil8
 };
 
-class RHITexture : public RHIResource {
+class RHITexture {
 
+};
+
+struct RHITextureDescription {
+    RHIFormat format;
+};
+
+using RHITextureHandle = SharedRef<RHITexture>;
+
+struct RHITextureViewDescription {
+    RHITextureHandle texture;
+    RHIFormat format;
 };
 
 class RHITextureView {
 
 };
 
-using RHITextureHandle = SharedRef<RHITexture>;
-
 using RHITextureViewHandle = SharedRef<RHITextureView>;
+
+
 
 }

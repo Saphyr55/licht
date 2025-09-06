@@ -79,7 +79,7 @@ bool VulkanPhysicalDeviceSelector::select_queue_families() {
     return false;
 }
 
-const VulkanPhysicalDeviceSelectorInformation& VulkanPhysicalDeviceSelector::query_info() {
+const VulkanPhysicalDeviceInformation& VulkanPhysicalDeviceSelector::query_info() {
     query_properties();
     bool is_suitable_device_properties = is_properties_suitable();
 

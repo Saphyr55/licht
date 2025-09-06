@@ -66,8 +66,8 @@ public:
         buffer_.clear();
     }
 
-    void reverse(usize p_capacity) {
-        buffer_.reverse(p_capacity);
+    void reserve(usize p_capacity) {
+        buffer_.reserve(p_capacity);
     }
 
 public:
@@ -102,7 +102,7 @@ public:
 protected:
     void ensure_capacity(usize p_required_capacity) {
         if (p_required_capacity > buffer_.capacity()) {
-            reverse(p_required_capacity);
+            reserve(p_required_capacity);
         }
     }
 

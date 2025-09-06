@@ -1,30 +1,28 @@
-#include "rhi_vulkan_graphics_pipeline.hpp"
+#include "rhi_vulkan_pipeline.hpp"
+
 #include "licht/core/defines.hpp"
-#include "licht/core/io/file_handle.hpp"
-#include "licht/core/io/file_system.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/memory/shared_ref_cast.hpp"
-#include "licht/core/string/string_ref.hpp"
 #include "licht/rhi/pipeline/compiled_shader.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_command_buffer.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_render_pass.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
-#include "vulkan/vulkan_core.h"
+
+#include <vulkan/vulkan_core.h>
 
 namespace licht {
 
-RHIVulkanGraphicsPipeline::RHIVulkanGraphicsPipeline(VulkanContext& context, const RHIPipelineDescription& description)
+RHIVulkanPipeline::RHIVulkanPipeline(VulkanContext& context,
+                                     const RHIPipelineDescription& description)
     : context_(context)
     , description_(description) {
 }
 
-void RHIVulkanGraphicsPipeline::initialize() {
-    
-    SharedRef<CompiledShader> vertex_compiled_shader = description_.vertex_shader_info.shader;
+void RHIVulkanPipeline::initialize() {
+    CompiledShader* vertex_compiled_shader = description_.vertex_shader_info.shader;
     VulkanShaderModule vertex_shader_module(vertex_compiled_shader->get_bytes());
 
-    SharedRef<CompiledShader> fragment_compiled_shader = description_.fragment_shader_info.shader;
+    CompiledShader* fragment_compiled_shader = description_.fragment_shader_info.shader;
     VulkanShaderModule fragment_shader_module(fragment_compiled_shader->get_bytes());
 
     VkPipelineInputAssemblyStateCreateInfo pipeline_input_assembly_state_create_info{};
@@ -98,11 +96,11 @@ void RHIVulkanGraphicsPipeline::initialize() {
     int32 offset_x = description_.viewport_info.scissor.x;
     int32 offset_y = description_.viewport_info.scissor.y;
     VkRect2D scissor = {};
-    scissor.offset = {offset_x, offset_y };
+    scissor.offset = {offset_x, offset_y};
     scissor.extent = {
-       static_cast<uint32>(description_.viewport_info.scissor.width),
-       static_cast<uint32>(description_.viewport_info.scissor.height), 
-    } ;
+        static_cast<uint32>(description_.viewport_info.scissor.width),
+        static_cast<uint32>(description_.viewport_info.scissor.height),
+    };
 
     VkPipelineViewportStateCreateInfo pipeline_viewport_state_create_info = {};
     pipeline_viewport_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -167,36 +165,9 @@ void RHIVulkanGraphicsPipeline::initialize() {
     fragment_shader_module.destroy(context_);
 }
 
-void RHIVulkanGraphicsPipeline::destroy() {
+void RHIVulkanPipeline::destroy() {
     VulkanAPI::lvkDestroyPipeline(context_.device, pipeline_, context_.allocator);
     VulkanAPI::lvkDestroyPipelineLayout(context_.device, pipeline_layout_, context_.allocator);
-}
-
-/*
-SharedRef<RHIVulkanGraphicsPipeline> RHIVulkanGraphicsPipeline::create(VulkanContext& context, StringRef p_name, const Array<uint8>& p_vertex_code, const Array<uint8>& p_fragment_code) {
-    VulkanShaderModule vertex_shader_module(p_vertex_code);
-    VulkanShaderModule fragment_shader_module(p_fragment_code);
-
-    return new_ref<RHIVulkanGraphicsPipeline>(context, p_name, vertex_shader_module, fragment_shader_module);
-}
-
-SharedRef<RHIVulkanGraphicsPipeline> RHIVulkanGraphicsPipeline::create(VulkanContext& context, StringRef p_name, StringRef p_vertex_path, StringRef p_fragment_path) {
-    FileHandleResult vertex_file_open_error = FileSystem::get_platform().open_read("shaders/main.vert.spv");
-    LCHECK(vertex_file_open_error.has_value())
-    SharedRef<FileHandle> vertex_file_handle = vertex_file_open_error.value();
-    Array<uint8> vertex_code = vertex_file_handle->read_all_bytes();
-
-    FileHandleResult fragment_file_open_error = FileSystem::get_platform().open_read("shaders/main.frag.spv");
-    LCHECK(fragment_file_open_error.has_value())
-    SharedRef<FileHandle> fragment_file_handle = fragment_file_open_error.value();
-    Array<uint8> fragment_code = fragment_file_handle->read_all_bytes();
-
-    return create(context, p_name, vertex_code, fragment_code);
-}
-*/
-
-void RHIVulkanGraphicsPipeline::bind(VkCommandBuffer command_buffer) {
-    VulkanAPI::lvkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_);
 }
 
 }  //namespace licht

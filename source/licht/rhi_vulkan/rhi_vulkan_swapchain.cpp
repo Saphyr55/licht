@@ -1,47 +1,57 @@
 #include "rhi_vulkan_swapchain.hpp"
+#include "licht/core/collection/array.hpp"
 #include "licht/core/memory/shared_ref.hpp"
+#include "licht/core/memory/shared_ref_cast.hpp"
+#include "licht/rhi/texture.hpp"
+#include "licht/rhi_vulkan/rhi_sync.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_device.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_render_surface.hpp"
+#include "licht/rhi_vulkan/rhi_vulkan_texture.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
+#include "vulkan/vulkan_core.h"
 
 namespace licht {
 
-uint32 vulkan_swapchain_count_image(const VkSurfaceCapabilitiesKHR& p_capabilities) {
-    uint32 image_count = p_capabilities.minImageCount + 1;
+uint32 vulkan_swapchain_count_image(const VkSurfaceCapabilitiesKHR& capabilities) {
+    uint32 image_count = capabilities.minImageCount + 1;
 
-    if (p_capabilities.maxImageCount > 0 && image_count > p_capabilities.maxImageCount) {
-        image_count = p_capabilities.maxImageCount;
+    if (capabilities.maxImageCount > 0 && image_count > capabilities.maxImageCount) {
+        image_count = capabilities.maxImageCount;
     }
 
     return image_count;
 }
 
-VkExtent2D vulkan_choose_swap_extent(const VkSurfaceCapabilitiesKHR& p_capabilities) {
-    return p_capabilities.currentExtent;
+VkExtent2D vulkan_choose_swaextent(const VkSurfaceCapabilitiesKHR& capabilities) {
+    return capabilities.currentExtent;
 }
 
-VkPresentModeKHR vulkan_choose_swap_present_mode(const Array<VkPresentModeKHR>& p_available_present_modes) {
-    if (p_available_present_modes.contains(VK_PRESENT_MODE_MAILBOX_KHR)) {
+VkPresentModeKHR vulkan_choose_swapresent_mode(const Array<VkPresentModeKHR>& available_present_modes) {
+    if (available_present_modes.contains(VK_PRESENT_MODE_MAILBOX_KHR)) {
         return VK_PRESENT_MODE_MAILBOX_KHR;
     }
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkSurfaceFormatKHR vulkan_choose_swap_surface_format(const Array<VkSurfaceFormatKHR>& p_available_surface_formats) {
-    auto is_priority_format = [](const VkSurfaceFormatKHR& p_available_format) -> bool {
-        return p_available_format.format == VK_FORMAT_B8G8R8A8_SRGB && p_available_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+VkSurfaceFormatKHR vulkan_choose_swasurface_format(const Array<VkSurfaceFormatKHR>& available_surface_formats) {
+    auto is_priority_format = [](const VkSurfaceFormatKHR& available_format) -> bool {
+        return available_format.format == VK_FORMAT_B8G8R8A8_SRGB && available_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
     };
 
-    if (const VkSurfaceFormatKHR* surface_format = p_available_surface_formats.get_if(is_priority_format)) {
+    if (const VkSurfaceFormatKHR* surface_format = available_surface_formats.get_if(is_priority_format)) {
         return *surface_format;
     }
 
-    return p_available_surface_formats[0];
+    return available_surface_formats[0];
 }
 
 RHIVulkanSwapchain::RHIVulkanSwapchain(VulkanContext& context, SharedRef<RHIVulkanRenderSurface> surface)
     : context_(context), surface_(surface) {
+}
+
+RHIFormat RHIVulkanSwapchain::get_format() {
+    return rhi_format_get(format_);
 }
 
 VulkanSwapchainSupportDetails RHIVulkanSwapchain::query_support_details() {
@@ -70,35 +80,14 @@ VulkanSwapchainSupportDetails RHIVulkanSwapchain::query_support_details() {
     return swapchain_support_details;
 }
 
-void RHIVulkanSwapchain::image_views_init() {
-    image_views_.resize(images_.size());
-    for (usize i = 0; i < images_.size(); i++) {
-        VkImageViewCreateInfo image_view_create_info = {};
-        image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        image_view_create_info.image = images_[i];
-        image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        image_view_create_info.format = format_;
-        image_view_create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-        image_view_create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-        image_view_create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-        image_view_create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-        image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        image_view_create_info.subresourceRange.baseMipLevel = 0;
-        image_view_create_info.subresourceRange.levelCount = 1;
-        image_view_create_info.subresourceRange.baseArrayLayer = 0;
-        image_view_create_info.subresourceRange.layerCount = 1;
-        LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateImageView(context_.device, &image_view_create_info, context_.allocator, &image_views_[i]))
-    }
-}
-
 void RHIVulkanSwapchain::initialize() {
     VulkanSwapchainSupportDetails swapchain_support_details = query_support_details();
 
     bool swapchain_adequate = !swapchain_support_details.surface_formats.empty() && !swapchain_support_details.present_modes.empty();
 
-    VkSurfaceFormatKHR surface_format = vulkan_choose_swap_surface_format(swapchain_support_details.surface_formats);
-    VkPresentModeKHR present_mode = vulkan_choose_swap_present_mode(swapchain_support_details.present_modes);
-    VkExtent2D extent = vulkan_choose_swap_extent(swapchain_support_details.capabilities);
+    VkSurfaceFormatKHR surface_format = vulkan_choose_swasurface_format(swapchain_support_details.surface_formats);
+    VkPresentModeKHR present_mode = vulkan_choose_swapresent_mode(swapchain_support_details.present_modes);
+    VkExtent2D extent = vulkan_choose_swaextent(swapchain_support_details.capabilities);
     uint32 image_count = vulkan_swapchain_count_image(swapchain_support_details.capabilities);
 
     VkSwapchainCreateInfoKHR swapchain_create_info = {};
@@ -130,7 +119,7 @@ void RHIVulkanSwapchain::initialize() {
     swapchain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
     swapchain_create_info.presentMode = present_mode;
     swapchain_create_info.clipped = VK_TRUE;
-    swapchain_create_info.oldSwapchain = VK_NULL_HANDLE;
+    swapchain_create_info.oldSwapchain = handle_;
 
     LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateSwapchainKHR(context_.device, &swapchain_create_info, context_.allocator, &handle_));
 
@@ -138,24 +127,67 @@ void RHIVulkanSwapchain::initialize() {
     VulkanAPI::lvkGetSwapchainImagesKHR(context_.device, handle_, &image_count, nullptr);
 
     images_.resize(image_count);
+    texture_views_.resize(image_count);
     VulkanAPI::lvkGetSwapchainImagesKHR(context_.device, handle_, &image_count, images_.data());
 
     extent_ = extent;
     format_ = surface_format.format;
 
-    image_views_init();
+    for (VkImage image : images_) {
+        RHIVulkanTextureViewRef texture_view = new_ref<RHIVulkanTextureView>();
+
+        VkImageViewCreateInfo image_view_create_info = {};
+        image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        image_view_create_info.image = image;
+        image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        image_view_create_info.format = format_;
+        image_view_create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        image_view_create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        image_view_create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        image_view_create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        image_view_create_info.subresourceRange.baseMipLevel = 0;
+        image_view_create_info.subresourceRange.levelCount = 1;
+        image_view_create_info.subresourceRange.baseArrayLayer = 0;
+        image_view_create_info.subresourceRange.layerCount = 1;
+
+        LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateImageView(context_.device, &image_view_create_info, context_.allocator, &texture_view->get_handle()))
+
+        texture_views_.append(texture_view);
+    }
 }
 
 void RHIVulkanSwapchain::destroy() {
-    for (const VkImageView& image_view : image_views_) {
-        VulkanAPI::lvkDestroyImageView(context_.device, image_view, context_.allocator);
+    for (RHITextureViewHandle texture_view : texture_views_) {
+        RHIVulkanTextureViewRef vk_texture_view = static_ref_cast<RHIVulkanTextureView>(texture_view);
+        VulkanAPI::lvkDestroyImageView(context_.device, vk_texture_view->get_handle(), context_.allocator);
     }
 
-    image_views_.clear();
+    texture_views_.clear();
     VulkanAPI::lvkDestroySwapchainKHR(context_.device, handle_, context_.allocator);
 }
 
-void RHIVulkanSwapchain::present() {
+void RHIVulkanSwapchain::acquire_next_frame(RHIFrameContext& context) {
+
+    context.current_frame = (context.current_frame + 1) % context.frame_count;
+
+    SharedRef<RHIVulkanSemaphore> frame_available_semaphore = static_ref_cast<RHIVulkanSemaphore>(context.frame_available_semaphores[context.current_frame]);
+    
+    VkResult acquire_next_image_result = VulkanAPI::lvkAcquireNextImageKHR(context_.device, handle_, UINT64_MAX, frame_available_semaphore->get_handle(), VK_NULL_HANDLE, &context.current_frame);
+    switch (acquire_next_image_result) {
+        case VK_SUCCESS:
+            context.success = true;
+            break;
+        case VK_SUBOPTIMAL_KHR:
+            context.success = true;
+            context.suboptimal = true;
+            break;
+        case VK_ERROR_OUT_OF_DATE_KHR:
+            context.out_of_date = true;
+            break;
+        default:
+            LICHT_VULKAN_CHECK(result);
+    }
 }
 
 uint32 RHIVulkanSwapchain::get_width() {

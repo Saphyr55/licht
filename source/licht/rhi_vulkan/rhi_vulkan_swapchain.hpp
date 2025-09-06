@@ -2,7 +2,9 @@
 
 #include "licht/core/collection/array.hpp"
 #include "licht/core/memory/shared_ref.hpp"
+#include "licht/rhi/rhi.hpp"
 #include "licht/rhi/swapchain.hpp"
+#include "licht/rhi/texture.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_render_surface.hpp"
 #include "vulkan/vulkan_core.h"
 
@@ -16,39 +18,35 @@ struct VulkanSwapchainSupportDetails {
 
 class RHIVulkanSwapchain : public RHISwapchain {
 public:
-    virtual void present() override;
+    virtual void acquire_next_frame(RHIFrameContext& context) override;
 
     virtual uint32 get_width() override;
 
     virtual uint32 get_height() override;
+
+    virtual RHIFormat get_format() override;
+
+    virtual const Array<RHITextureViewHandle>& get_texture_views() override; 
 
     void initialize();
 
     void destroy();
 
 public:
-    inline VkSwapchainKHR get_handle() {
-        return handle_;
+    inline VkFormat get_vkformat() {
+        return format_;
     }
 
-    inline VkFormat get_format() {
-        return format_;
+    inline VkSwapchainKHR get_handle() {
+        return handle_;
     }
 
     inline VkExtent2D get_extent() {
         return extent_;
     }
 
-    inline Array<VkImageView>& get_image_views() {
-        return image_views_;
-    }
-
-    inline const Array<VkImageView>& get_image_views() const {
-        return image_views_;
-    }
-
 public:
-    RHIVulkanSwapchain(VulkanContext& context, SharedRef<RHIVulkanRenderSurface> surface);
+    RHIVulkanSwapchain(VulkanContext& context, RHIVulkanRenderSurfaceRef surface);
 
 private:
     void image_views_init();
@@ -57,12 +55,14 @@ private:
 
 private:
     VulkanContext& context_;
-    SharedRef<RHIVulkanRenderSurface> surface_;
-    VkSwapchainKHR handle_ = VK_NULL_HANDLE;
+    RHIVulkanRenderSurfaceRef surface_;
     VkFormat format_;
     VkExtent2D extent_;
     Array<VkImage> images_;
-    Array<VkImageView> image_views_;
+    Array<RHITextureViewHandle> texture_views_;
+    VkSwapchainKHR handle_ = VK_NULL_HANDLE;
 };
+
+using RHIVulkanSwapchainRef = SharedRef<RHIVulkanSwapchain>;
 
 }  //namespace licht

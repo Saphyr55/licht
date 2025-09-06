@@ -1,7 +1,6 @@
 #include "vulkan_shader_module.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
-#include "licht/core/trace/trace.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
 
 #include <vulkan/vulkan_core.h>

@@ -26,12 +26,12 @@ public:
         return other;
     }
 
-    void append(const ElementType& p_element) {
+    void append(const ElementType& element) {
         if (size_ >= capacity_) {
-            reverse(capacity_ == 0 ? 1 : capacity_ * 2);
+            reserve(capacity_ == 0 ? 1 : capacity_ * 2);
         }
 
-        new (data_ + size_) ElementType(p_element);
+        new (data_ + size_) ElementType(element);
 
         ++size_;
     }
@@ -44,11 +44,11 @@ public:
     }
 
     template <typename... Args>
-    void emplace(Args&&... p_args) {
+    void emplace(Args&&... args) {
         if (size_ >= capacity_) {
-            reverse(capacity_ == 0 ? 1 : capacity_ * 2);
+            reserve(capacity_ == 0 ? 1 : capacity_ * 2);
         }
-        new (data_ + size_) ElementType(std::forward<Args>(p_args)...);
+        new (data_ + size_) ElementType(std::forward<Args>(args)...);
         ++size_;
     }
 
@@ -59,14 +59,14 @@ public:
         }
     }
 
-    inline constexpr ElementType& operator[](SizeType p_index) {
-        LCHECK_MSG(p_index < size_, "Index out of bounds.");
-        return data_[p_index];
+    inline constexpr ElementType& operator[](SizeType index) {
+        LCHECK_MSG(index < size_, "Index out of bounds.");
+        return data_[index];
     }
 
-    inline constexpr const ElementType& operator[](SizeType p_index) const {
-        LCHECK_MSG(p_index < size_, "Index out of bounds.");
-        return data_[p_index];
+    inline constexpr const ElementType& operator[](SizeType index) const {
+        LCHECK_MSG(index < size_, "Index out of bounds.");
+        return data_[index];
     }
 
     inline constexpr SizeType size() const {
@@ -89,8 +89,8 @@ public:
         size_ = 0;
     }
 
-    void remove(const ElementType& p_value) {
-        remove(p_value, [](auto& p_1, auto& p_2) -> int32 {
+    void remove(const ElementType& value) {
+        remove(value, [](auto& p_1, auto& p_2) -> int32 {
             if (p_1 == p_2) {
                 return 0;
             } else if (p_1 > p_2) {
@@ -101,10 +101,10 @@ public:
         });
     }
 
-    void remove(const ElementType& p_value, auto&& p_comparator) {
+    void remove(const ElementType& value, auto&& comparator) {
         SizeType new_size = 0;
         for (SizeType i = 0; i < size_; ++i) {
-            if (p_comparator(data_[i], p_value) != 0) {
+            if (comparator(data_[i], value) != 0) {
                 if (new_size != i) {
                     new (data_ + new_size) ElementType(data_[i]);
                 }
@@ -116,30 +116,30 @@ public:
         size_ = new_size;
     }
 
-    void resize(SizeType p_size) {
-        reverse(p_size);
-        if (size_ != p_size) {
-            size_ = p_size;
+    void resize(SizeType size) {
+        reserve(size);
+        if (size_ != size) {
+            size_ = size;
         }
     }
 
-    void reverse(SizeType p_capacity) {
-        if (p_capacity > capacity_) {
-            allocate_resize(p_capacity);
+    void reserve(SizeType capacity) {
+        if (capacity > capacity_) {
+            allocate_resize(capacity);
         }
     }
 
     void shrink() {
         if (size_ < capacity_) {
-            reverse(size_);
+            reserve(size_);
         }
     }
 
-    void swap(Array& p_other) noexcept {
-        std::swap(data_, p_other.data_);
-        std::swap(size_, p_other.size_);
-        std::swap(capacity_, p_other.capacity_);
-        std::swap(allocator_, p_other.allocator_);
+    void swap(Array& other) noexcept {
+        std::swap(data_, other.data_);
+        std::swap(size_, other.size_);
+        std::swap(capacity_, other.capacity_);
+        std::swap(allocator_, other.allocator_);
     }
 
     inline const ElementType* data() const {
@@ -150,8 +150,8 @@ public:
         return data_;
     }
 
-    void push_back(ElementType p_element) {
-        append(std::move(p_element));
+    void push_back(ElementType element) {
+        append(std::move(element));
     }
 
     template <typename Predicate>
@@ -164,18 +164,18 @@ public:
         return nullptr;
     }
 
-    bool contains(const ElementType& p_element) const {
+    bool contains(const ElementType& element) const {
         for (SizeType i = 0; i < size_; ++i) {
-            if (data_[i] == p_element) {
+            if (data_[i] == element) {
                 return true;
             }
         }
         return false;
     }
 
-    bool contains(const ElementType& p_element, auto&& p_comparator) const {
+    bool contains(const ElementType& element, auto&& comparator) const {
         for (SizeType i = 0; i < size_; ++i) {
-            if (p_comparator(data_[i], p_element) == 0) {
+            if (comparator(data_[i], element) == 0) {
                 return true;
             }
         }

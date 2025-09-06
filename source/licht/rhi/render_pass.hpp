@@ -1,13 +1,21 @@
 #pragma once
 
+#include "licht/core/collection/array.hpp"
 #include "licht/core/memory/shared_ref.hpp"
+#include "licht/rhi/rhi.hpp"
+
 namespace licht {
+
+struct RHIAttachmentDescription {
+    RHIFormat format;
+};
+
+struct RHIRenderPassDescription {
+    Array<RHIAttachmentDescription> attachment_decriptions;
+};
 
 class RHIRenderPass {
 public:
-    virtual void begin() = 0;
-
-    virtual void end() = 0;
 };
 
 using RHIRenderPassHandle = SharedRef<RHIRenderPass>;

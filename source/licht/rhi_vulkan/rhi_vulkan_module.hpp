@@ -1,12 +1,15 @@
 #pragma once
 
-#include "licht/core/memory/shared_ref.hpp"
+#include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/device.hpp"
+#include "licht/rhi/framebuffer.hpp"
+#include "licht/rhi/pipeline/pipeline.hpp"
+#include "licht/rhi/render_pass.hpp"
 #include "licht/rhi/render_surface.hpp"
 #include "licht/rhi/swapchain.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_device.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_exports.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_render_surface.hpp"
+#include "licht/rhi_vulkan/vulkan_context.hpp"
 
 namespace licht {
 
@@ -26,9 +29,15 @@ public:
 
 private:
     VulkanContext context_;
-    SharedRef<RHIVulkanRenderSurface> surface_;
-    SharedRef<RHIVulkanDevice> device_;
+    
+    RHIRenderSurfaceHandle surface_;
+    RHIDeviceHandle device_;
     RHISwapchainHandle swapchain_;
+    RHIRenderPassHandle render_pass_;
+    RHIPipelineHandle pipeline_;
+    Array<RHIFramebufferHandle> framebuffers_;
+    RHICommandAllocatorRef command_allocator_;
+    RHIFrameContext frame_context_;
 
     bool window_resized_ = false;
 };

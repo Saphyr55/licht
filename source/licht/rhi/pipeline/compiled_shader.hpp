@@ -11,7 +11,7 @@ public:
 
 public:
     CompiledShader() = default;
-
+    
     CompiledShader(const Array<uint8>& code)
         : code_(code) {}
 

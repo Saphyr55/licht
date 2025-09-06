@@ -1,6 +1,7 @@
 #pragma once
 
 #include "licht/core/defines.hpp"
+#include "licht/core/string/format.hpp"
 #include "licht/core/trace/logger.hpp"
 
 #define LMAKE_CONTEXT_LOG_MSG(severity, channel, msg) \

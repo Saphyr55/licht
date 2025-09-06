@@ -2,10 +2,7 @@
 
 #include <vulkan/vulkan_core.h>
 
-#include <cstdint>
-
 #include "licht/core/collection/array.hpp"
-#include "licht/core/collection/hash_map.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/string/string_ref.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_render_surface.hpp"
@@ -28,7 +25,7 @@ struct VulkanPhysicalDeviceInformation {
 class VulkanPhysicalDeviceSelector {
 public:
     bool select_physical_device();
-    
+
     const VulkanPhysicalDeviceInformation& query_info();
 
     VkPhysicalDeviceProperties query_properties();
@@ -62,4 +59,4 @@ private:
     VulkanContext& context_;
 };
 
-} // namespace licht
+}  // namespace licht
