@@ -46,7 +46,7 @@ using RHICommandBufferHandle = SharedRef<RHICommandBuffer>;
 
 class RHICommandAllocator {
 public:
-    virtual RHICommandBufferHandle open() = 0;
+    virtual RHICommandBufferHandle open(uint32 index) = 0;
 
     virtual void reset_command_buffer(RHICommandBufferHandle command_buffer) = 0;
 };

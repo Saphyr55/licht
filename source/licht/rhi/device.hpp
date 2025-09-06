@@ -23,6 +23,7 @@ public:
     virtual void wait_idle() = 0;
 
     virtual RHICommandAllocatorRef create_command_allocator(uint32 count) = 0;
+    virtual void destroy_command_allocator(RHICommandAllocatorRef command_allocator) = 0;
 
     virtual RHITextureHandle create_texture(const RHITextureDescription& description) = 0;
     virtual void destroy_texture(RHITextureHandle texture) = 0;

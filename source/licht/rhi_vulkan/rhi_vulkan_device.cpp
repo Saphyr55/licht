@@ -4,6 +4,7 @@
 #include "licht/core/defines.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/memory/shared_ref_cast.hpp"
+#include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/command_queue.hpp"
 #include "licht/rhi/fence.hpp"
 #include "licht/rhi/framebuffer.hpp"
@@ -50,7 +51,15 @@ void RHIVulkanDevice::wait_idle() {
 }
 
 RHICommandAllocatorRef RHIVulkanDevice::create_command_allocator(uint32 count) {
-    return new_ref<RHIVulkanCommandAllocator>(context_, count);
+    SharedRef<RHIVulkanCommandAllocator> allocator = new_ref<RHIVulkanCommandAllocator>(context_, count);
+    allocator->initialize_command_pool();
+    allocator->allocate_command_buffers();
+    return allocator;
+}
+
+void RHIVulkanDevice::destroy_command_allocator(RHICommandAllocatorRef command_allocator) {
+    SharedRef<RHIVulkanCommandAllocator> allocator = static_ref_cast<RHIVulkanCommandAllocator>(command_allocator);
+    allocator->destroy();
 }
 
 RHITextureHandle RHIVulkanDevice::create_texture(const RHITextureDescription& description) {

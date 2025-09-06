@@ -1,8 +1,6 @@
 #include "licht/rhi_vulkan/win32/vulkan_win32.hpp"
-#include "licht/core/memory/shared_ref.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
-#include "licht/rhi_vulkan/vulkan_surface.hpp"
 #ifdef _WIN32
     #include <windows.h>
 #endif
@@ -16,15 +14,15 @@
 
 namespace licht {
 
-VulkanWindowsSurface::VulkanWindowsSurface(VulkanInstance& p_instance, VkAllocationCallbacks* p_allocator, void* p_window_handle) 
- : VulkanPlatformSurface(p_instance, p_allocator, p_window_handle) {
+RHIVulkanWindowsSurface::RHIVulkanWindowsSurface(VulkanContext& context, void* p_window_handle)
+ : RHIVulkanRenderSurface(context.instance, context.allocator, p_window_handle) {
 }
 
-void VulkanWindowsSurface::initialize() {
+void RHIVulkanWindowsSurface::initialize() {
     LLOG_INFO("[Vulkan]", "Initializing Vulkan surface...");
 
     PFN_vkCreateWin32SurfaceKHR licht_vkCreateWin32SurfaceKHR = reinterpret_cast<PFN_vkCreateWin32SurfaceKHR>(
-        VulkanAPI::lvkGetInstanceProcAddr(instance_.get_handle(), "vkCreateWin32SurfaceKHR"));
+        VulkanAPI::lvkGetInstanceProcAddr(instance_, "vkCreateWin32SurfaceKHR"));
 
     VkWin32SurfaceCreateInfoKHR surface_create_info = {};
     surface_create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
@@ -33,14 +31,14 @@ void VulkanWindowsSurface::initialize() {
     surface_create_info.hwnd = (HWND) window_handle_;
     surface_create_info.flags = 0;
 
-    LICHT_VULKAN_CHECK(licht_vkCreateWin32SurfaceKHR(instance_.get_handle(), &surface_create_info, allocator_, &handle_));
+    LICHT_VULKAN_CHECK(licht_vkCreateWin32SurfaceKHR(instance_, &surface_create_info, allocator_, &handle_));
 }
 
-void VulkanWindowsSurface::destroy() {
+void RHIVulkanWindowsSurface::destroy() {
     LLOG_INFO("[Vulkan]", "Destroying Vulkan surface...");
 
     if (handle_ != VK_NULL_HANDLE) {
-        VulkanAPI::lvkDestroySurfaceKHR(instance_.get_handle(), handle_, allocator_);
+        VulkanAPI::lvkDestroySurfaceKHR(instance_, handle_, allocator_);
         handle_ = VK_NULL_HANDLE;
         LLOG_INFO("[Vulkan]", "Vulkan surface destroyed.");
     }

@@ -44,7 +44,7 @@ using RHIVulkanCommandBufferRef = SharedRef<RHIVulkanCommandBuffer>;
 
 class RHIVulkanCommandAllocator : public RHICommandAllocator {
 public:
-    virtual RHICommandBufferHandle open() override;
+    virtual RHICommandBufferHandle open(uint32 index) override;
 
     virtual void reset_command_buffer(RHICommandBufferHandle command_buffer) override;
 

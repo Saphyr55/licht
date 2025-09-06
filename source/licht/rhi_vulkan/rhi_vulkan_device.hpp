@@ -18,6 +18,7 @@ public:
     virtual void wait_idle() override;
 
     virtual RHICommandAllocatorRef create_command_allocator(uint32 count) override;
+    virtual void destroy_command_allocator(RHICommandAllocatorRef command_allocator) override;
 
     virtual RHITextureHandle create_texture(const RHITextureDescription& description) override;
     virtual void destroy_texture(RHITextureHandle texture) override;

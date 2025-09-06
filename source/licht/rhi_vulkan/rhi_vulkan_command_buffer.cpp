@@ -1,5 +1,6 @@
 #include "rhi_vulkan_command_buffer.hpp"
 #include "licht/core/defines.hpp"
+#include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/memory/shared_ref_cast.hpp"
 #include "licht/rhi/rhi.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_framebuffer.hpp"
@@ -81,8 +82,9 @@ void RHIVulkanCommandBuffer::draw(const RHIDrawCommand& command) {
     VulkanAPI::lvkCmdDraw(command_buffer_, command.vertex_count, command.instance_count, command.first_vertex, command.first_instance);
 }
 
-RHICommandBufferHandle RHIVulkanCommandAllocator::open() {
-    
+RHICommandBufferHandle RHIVulkanCommandAllocator::open(uint32 index) {
+    VkCommandBuffer command_buffer = command_buffers_[index];
+    return new_ref<RHIVulkanCommandBuffer>(command_buffer);
 }
 
 void RHIVulkanCommandAllocator::reset_command_buffer(RHICommandBufferHandle command_buffer) {

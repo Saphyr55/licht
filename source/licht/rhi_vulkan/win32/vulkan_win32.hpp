@@ -1,17 +1,17 @@
 #pragma once
 
-#include "licht/rhi_vulkan/vulkan_surface.hpp"
+#include "licht/rhi_vulkan/rhi_vulkan_render_surface.hpp"
 
 namespace licht {
 
-class VulkanWindowsSurface : public VulkanPlatformSurface {
+class RHIVulkanWindowsSurface : public RHIVulkanRenderSurface {
 public:
     virtual void initialize() override;
 
     virtual void destroy() override;
 
 public:
-    VulkanWindowsSurface(VulkanInstance& p_instance, VkAllocationCallbacks* allocator, void* p_window_handle);
+    RHIVulkanWindowsSurface(VulkanContext& context, void* p_window_handle);
 };
     
 }

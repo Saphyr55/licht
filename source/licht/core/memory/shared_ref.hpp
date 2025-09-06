@@ -27,9 +27,15 @@ public:
 
     const ResourceType* operator->() const { return resource_; }
 
-    ResourceType* get_resource() { return resource_; }
+    ResourceType* get_resource() const { return resource_; }
 
-    const ResourceType* get_resource() const { return resource_; }
+    ReferenceCounter* get_reference_counter() {
+        return reference_counter_;
+    }
+
+    ReferenceCounter* get_reference_counter() const {
+        return reference_counter_;
+    }
 
     int32 get_shared_reference_count() const {
         return reference_counter_->get_shared_reference_count();
@@ -64,6 +70,11 @@ public:
         if (resource_) {
             reference_counter_ = new_default_reference_counter<ResourceType>(resource_);
         }
+    }
+    
+    SharedRef(ResourceType* resource, ReferenceCounter* reference_counter) noexcept
+        : resource_(resource)
+        , reference_counter_(reference_counter) {
     }
 
     template <typename DerivedType>

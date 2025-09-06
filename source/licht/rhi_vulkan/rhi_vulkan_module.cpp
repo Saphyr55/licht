@@ -147,9 +147,13 @@ void RHIVulkanModule::tick() {
         return;
     }
 
-    // LICHT_VULKAN_CHECK(VulkanAPI::lvkResetFences(context_->device->get_handle(), 1, &context_->in_flight_fences[context_->current_frame]));
+    RHISemaphoreHandle wait_semaphore = frame_context_.current_frame_available_semaphore();
+    RHISemaphoreHandle signal_semaphore = frame_context_.current_render_finished_semaphore();
+    RHIFenceHandle fence = frame_context_.current_in_flight_fence();
 
-    RHICommandBufferHandle command_buffer = command_allocator_->open();
+    device_->reset_fences({fence});
+
+    RHICommandBufferHandle command_buffer = command_allocator_->open(frame_context_.current_frame);
     command_allocator_->reset_command_buffer(command_buffer);
 
     Rect2D render_pass_area = {};
@@ -194,14 +198,10 @@ void RHIVulkanModule::tick() {
     command_buffer->end_render_pass();
     command_buffer->end();
 
-    RHISemaphoreHandle wait_semaphore = frame_context_.frame_available_semaphores[frame_context_.current_frame];
-    RHISemaphoreHandle signal_semaphore = frame_context_.frame_available_semaphores[frame_context_.current_frame];
-    RHIFenceHandle fence = frame_context_.in_flight_fences[frame_context_.current_frame];
-
     graphics_queue->submit({command_buffer}, {wait_semaphore}, {signal_semaphore}, fence);
     present_queue->present(swapchain_, {wait_semaphore}, frame_context_.current_frame);
     
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkWaitForFences(context_->device->get_handle(), 1, &context_->in_flight_fences[context_->current_frame], VK_TRUE, UINT64_MAX));
+    device_->wait_for_fences({fence});
 }
 
 void RHIVulkanModule::shutdown() {
@@ -214,6 +214,11 @@ void RHIVulkanModule::shutdown() {
             device_->destroy_semaphore(frame_context_.render_finished_semaphores[i]);
             device_->destroy_fence(frame_context_.in_flight_fences[i]);
         }
+    }
+
+    // -- Allocator
+    {
+        device_->destroy_command_allocator(command_allocator_);
     }
 
     // -- Framebuffers --
