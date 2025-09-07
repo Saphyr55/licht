@@ -14,7 +14,12 @@ public:
     Array<RHISemaphoreHandle> frame_available_semaphores;
     Array<RHISemaphoreHandle> render_finished_semaphores;
     Array<RHIFenceHandle> in_flight_fences;
+    Array<RHIFenceHandle*> frame_in_flight_fences;
 
+    uint32 frame_width;
+    uint32 frame_height;
+
+    uint32 frame_index = 0;
     uint32 current_frame = 0;
     uint32 frame_count = 2;
 
@@ -27,8 +32,7 @@ public:
     
     inline RHISemaphoreHandle current_render_finished_semaphore();
     
-    inline RHIFenceHandle current_in_flight_fence();
-    
+    inline RHIFenceHandle current_in_flight_fence();    
 };
 
 class RHISwapchain {

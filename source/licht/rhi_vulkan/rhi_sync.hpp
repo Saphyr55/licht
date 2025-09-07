@@ -9,13 +9,22 @@ namespace licht {
 
 class RHIVulkanFence : public RHIFence {
 public:
-    VkFence get_handle() {
+    VkFence& get_handle() {
         return fence_;
     }
 
+    virtual bool is_signaled() {
+        return signaled_;
+    }
+
+    inline void set_signaled(bool signaled) {
+        signaled_ = signaled;
+    }
+
 public:
-    RHIVulkanFence(VkFence fence)
-        : fence_(fence) {
+    RHIVulkanFence(VkFence fence, bool signaled)
+        : fence_(fence)
+        , signaled_(signaled) {
     }
 
     RHIVulkanFence() = default;
@@ -23,6 +32,7 @@ public:
 
 
 private:
+    bool signaled_;
     VkFence fence_;
 };
 

@@ -4,7 +4,6 @@
 #include "licht/core/memory/allocator.hpp"
 
 #include <algorithm>
-#include <type_traits>
 
 namespace licht {
 

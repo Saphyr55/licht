@@ -4,6 +4,7 @@
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/command_queue.hpp"
 #include "licht/rhi/device.hpp"
+#include "licht/rhi/fence.hpp"
 #include "licht/rhi/framebuffer.hpp"
 #include "licht/rhi/render_pass.hpp"
 #include "licht/rhi/swapchain.hpp"
@@ -14,16 +15,17 @@ namespace licht {
 
 class RHIVulkanDevice : public RHIDevice {
 public:
-    virtual void wait_for_fences(const Array<RHIFenceHandle>& fences) override;
-    virtual void reset_fences(const Array<RHIFenceHandle>& fences) override;
     virtual void wait_idle() override;
-
+    
+    virtual void wait_fence(RHIFenceHandle fence) override;
+    virtual void reset_fence(RHIFenceHandle fence) override;
+    
     virtual RHICommandAllocatorRef create_command_allocator(uint32 count) override;
     virtual void destroy_command_allocator(RHICommandAllocatorRef command_allocator) override;
 
     virtual RHITextureHandle create_texture(const RHITextureDescription& description) override;
     virtual void destroy_texture(RHITextureHandle texture) override;
-
+    
     virtual RHITextureViewHandle create_texture_view(const RHITextureViewDescription& description) override;
     virtual void destroy_texture_view(RHITextureViewHandle texture_view) override;
 
@@ -36,8 +38,8 @@ public:
     virtual RHIBufferHandle create_buffer() override;
     virtual void destroy_buffer(RHIBufferHandle buffer) override; 
 
-    virtual RHISwapchainHandle create_swapchain() override;
-    virtual void recreate_swapchain(RHISwapchainHandle swapchain) override;
+    virtual RHISwapchainHandle create_swapchain(uint32 width, uint32 height) override;
+    virtual void recreate_swapchain(RHISwapchainHandle swapchain, uint32 width, uint32 height) override;
     virtual void destroy_swapchain(RHISwapchainHandle swapchain) override; 
 
     virtual RHIFramebufferHandle create_framebuffer(RHIRenderPassHandle render_pass,

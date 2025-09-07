@@ -1,12 +1,13 @@
 #pragma once
 
-#include "licht/core/defines.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 
 namespace licht {
 
 class RHIFence {
-public:    
+public:
+    virtual bool is_signaled() = 0;
+
     virtual ~RHIFence() = default;
 };
 

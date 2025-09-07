@@ -1,6 +1,7 @@
 #pragma once
 
 #include "licht/core/collection/array.hpp"
+#include "licht/core/defines.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/rhi/rhi.hpp"
 #include "licht/rhi/swapchain.hpp"
@@ -47,8 +48,12 @@ public:
         return extent_;
     }
 
+    void set_extent(VkExtent2D extent) {
+        extent_ = extent;        
+    }
+
 public:
-    RHIVulkanSwapchain(VulkanContext& context);
+    RHIVulkanSwapchain(VulkanContext& context, uint32 width, uint32 height);
 
 private:
     VulkanSwapchainSupportDetails query_support_details();

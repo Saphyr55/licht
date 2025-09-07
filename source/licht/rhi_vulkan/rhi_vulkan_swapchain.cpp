@@ -1,10 +1,11 @@
 #include "rhi_vulkan_swapchain.hpp"
+#include <cstdint>
 #include "licht/core/collection/array.hpp"
+#include "licht/core/math/common_math.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/memory/shared_ref_cast.hpp"
 #include "licht/rhi/texture.hpp"
 #include "licht/rhi_vulkan/rhi_sync.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_device.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_render_surface.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_texture.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
@@ -23,8 +24,19 @@ uint32 vulkan_swapchain_count_image(const VkSurfaceCapabilitiesKHR& capabilities
     return image_count;
 }
 
-VkExtent2D vulkan_choose_swaextent(const VkSurfaceCapabilitiesKHR& capabilities) {
-    return capabilities.currentExtent;
+VkExtent2D vulkan_choose_swapchain_extent(VkExtent2D extent, const VkSurfaceCapabilitiesKHR& capabilities) {
+    
+    if (capabilities.currentExtent.width != UINT32_MAX) {
+        extent = capabilities.currentExtent;
+    }
+    
+    VkExtent2D min = capabilities.minImageExtent;
+    VkExtent2D max = capabilities.maxImageExtent;
+
+    extent.width = clamp(extent.width, min.width, max.width);
+    extent.height = clamp(extent.height, min.height, max.height);
+
+    return extent;
 }
 
 VkPresentModeKHR vulkan_choose_swapresent_mode(const Array<VkPresentModeKHR>& available_present_modes) {
@@ -46,8 +58,9 @@ VkSurfaceFormatKHR vulkan_choose_swasurface_format(const Array<VkSurfaceFormatKH
     return available_surface_formats[0];
 }
 
-RHIVulkanSwapchain::RHIVulkanSwapchain(VulkanContext& context)
-    : context_(context) {
+RHIVulkanSwapchain::RHIVulkanSwapchain(VulkanContext& context, uint32 width, uint32 height)
+    : context_(context)
+    , extent_({width, height}) {
 }
 
 RHIFormat RHIVulkanSwapchain::get_format() {
@@ -88,7 +101,7 @@ void RHIVulkanSwapchain::initialize() {
 
     VkSurfaceFormatKHR surface_format = vulkan_choose_swasurface_format(swapchain_support_details.surface_formats);
     VkPresentModeKHR present_mode = vulkan_choose_swapresent_mode(swapchain_support_details.present_modes);
-    VkExtent2D extent = vulkan_choose_swaextent(swapchain_support_details.capabilities);
+    VkExtent2D extent = vulkan_choose_swapchain_extent(extent_, swapchain_support_details.capabilities);
     uint32 image_count = vulkan_swapchain_count_image(swapchain_support_details.capabilities);
 
     VkSwapchainCreateInfoKHR swapchain_create_info = {};
@@ -120,7 +133,7 @@ void RHIVulkanSwapchain::initialize() {
     swapchain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
     swapchain_create_info.presentMode = present_mode;
     swapchain_create_info.clipped = VK_TRUE;
-    swapchain_create_info.oldSwapchain = handle_;
+    swapchain_create_info.oldSwapchain = VK_NULL_HANDLE;
 
     LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateSwapchainKHR(context_.device, &swapchain_create_info, context_.allocator, &handle_));
 
@@ -173,12 +186,10 @@ void RHIVulkanSwapchain::destroy() {
 }
 
 void RHIVulkanSwapchain::acquire_next_frame(RHIFrameContext& context) {
-
-    context.current_frame = (context.current_frame + 1) % context.frame_count;
-
-    SharedRef<RHIVulkanSemaphore> frame_available_semaphore = static_ref_cast<RHIVulkanSemaphore>(context.frame_available_semaphores[context.current_frame]);
     
-    VkResult acquire_next_image_result = VulkanAPI::lvkAcquireNextImageKHR(context_.device, handle_, UINT64_MAX, frame_available_semaphore->get_handle(), VK_NULL_HANDLE, &context.current_frame);
+    SharedRef<RHIVulkanSemaphore> frame_available_semaphore = static_ref_cast<RHIVulkanSemaphore>(context.current_frame_available_semaphore());
+    
+    VkResult acquire_next_image_result = VulkanAPI::lvkAcquireNextImageKHR(context_.device, handle_, UINT64_MAX, frame_available_semaphore->get_handle(), VK_NULL_HANDLE, &context.frame_index);
     switch (acquire_next_image_result) {
         case VK_SUCCESS:
             context.success = true;

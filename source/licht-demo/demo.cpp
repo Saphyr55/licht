@@ -12,16 +12,16 @@ namespace licht::demo {
 
 static bool g_is_running = false;
 
-void DemoMessageHandler::on_window_close(WindowHandle p_window) {
+void DemoMessageHandler::on_window_close(WindowHandle window) {
     LLOG_INFO("[DemoMessageHandler::on_window_close]", "Window closed.");
     g_is_running = false;
 }
 
-void DemoMessageHandler::on_window_resized(WindowHandle p_window, uint32 p_width, uint32 p_height) {
-    LLOG_INFO("[DemoMessageHandler::on_window_resized]", vformat("Window resized to %dx%d", p_width, p_height));
+void DemoMessageHandler::on_window_resized(WindowHandle window, uint32 width, uint32 height) {
+    LLOG_INFO("[DemoMessageHandler::on_window_resized]", vformat("Window resized to %dx%d", width, height));
 
     if (rhi_module_) {
-        rhi_module_->update_resized();
+        rhi_module_->update_resized(width, height);
     }
 
 }

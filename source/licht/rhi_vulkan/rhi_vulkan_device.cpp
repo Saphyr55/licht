@@ -29,22 +29,34 @@
 
 namespace licht {
 
-void RHIVulkanDevice::wait_for_fences(const Array<RHIFenceHandle>& fences) {
-    Array<VkFence> vk_fences(fences.size());
-    for (RHIFenceHandle fence : fences) {
-        SharedRef<RHIVulkanFence> vk_fence = static_ref_cast<RHIVulkanFence>(fence);
-        vk_fences.append(vk_fence->get_handle());
+void RHIVulkanDevice::wait_fence(RHIFenceHandle fence) {
+    if (fence->is_signaled()) {
+        return;
     }
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkWaitForFences(context_.device, vk_fences.size(), vk_fences.data(), VK_TRUE, UINT64_MAX));
+
+    SharedRef<RHIVulkanFence> rhi_vk_fence = static_ref_cast<RHIVulkanFence>(fence);
+    VkFence& vkfence = rhi_vk_fence->get_handle();
+
+    VkResult result = VulkanAPI::lvkWaitForFences(context_.device, 1, &vkfence, VK_TRUE, UINT64_MAX);
+    switch (result) {
+        case VK_SUCCESS: {
+            rhi_vk_fence->set_signaled(true);
+            return;
+        }
+        default: {
+            LICHT_VULKAN_CHECK(result)
+            return;
+        }
+    }
 }
 
-void RHIVulkanDevice::reset_fences(const Array<RHIFenceHandle>& fences) {
-    Array<VkFence> vk_fences(fences.size());
-    for (RHIFenceHandle fence : fences) {
-        SharedRef<RHIVulkanFence> vk_fence = static_ref_cast<RHIVulkanFence>(fence);
-        vk_fences.append(vk_fence->get_handle());
+void RHIVulkanDevice::reset_fence(RHIFenceHandle fence) {
+    if (fence->is_signaled()) {
+        SharedRef<RHIVulkanFence> rhi_vk_fence = static_ref_cast<RHIVulkanFence>(fence);
+        VkFence& vkfence = rhi_vk_fence->get_handle();
+        LICHT_VULKAN_CHECK(VulkanAPI::lvkResetFences(context_.device, 1, &vkfence));
+        rhi_vk_fence->set_signaled(false);
     }
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkResetFences(context_.device, fences.size(), vk_fences.data()));
 }
 
 void RHIVulkanDevice::wait_idle() {
@@ -82,7 +94,6 @@ RHIBufferHandle RHIVulkanDevice::create_buffer() {
 }
 
 void RHIVulkanDevice::destroy_buffer(RHIBufferHandle buffer) {
-
 }
 
 RHITextureViewHandle RHIVulkanDevice::create_texture_view(const RHITextureViewDescription& description) {
@@ -137,21 +148,17 @@ void RHIVulkanDevice::destroy_graphics_pipeline(RHIPipelineHandle pipeline) {
     graphics_pipeline->destroy();
 }
 
-RHISwapchainHandle RHIVulkanDevice::create_swapchain() {
-    RHIVulkanSwapchainRef swapchain = new_ref<RHIVulkanSwapchain>(context_);
+RHISwapchainHandle RHIVulkanDevice::create_swapchain(uint32 width, uint32 height) {
+    RHIVulkanSwapchainRef swapchain = new_ref<RHIVulkanSwapchain>(context_, width, height);
     swapchain->initialize();
     return swapchain;
 }
 
-void RHIVulkanDevice::recreate_swapchain(RHISwapchainHandle swapchain) {
+void RHIVulkanDevice::recreate_swapchain(RHISwapchainHandle swapchain, uint32 width, uint32 height) {
     SharedRef<RHIVulkanSwapchain> vulkan_swapchain = static_ref_cast<RHIVulkanSwapchain>(swapchain);
-
-    // TODO: Destroy framebuffers
-
+    vulkan_swapchain->set_extent({width, height});
     vulkan_swapchain->destroy();
     vulkan_swapchain->initialize();
-
-    // TODO: Init framebuffers
 }
 
 void RHIVulkanDevice::destroy_swapchain(RHISwapchainHandle swapchain) {
@@ -162,7 +169,6 @@ void RHIVulkanDevice::destroy_swapchain(RHISwapchainHandle swapchain) {
 
 RHIFramebufferHandle RHIVulkanDevice::create_framebuffer(RHIRenderPassHandle render_pass,
                                                          const RHIFramebufferDescription& description) {
-
     LCHECK(render_pass);
 
     SharedRef<RHIVulkanFramebuffer> framebuffer = new_ref<RHIVulkanFramebuffer>();
@@ -200,8 +206,6 @@ RHISemaphoreHandle RHIVulkanDevice::create_semaphore() {
 
     VkSemaphoreCreateInfo semaphore_create_info = {};
     semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    semaphore_create_info.pNext = VK_NULL_HANDLE;
-    semaphore_create_info.flags = 0;
 
     LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateSemaphore(context_.device, &semaphore_create_info, context_.allocator, &semaphore->get_handle()));
 
@@ -220,11 +224,11 @@ RHIFenceHandle RHIVulkanDevice::create_fence() {
     VkFenceCreateInfo fence_create_info = {};
     fence_create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fence_create_info.pNext = VK_NULL_HANDLE;
-    fence_create_info.flags = 0;
+    fence_create_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
     LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateFence(context_.device, &fence_create_info, context_.allocator, &fence));
 
-    return new_ref<RHIVulkanFence>(fence);
+    return new_ref<RHIVulkanFence>(fence, true);
 }
 
 void RHIVulkanDevice::destroy_fence(RHIFenceHandle fence) {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "licht/core/collection/array.hpp"
+#include "licht/core/defines.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/command_buffer.hpp"
@@ -9,7 +10,6 @@
 #include "licht/rhi/framebuffer.hpp"
 #include "licht/rhi/pipeline/pipeline.hpp"
 #include "licht/rhi/render_pass.hpp"
-#include "licht/rhi/render_surface.hpp"
 #include "licht/rhi/semaphore.hpp"
 #include "licht/rhi/swapchain.hpp"
 #include "licht/rhi/texture.hpp"
@@ -18,10 +18,11 @@ namespace licht {
 
 class RHIDevice {
 public:
-    virtual void wait_for_fences(const Array<RHIFenceHandle>& fences) = 0;
-    virtual void reset_fences(const Array<RHIFenceHandle>& fences) = 0;
     virtual void wait_idle() = 0;
 
+    virtual void wait_fence(RHIFenceHandle fence) = 0;
+    virtual void reset_fence(RHIFenceHandle fence) = 0;
+    
     virtual RHICommandAllocatorRef create_command_allocator(uint32 count) = 0;
     virtual void destroy_command_allocator(RHICommandAllocatorRef command_allocator) = 0;
 
@@ -40,8 +41,8 @@ public:
     virtual RHIBufferHandle create_buffer() = 0;
     virtual void destroy_buffer(RHIBufferHandle buffer) = 0; 
 
-    virtual RHISwapchainHandle create_swapchain() = 0;
-    virtual void recreate_swapchain(RHISwapchainHandle swapchain) = 0;
+    virtual RHISwapchainHandle create_swapchain(uint32 width, uint32 height) = 0;
+    virtual void recreate_swapchain(RHISwapchainHandle swapchain, uint32 width, uint32 height) = 0;
     virtual void destroy_swapchain(RHISwapchainHandle swapchain) = 0; 
 
     virtual RHIFramebufferHandle create_framebuffer(RHIRenderPassHandle render_pass,

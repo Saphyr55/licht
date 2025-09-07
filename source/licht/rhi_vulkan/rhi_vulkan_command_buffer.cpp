@@ -32,7 +32,8 @@ void RHIVulkanCommandBuffer::bind_pipeline(RHIPipelineHandle pipeline) {
 }
 
 void RHIVulkanCommandBuffer::set_scissors(const Rect2D* scissors, uint32 count) {
-    Array<VkRect2D> vk_scissors(count);
+    Array<VkRect2D> vk_scissors;
+    vk_scissors.resize(count);
     for (usize i = 0; i < count; i++) {
         vk_scissors[i].offset.x = static_cast<int32>(scissors[i].x);
         vk_scissors[i].offset.y = static_cast<int32>(scissors[i].y);
@@ -43,7 +44,8 @@ void RHIVulkanCommandBuffer::set_scissors(const Rect2D* scissors, uint32 count) 
 }
 
 void RHIVulkanCommandBuffer::set_viewports(const Viewport* viewports, uint32 count) {
-    Array<VkViewport> vk_viewports(count);
+    Array<VkViewport> vk_viewports;
+    vk_viewports.resize(count);
     for (uint32 i = 0; i < count; i++) {
         vk_viewports[i].x = viewports[i].x;
         vk_viewports[i].y = viewports[i].y;

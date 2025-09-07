@@ -1,5 +1,6 @@
 #pragma once
 
+#include "licht/core/defines.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/device.hpp"
 #include "licht/rhi/framebuffer.hpp"
@@ -23,9 +24,14 @@ public:
 
     void shutdown();
 
-    inline void update_resized() {
+    inline void update_resized(uint32 width, uint32 height) {
         window_resized_ = true;
+        frame_context_.frame_width = width;
+        frame_context_.frame_height = height;
     }
+
+private:
+    void reset();
 
 private:
     VulkanContext context_;

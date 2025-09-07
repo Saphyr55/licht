@@ -178,9 +178,9 @@ Matrix4<R> Matrix4<R>::look_at(const Vector3<R>& eye,
     result[0][2] = f.x;
     result[1][2] = f.y;
     result[2][2] = f.z;
-    result[3][0] = -s.Dot(eye);
-    result[3][1] = -u.Dot(eye);
-    result[3][2] = -f.Dot(eye);
+    result[3][0] = -s.dot(eye);
+    result[3][1] = -u.dot(eye);
+    result[3][2] = -f.dot(eye);
     return result;
 }
 

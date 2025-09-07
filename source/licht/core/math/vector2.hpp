@@ -10,7 +10,7 @@ struct Vector2 {
     R x = 0;
     R y = 0;
 
-    auto dot(const Vector2& vec) const -> auto;
+    auto dot(const Vector2& vec) const;
 
     Vector2 operator*(const Real auto&) const;
     Vector2 operator+(const Real auto&) const;
