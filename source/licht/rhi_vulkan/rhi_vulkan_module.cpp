@@ -224,7 +224,7 @@ void RHIVulkanModule::tick() {
 
     LCHECK(frame_context_.success);
 
-    frame_context_.current_frame = (frame_context_.current_frame + 1) % frame_context_.frame_count;
+    frame_context_.next_frame();
 }
 
 void RHIVulkanModule::reset() {

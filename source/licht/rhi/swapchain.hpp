@@ -33,6 +33,13 @@ public:
     inline RHISemaphoreHandle current_render_finished_semaphore();
     
     inline RHIFenceHandle current_in_flight_fence();    
+
+    inline void next_frame() {
+        current_frame = (current_frame + 1) % frame_count;
+        success = false;
+        suboptimal = false;
+        out_of_date = false;
+    }
 };
 
 class RHISwapchain {
