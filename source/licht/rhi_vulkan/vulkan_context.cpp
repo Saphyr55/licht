@@ -6,14 +6,16 @@
 #include "licht/platform/dynamic_library.hpp"
 #include "licht/rhi/rhi.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_render_surface.hpp"
-#include "licht/rhi_vulkan/vulkan_loader.hpp"
 #include "licht/rhi_vulkan/vulkan_physical_device.hpp"
 #include "licht/rhi_vulkan/vulkan_shader_module.hpp"
+#include "licht/rhi_vulkan/vulkan_loader.hpp"
 
 #include <vulkan/vulkan_core.h>
 
 namespace licht {
+
 void vulkan_device_initialize(VulkanContext& context, VulkanPhysicalDeviceSelector& physical_device_selector) {
+
     physical_device_selector.select_physical_device();
     context.physical_device_info = physical_device_selector.get_info();
 
@@ -105,7 +107,6 @@ VkQueue vulkan_query_queue(VulkanContext& context, RHIQueueType type) {
 
 void vulkan_context_initialize(VulkanContext& context, void* window_handle) {
     LLOG_INFO("[Vulkan]", "Initializing Vulkan RHI context...");
-
     {
         context.library = vulkan_library_load();
         LLOG_FATAL_WHEN(!context.library, "[Vulkan]", "Failed to load Vulkan RHI library.");
@@ -117,8 +118,10 @@ void vulkan_context_initialize(VulkanContext& context, void* window_handle) {
 
         vulkan_debug_messenger_init(context);
 
-        context.surface = RHIVulkanRenderSurface::create(context.instance, window_handle);
+        context.surface = RHIVulkanRenderSurface::create(context, window_handle);
         context.surface->initialize();
+            
+        LCHECK(context.surface->get_handle());
 
         VulkanPhysicalDeviceSelector selector(context, g_physical_device_extensions);
         vulkan_device_initialize(context, selector);

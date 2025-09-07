@@ -14,11 +14,8 @@ VkFramebuffer& RHIVulkanFramebuffer::get_handle() {
     return handle_;
 }
 
-RHIVulkanFramebuffer::RHIVulkanFramebuffer() {
-}
-
 void vulkan_framebuffer_init(VulkanContext& context, RHIVulkanFramebufferRef framebuffer, const RHIFramebufferDescription& description) {
-    RHIVulkanRenderPassRef render_passs = static_ref_cast<RHIVulkanRenderPass>(description.render_pass);
+    RHIVulkanRenderPassRef render_pass = static_ref_cast<RHIVulkanRenderPass>(description.render_pass);
 
     Array<VkImageView> attachments(description.attachments.size());
     for (RHITextureViewHandle texture_view : description.attachments) {
@@ -28,7 +25,7 @@ void vulkan_framebuffer_init(VulkanContext& context, RHIVulkanFramebufferRef fra
 
     VkFramebufferCreateInfo framebuffer_create_info = {};
     framebuffer_create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebuffer_create_info.renderPass = render_passs->get_handle();
+    framebuffer_create_info.renderPass = render_pass->get_handle();
     framebuffer_create_info.attachmentCount = attachments.size();
     framebuffer_create_info.pAttachments = attachments.data();
     framebuffer_create_info.width = description.width;

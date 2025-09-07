@@ -75,6 +75,9 @@ public:
     SharedRef(ResourceType* resource, ReferenceCounter* reference_counter) noexcept
         : resource_(resource)
         , reference_counter_(reference_counter) {
+        if (reference_counter_) {
+            reference_counter_->add_shared_reference();
+        }
     }
 
     template <typename DerivedType>
@@ -206,7 +209,7 @@ public:
 
 public:
     void release_shared_reference() {
-        if (reference_counter_ && is_valid()) {
+        if (is_valid()) {
             reference_counter_->release_shared_reference();
         }
     }
@@ -215,8 +218,8 @@ public:
     friend class SharedRef;
 
 private:
-    ResourceType* resource_;
-    ReferenceCounter* reference_counter_;
+    ResourceType* resource_ = nullptr;
+    ReferenceCounter* reference_counter_ = nullptr;
 };
 
 template <typename ResourceType, typename... Args>

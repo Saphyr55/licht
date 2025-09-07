@@ -1,5 +1,6 @@
 #pragma once
 
+#include "licht/rhi/buffer.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/command_queue.hpp"
 #include "licht/rhi/device.hpp"
@@ -33,10 +34,9 @@ public:
     virtual void destroy_graphics_pipeline(RHIPipelineHandle pipeline) override;
 
     virtual RHIBufferHandle create_buffer() override;
+    virtual void destroy_buffer(RHIBufferHandle buffer) override; 
 
-    virtual RHICommandBufferHandle create_command_buffer() override;
-
-    virtual RHISwapchainHandle create_swapchain(RHIRenderSurfaceHandle render_surface) override;
+    virtual RHISwapchainHandle create_swapchain() override;
     virtual void recreate_swapchain(RHISwapchainHandle swapchain) override;
     virtual void destroy_swapchain(RHISwapchainHandle swapchain) override; 
 

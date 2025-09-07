@@ -28,7 +28,9 @@ public:
 
     virtual void draw(const RHIDrawCommand& command) override;
 
-    VkCommandBuffer get_handle();
+    inline VkCommandBuffer& get_handle() {
+        return command_buffer_;
+    }
 
 public:
     RHIVulkanCommandBuffer(VkCommandBuffer command_buffer)
@@ -49,7 +51,7 @@ public:
     virtual void reset_command_buffer(RHICommandBufferHandle command_buffer) override;
 
 public:
-    const VkCommandPool get_command_pool() const;
+    VkCommandPool& get_command_pool();
 
     const Array<VkCommandBuffer>& get_command_buffers() const;
 

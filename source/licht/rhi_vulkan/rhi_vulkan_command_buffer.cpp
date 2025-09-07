@@ -92,7 +92,7 @@ void RHIVulkanCommandAllocator::reset_command_buffer(RHICommandBufferHandle comm
     VulkanAPI::lvkResetCommandBuffer(vk_command_buffer->get_handle(), 0);
 }
 
-const VkCommandPool RHIVulkanCommandAllocator::get_command_pool() const {
+VkCommandPool& RHIVulkanCommandAllocator::get_command_pool() {
     return command_pool_;
 }
 

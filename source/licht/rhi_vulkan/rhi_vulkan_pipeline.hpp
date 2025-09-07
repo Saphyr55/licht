@@ -16,10 +16,10 @@ public:
 
     void destroy();
 
-    VkPipeline pipeline() const { return pipeline_; };
+    VkPipeline& pipeline() { return pipeline_; };
 
-    VkPipelineLayout layout() const { return pipeline_layout_; };
-
+    VkPipelineLayout& layout() { return pipeline_layout_; };
+    
 public:
     RHIVulkanPipeline(VulkanContext& context, const RHIPipelineDescription& description);
 

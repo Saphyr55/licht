@@ -10,13 +10,17 @@ struct VulkanContext;
 
 class RHIVulkanRenderSurface : public RHIRenderSurface {
 public:
-    static SharedRef<RHIVulkanRenderSurface> create(VkInstance instance, void* window_handle);
+    static SharedRef<RHIVulkanRenderSurface> create(VulkanContext& context, void* window_handle);
+
+    virtual void* get_platform_window() override {
+        return window_handle_;
+    }
 
     virtual void initialize() = 0;
 
     virtual void destroy() = 0;
 
-    inline VkSurfaceKHR get_handle() {
+    VkSurfaceKHR& get_handle() {
         return handle_;
     }
 

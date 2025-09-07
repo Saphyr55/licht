@@ -186,7 +186,7 @@ public:
     constexpr Array(AllocatorType&& allocator = AllocatorType()) noexcept
         : data_(nullptr)
         , size_(0)
-        , capacity_(1)
+        , capacity_(2)
         , allocator_(allocator) {
         data_ = allocator_allocate(capacity_);
     }
@@ -194,7 +194,7 @@ public:
     constexpr Array(usize capacity,
                     AllocatorType&& allocator = AllocatorType()) noexcept
         : data_(nullptr)
-        , size_(capacity)
+        , size_(0)
         , capacity_(capacity)
         , allocator_(allocator) {
         data_ = allocator_allocate(capacity_);

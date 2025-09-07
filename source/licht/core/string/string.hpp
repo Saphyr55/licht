@@ -7,17 +7,17 @@ namespace licht {
 
 class WString;
 
-LICHT_CORE_API usize string_length(const char* p_str);
-LICHT_CORE_API usize string_length(const wchar_t* p_str);
+LICHT_CORE_API usize string_length(const char* str);
+LICHT_CORE_API usize string_length(const wchar_t* str);
 
-LICHT_CORE_API errno_t string_copy(char* p_dst, usize p_bytes_size, const char* p_src);
-LICHT_CORE_API errno_t string_copy(wchar_t* p_dst, usize p_bytes_size, const wchar_t* p_src);
+LICHT_CORE_API errno_t string_copy(char* dst, usize bytes_size, const char* src);
+LICHT_CORE_API errno_t string_copy(wchar_t* dst, usize bytes_size, const wchar_t* src);
 
-LICHT_CORE_API errno_t string_cat(char* p_dst, usize p_bytes_size, const char* p_src);
-LICHT_CORE_API errno_t string_cat(wchar_t* p_dst, usize p_bytes_size, const wchar_t* p_src);
+LICHT_CORE_API errno_t string_cat(char* dst, usize p_bytes_size, const char* src);
+LICHT_CORE_API errno_t string_cat(wchar_t* dst, usize p_bytes_size, const wchar_t* src);
 
-LICHT_CORE_API int32 string_compare(const char* p_str1, const char* p_str2);
-LICHT_CORE_API int32 string_compare(const wchar_t* p_str1, const wchar_t* p_str2);
+LICHT_CORE_API int32 string_compare(const char* str1, const char* str2);
+LICHT_CORE_API int32 string_compare(const wchar_t* str1, const wchar_t* str2);
 
 /**
  * @brief Converts a UTF-8 encoded string to a wide character string (UTF-16).
@@ -66,8 +66,12 @@ public:
         buffer_.clear();
     }
 
-    void reserve(usize p_capacity) {
-        buffer_.reserve(p_capacity);
+    void resize(usize size) {
+        buffer_.resize(size);
+    }
+
+    void reserve(usize capacity) {
+        buffer_.reserve(capacity);
     }
 
 public:
@@ -76,23 +80,23 @@ public:
         buffer_.append('\0');
     }
 
-    explicit StringBase(usize p_capacity)
-        : buffer_(p_capacity) {
-        LCHECK(p_capacity != 0)
+    explicit StringBase(usize capacity)
+        : buffer_(capacity) {
+        LCHECK(capacity != 0)
         buffer_.append('\0');
     }
 
-    StringBase(const CharType* p_str)
-        : buffer_(string_length(p_str) + 1) {
-        append(p_str);
+    StringBase(const CharType* str)
+        : buffer_(string_length(str) + 1) {
+        append(str);
     }
 
-    StringBase(const StringBase& p_other)
-        : buffer_(p_other.buffer_) {}
+    StringBase(const StringBase& other)
+        : buffer_(other.buffer_) {}
 
-    StringBase& operator=(const StringBase& p_other) {
-        if (this != std::addressof(p_other)) {
-            buffer_ = p_other.buffer_;
+    StringBase& operator=(const StringBase& other) {
+        if (this != std::addressof(other)) {
+            buffer_ = other.buffer_;
         }
         return *this;
     }
@@ -100,9 +104,9 @@ public:
     virtual ~StringBase() {}
 
 protected:
-    void ensure_capacity(usize p_required_capacity) {
-        if (p_required_capacity > buffer_.capacity()) {
-            reserve(p_required_capacity);
+    void ensure_capacity(usize required_capacity) {
+        if (required_capacity > buffer_.capacity()) {
+            reserve(required_capacity);
         }
     }
 
@@ -114,20 +118,20 @@ class WString : public StringBase<wchar_t> {
 public:
     WString() : StringBase<wchar_t>() { }
 
-    explicit WString(usize p_capacity)
-        : StringBase<wchar_t>(p_capacity) {
+    explicit WString(usize capacity)
+        : StringBase<wchar_t>(capacity) {
     }
 
-    WString(const wchar_t* p_str)
-        : StringBase<wchar_t>(string_length(p_str) + 1) {
+    WString(const wchar_t* str)
+        : StringBase<wchar_t>(string_length(str) + 1) {
     }
 
-    WString(const WString& p_other)
-        : StringBase<wchar_t>(p_other) {}
+    WString(const WString& other)
+        : StringBase<wchar_t>(other) {}
 
-    WString& operator=(const WString& p_other) {
-        if (this != std::addressof(p_other)) {
-            buffer_ = p_other.buffer_;
+    WString& operator=(const WString& other) {
+        if (this != std::addressof(other)) {
+            buffer_ = other.buffer_;
         }
         return *this;
     }
@@ -140,20 +144,20 @@ public:
         buffer_.append('\0');
     }
 
-    explicit String(usize p_capacity)
-        : StringBase<char>(p_capacity) {
+    explicit String(usize capacity)
+        : StringBase<char>(capacity) {
     }
 
-    String(const char* p_str)
-        : StringBase<char>(string_length(p_str) + 1) {
+    String(const char* str)
+        : StringBase<char>(string_length(str) + 1) {
     }
 
-    String(const String& p_other)
-        : StringBase<char>(p_other) {}
+    String(const String& other)
+        : StringBase<char>(other) {}
 
-    String& operator=(const String& p_other) {
-        if (this != std::addressof(p_other)) {
-            buffer_ = p_other.buffer_;
+    String& operator=(const String& other) {
+        if (this != std::addressof(other)) {
+            buffer_ = other.buffer_;
         }
         return *this;
     }

@@ -38,10 +38,9 @@ public:
     virtual void destroy_graphics_pipeline(RHIPipelineHandle pipeline) = 0;
 
     virtual RHIBufferHandle create_buffer() = 0;
+    virtual void destroy_buffer(RHIBufferHandle buffer) = 0; 
 
-    virtual RHICommandBufferHandle create_command_buffer() = 0;
-
-    virtual RHISwapchainHandle create_swapchain(RHIRenderSurfaceHandle render_surface) = 0;
+    virtual RHISwapchainHandle create_swapchain() = 0;
     virtual void recreate_swapchain(RHISwapchainHandle swapchain) = 0;
     virtual void destroy_swapchain(RHISwapchainHandle swapchain) = 0; 
 

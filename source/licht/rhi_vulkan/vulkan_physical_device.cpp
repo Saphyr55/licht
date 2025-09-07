@@ -34,7 +34,8 @@ bool VulkanPhysicalDeviceSelector::check_extension_support(const Array<StringRef
     uint32 extension_count;
     LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumerateDeviceExtensionProperties(context_.physical_device, nullptr, &extension_count, nullptr));
 
-    Array<VkExtensionProperties> available_extensions(extension_count);
+    Array<VkExtensionProperties> available_extensions;
+    available_extensions.resize(extension_count);
     LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumerateDeviceExtensionProperties(context_.physical_device, nullptr, &extension_count, available_extensions.data()));
 
     Array<StringRef> physical_device_extensions = extensions;
@@ -110,7 +111,8 @@ bool VulkanPhysicalDeviceSelector::select_physical_device() {
         return false;
     }
 
-    Array<VkPhysicalDevice> devices(device_count);
+    Array<VkPhysicalDevice> devices;
+    devices.resize(device_count);
     LICHT_VULKAN_CHECK(VulkanAPI::lvkEnumeratePhysicalDevices(instance, &device_count, devices.data()));
 
     for (const VkPhysicalDevice& physical_device : devices) {

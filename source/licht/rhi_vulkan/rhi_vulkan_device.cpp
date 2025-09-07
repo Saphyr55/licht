@@ -4,6 +4,7 @@
 #include "licht/core/defines.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/memory/shared_ref_cast.hpp"
+#include "licht/rhi/buffer.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/command_queue.hpp"
 #include "licht/rhi/fence.hpp"
@@ -76,6 +77,14 @@ void RHIVulkanDevice::destroy_texture(RHITextureHandle texture) {
     VulkanAPI::lvkDestroyImage(context_.device, vktexture->get_handle(), context_.allocator);
 }
 
+RHIBufferHandle RHIVulkanDevice::create_buffer() {
+    return SharedRef<RHIBuffer>(nullptr);
+}
+
+void RHIVulkanDevice::destroy_buffer(RHIBufferHandle buffer) {
+
+}
+
 RHITextureViewHandle RHIVulkanDevice::create_texture_view(const RHITextureViewDescription& description) {
     RHIVulkanTextureViewRef texture_view = new_ref<RHIVulkanTextureView>();
 
@@ -97,6 +106,8 @@ RHITextureViewHandle RHIVulkanDevice::create_texture_view(const RHITextureViewDe
     image_view_create_info.subresourceRange.layerCount = 1;
 
     LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateImageView(context_.device, &image_view_create_info, context_.allocator, &texture_view->get_handle()))
+
+    return texture_view;
 }
 
 void RHIVulkanDevice::destroy_texture_view(RHITextureViewHandle texture_view) {
@@ -126,17 +137,14 @@ void RHIVulkanDevice::destroy_graphics_pipeline(RHIPipelineHandle pipeline) {
     graphics_pipeline->destroy();
 }
 
-RHISwapchainHandle RHIVulkanDevice::create_swapchain(RHIRenderSurfaceHandle render_surface) {
-    SharedRef<RHIVulkanRenderSurface> vulkan_render_surface = static_ref_cast<RHIVulkanRenderSurface>(render_surface);
-    SharedRef<RHIVulkanSwapchain> swapchain = new_ref<RHIVulkanSwapchain>(context_, vulkan_render_surface);
+RHISwapchainHandle RHIVulkanDevice::create_swapchain() {
+    RHIVulkanSwapchainRef swapchain = new_ref<RHIVulkanSwapchain>(context_);
     swapchain->initialize();
     return swapchain;
 }
 
 void RHIVulkanDevice::recreate_swapchain(RHISwapchainHandle swapchain) {
     SharedRef<RHIVulkanSwapchain> vulkan_swapchain = static_ref_cast<RHIVulkanSwapchain>(swapchain);
-
-    wait_idle();
 
     // TODO: Destroy framebuffers
 
@@ -147,12 +155,16 @@ void RHIVulkanDevice::recreate_swapchain(RHISwapchainHandle swapchain) {
 }
 
 void RHIVulkanDevice::destroy_swapchain(RHISwapchainHandle swapchain) {
+    LCHECK(swapchain);
     SharedRef<RHIVulkanSwapchain> vulkan_swapchain = static_ref_cast<RHIVulkanSwapchain>(swapchain);
     vulkan_swapchain->destroy();
 }
 
 RHIFramebufferHandle RHIVulkanDevice::create_framebuffer(RHIRenderPassHandle render_pass,
                                                          const RHIFramebufferDescription& description) {
+
+    LCHECK(render_pass);
+
     SharedRef<RHIVulkanFramebuffer> framebuffer = new_ref<RHIVulkanFramebuffer>();
     vulkan_framebuffer_init(context_, framebuffer, description);
 
@@ -178,6 +190,7 @@ RHIFramebufferHandle RHIVulkanDevice::create_framebuffer(RHIRenderPassHandle ren
 }
 
 void RHIVulkanDevice::destroy_framebuffer(RHIFramebufferHandle framebuffer) {
+    LCHECK(framebuffer);
     SharedRef<RHIVulkanFramebuffer> vulkan_framebuffer = static_ref_cast<RHIVulkanFramebuffer>(framebuffer);
     vulkan_framebuffer_destroy(context_, vulkan_framebuffer);
 }
@@ -196,6 +209,8 @@ RHISemaphoreHandle RHIVulkanDevice::create_semaphore() {
 }
 
 void RHIVulkanDevice::destroy_semaphore(RHISemaphoreHandle semaphore) {
+    LCHECK(semaphore);
+
     SharedRef<RHIVulkanSemaphore> vk_semaphore = static_ref_cast<RHIVulkanSemaphore>(semaphore);
     VulkanAPI::lvkDestroySemaphore(context_.device, vk_semaphore->get_handle(), context_.allocator);
 }
@@ -213,6 +228,8 @@ RHIFenceHandle RHIVulkanDevice::create_fence() {
 }
 
 void RHIVulkanDevice::destroy_fence(RHIFenceHandle fence) {
+    LCHECK(fence);
+
     SharedRef<RHIVulkanFence> vk_fence = static_ref_cast<RHIVulkanFence>(fence);
     VulkanAPI::lvkDestroyFence(context_.device, vk_fence->get_handle(), context_.allocator);
 }

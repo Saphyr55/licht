@@ -8,6 +8,10 @@
 
 namespace licht {
 
+VkRenderPass& RHIVulkanRenderPass::get_handle() {
+    return render_pass_;
+}
+
 void vulkan_render_pass_init(VulkanContext& context, VkRenderPass* render_pass, const RHIRenderPassDescription& description) {
     Array<VkAttachmentDescription> attachments(description.attachment_decriptions.size());
     for (const RHIAttachmentDescription& attachment_description : description.attachment_decriptions) {

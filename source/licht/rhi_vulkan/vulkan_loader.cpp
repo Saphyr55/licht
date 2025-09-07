@@ -157,7 +157,7 @@ SharedRef<DynamicLibrary> vulkan_library_load() {
     return SharedRef<DynamicLibrary>(nullptr);
 }
 
-bool vulkan_core_load(SharedRef<DynamicLibrary> library) {
+bool vulkan_core_api_load(SharedRef<DynamicLibrary> library) {
     LICHT_LOAD_RHI_CORE_FUNCTION(vkGetInstanceProcAddr);
     LICHT_LOAD_RHI_CORE_FUNCTION(vkEnumerateInstanceVersion);
     LICHT_LOAD_RHI_CORE_FUNCTION(vkEnumerateInstanceExtensionProperties);
@@ -167,7 +167,7 @@ bool vulkan_core_load(SharedRef<DynamicLibrary> library) {
     return true;
 }
 
-bool vulkan_instance_load(VkInstance instance) {
+bool vulkan_instance_api_load(VkInstance instance) {
     LICHT_LOAD_RHI_INSTANCE_FUNCTION(vkGetDeviceProcAddr);
     LICHT_LOAD_RHI_INSTANCE_FUNCTION(vkDestroyInstance);
     LICHT_LOAD_RHI_INSTANCE_FUNCTION(vkEnumeratePhysicalDevices);
@@ -189,7 +189,7 @@ bool vulkan_instance_load(VkInstance instance) {
     return true;
 }
 
-bool vulkan_device_load(VkDevice device) {
+bool vulkan_device_api_load(VkDevice device) {
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkGetDeviceQueue);
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkDeviceWaitIdle);
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkCreateCommandPool);

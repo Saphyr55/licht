@@ -6,7 +6,6 @@ namespace licht {
 
 class RHIResource {
 public:
-    virtual void release() = 0;
 
 public:
     RHIResource(const RHIResource&) = delete;

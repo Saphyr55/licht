@@ -17,8 +17,6 @@ struct RHIFramebufferDescription {
 
 class RHIFramebuffer {
 public:
-
-    RHIFramebuffer();
     virtual ~RHIFramebuffer() = default;
 };
 

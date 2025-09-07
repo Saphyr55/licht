@@ -26,7 +26,9 @@ public:
 
     virtual RHIFormat get_format() override;
 
-    virtual const Array<RHITextureViewHandle>& get_texture_views() override; 
+    virtual const Array<RHITextureViewHandle>& get_texture_views() override {
+        return texture_views_;
+    }
 
     void initialize();
 
@@ -37,7 +39,7 @@ public:
         return format_;
     }
 
-    inline VkSwapchainKHR get_handle() {
+    inline VkSwapchainKHR& get_handle() {
         return handle_;
     }
 
@@ -46,16 +48,13 @@ public:
     }
 
 public:
-    RHIVulkanSwapchain(VulkanContext& context, RHIVulkanRenderSurfaceRef surface);
+    RHIVulkanSwapchain(VulkanContext& context);
 
 private:
-    void image_views_init();
-
     VulkanSwapchainSupportDetails query_support_details();
 
 private:
     VulkanContext& context_;
-    RHIVulkanRenderSurfaceRef surface_;
     VkFormat format_;
     VkExtent2D extent_;
     Array<VkImage> images_;

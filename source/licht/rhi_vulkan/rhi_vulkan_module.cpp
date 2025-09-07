@@ -38,7 +38,7 @@ void RHIVulkanModule::initialize() {
 
     // -- Swapchain --
     {
-        swapchain_ = device_->create_swapchain(surface_);
+        swapchain_ = device_->create_swapchain();
     }
 
     // -- Render Pass --
@@ -59,12 +59,12 @@ void RHIVulkanModule::initialize() {
         FileHandleResult vertex_file_open_error = file_system.open_read("shaders/main.vert.spv");
         LCHECK(vertex_file_open_error.has_value())
         SharedRef<FileHandle> vertex_file_handle = vertex_file_open_error.value();
-        CompiledShader vertex_shader = CompiledShader(vertex_file_handle->read_all_bytes());
+        CompiledShader vertex_shader(vertex_file_handle->read_all_bytes());
 
         FileHandleResult fragment_file_open_error = file_system.open_read("shaders/main.frag.spv");
         LCHECK(fragment_file_open_error.has_value())
         SharedRef<FileHandle> fragment_file_handle = fragment_file_open_error.value();
-        CompiledShader fragment_shader = CompiledShader(fragment_file_handle->read_all_bytes());
+        CompiledShader fragment_shader(fragment_file_handle->read_all_bytes());
 
         // -- Graphics Pipeline Shaders --
         RHIPipelineShaderStageCreateInfo vertex_stage_create_info;
@@ -106,14 +106,17 @@ void RHIVulkanModule::initialize() {
 
     // -- Framebuffers --
     {
+        framebuffers_.reserve(swapchain_->get_texture_views().size());
         for (RHITextureViewHandle texture : swapchain_->get_texture_views()) {
             RHIFramebufferDescription description = {};
             description.height = swapchain_->get_height();
             description.width = swapchain_->get_width();
+            description.render_pass = render_pass_;
             description.attachments = {texture};
             description.layers = 1;
 
             RHIFramebufferHandle framebuffer = device_->create_framebuffer(render_pass_, description);
+            framebuffers_.append(framebuffer);
         }
     }
 
@@ -124,14 +127,14 @@ void RHIVulkanModule::initialize() {
 
     // -- Frame Context Sync --
     {
-        frame_context_.frame_available_semaphores.resize(frame_context_.frame_count);
-        frame_context_.render_finished_semaphores.resize(frame_context_.frame_count);
-        frame_context_.in_flight_fences.resize(frame_context_.frame_count);
+        frame_context_.frame_available_semaphores.reserve(frame_context_.frame_count);
+        frame_context_.render_finished_semaphores.reserve(frame_context_.frame_count);
+        frame_context_.in_flight_fences.reserve(frame_context_.frame_count);
 
         for (uint32 i = 0; i < frame_context_.frame_count; i++) {
-            frame_context_.frame_available_semaphores[i] = device_->create_semaphore();
-            frame_context_.render_finished_semaphores[i] = device_->create_semaphore();
-            frame_context_.in_flight_fences[i] = device_->create_fence();
+            frame_context_.frame_available_semaphores.append(device_->create_semaphore());
+            frame_context_.render_finished_semaphores.append(device_->create_semaphore());
+            frame_context_.in_flight_fences.append(device_->create_fence());
         }
     }
 }
@@ -142,7 +145,24 @@ void RHIVulkanModule::tick() {
 
     swapchain_->acquire_next_frame(frame_context_);
     if (frame_context_.out_of_date || frame_context_.suboptimal || window_resized_) {
+
+        device_->wait_idle();
+
+        for (RHIFramebufferHandle framebuffer : framebuffers_) {
+            device_->destroy_framebuffer(framebuffer);
+        }
         device_->recreate_swapchain(swapchain_);
+        for (RHITextureViewHandle texture : swapchain_->get_texture_views()) {
+            RHIFramebufferDescription description = {};
+            description.height = swapchain_->get_height();
+            description.width = swapchain_->get_width();
+            description.render_pass = render_pass_;
+            description.attachments = {texture};
+            description.layers = 1;
+
+            RHIFramebufferHandle framebuffer = device_->create_framebuffer(render_pass_, description);
+            framebuffers_.append(framebuffer);
+        }
         window_resized_ = false;
         return;
     }

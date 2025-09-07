@@ -24,6 +24,10 @@ public:
         return type_;
     }
 
+    VkQueue& get_handle() {
+        return queue_;
+    }
+
 public:
     RHIVulkanCommandQueue(VulkanContext& context, VkQueue queue, RHIQueueType type);
 

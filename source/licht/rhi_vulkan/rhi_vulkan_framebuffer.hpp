@@ -13,7 +13,7 @@ public:
     VkFramebuffer& get_handle();
 
 public:
-    RHIVulkanFramebuffer();
+    virtual ~RHIVulkanFramebuffer() override = default;
 
 private:
     VkFramebuffer handle_;

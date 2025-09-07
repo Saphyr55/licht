@@ -85,8 +85,9 @@ Array<uint8> PlatformFileHandle::read_all_bytes() {
     }
 
     // Allocate buffer
-    Array<uint8> buffer(static_cast<usize>(file_size));
-    size_t bytes_read = fread(buffer.data(), sizeof(uint8), buffer.size(), stream_);
+    Array<uint8> buffer;
+    buffer.resize(static_cast<usize>(file_size));
+    usize bytes_read = fread(buffer.data(), sizeof(uint8), buffer.size(), stream_);
     if (bytes_read != buffer.size()) {
         return {};  // Read error or incomplete read
     }

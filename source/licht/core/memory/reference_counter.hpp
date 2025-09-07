@@ -16,6 +16,7 @@ public:
     using RefCountType = std::atomic_int32_t;
 
 public:
+    ReferenceCounter() = default;
     virtual ~ReferenceCounter() = default;
 
     virtual void destroy_resource() = 0;

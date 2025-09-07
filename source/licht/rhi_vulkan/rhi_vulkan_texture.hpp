@@ -8,7 +8,9 @@ namespace licht {
 
 class RHIVulkanTexture : public RHITexture {
 public:
-    VkImage& get_handle();
+    VkImage& get_handle() {
+        return handle_;
+    }
 
 public:
     RHIVulkanTexture() = default;
@@ -23,7 +25,9 @@ private:
 
 class RHIVulkanTextureView : public RHITextureView {
 public:
-    VkImageView& get_handle();
+    VkImageView& get_handle() {
+        return handle_;
+    }
 
 public:
     RHIVulkanTextureView() = default;
