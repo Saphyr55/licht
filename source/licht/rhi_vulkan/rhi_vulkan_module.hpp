@@ -1,6 +1,7 @@
 #pragma once
 
 #include "licht/core/defines.hpp"
+#include "licht/core/memory/linear_allocator.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/device.hpp"
 #include "licht/rhi/framebuffer.hpp"
@@ -16,6 +17,7 @@ namespace licht {
 
 struct VulkanContext;
 
+
 class LICHT_RHI_VULKAN_API RHIVulkanModule {
 public:
     void initialize();
@@ -23,7 +25,7 @@ public:
     void tick();
 
     void shutdown();
-    
+
     inline void update_resized(uint32 width, uint32 height) {
         window_resized_ = true;
         frame_context_.frame_width = width;
@@ -38,18 +40,27 @@ public:
         pause_ = false;
     }
 
+public:
+    RHIVulkanModule();
+
 private:
     void reset();
 
 private:
-    VulkanContext context_;
+    using RHIFramebufferRegistryAllocator = LinearAllocator<RHIFramebufferHandle>;
+    using RHIFramebufferRegistry = Array<RHIFramebufferHandle, RHIFramebufferRegistryAllocator>;
     
+    VulkanContext context_;
+
     RHIRenderSurfaceHandle surface_;
     RHIDeviceHandle device_;
     RHISwapchainHandle swapchain_;
     RHIRenderPassHandle render_pass_;
     RHIPipelineHandle pipeline_;
-    Array<RHIFramebufferHandle> framebuffers_;
+    
+    LinearMemoryPool framebuffer_memory_pool_;
+    RHIFramebufferRegistry framebuffers_;
+    
     RHICommandAllocatorRef command_allocator_;
     RHIFrameContext frame_context_;
 
@@ -57,4 +68,4 @@ private:
     bool window_resized_ = false;
 };
 
-}
+}  //namespace licht

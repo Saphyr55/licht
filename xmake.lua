@@ -5,6 +5,8 @@ set_languages("c++20")
 set_targetdir("build/bin/$(plat)_$(arch)_$(mode)")
 
 add_rules("mode.debug", "mode.release")
+add_rules("plugin.vsxmake.autoupdate")
+add_rules("plugin.compile_commands.autoupdate", {outputdir = ".vscode"})
 
 if is_mode("debug") then
     add_defines("LDEBUG")
@@ -14,10 +16,9 @@ includes("scripts/**.lua")
 
 add_requires("libsdl3", "catch2", "vulkan-headers")
 
-
 target("licht.core")
     set_kind("shared")
-
+    
     add_includedirs("source")
 
     add_files("source/licht/core/**.cpp")
@@ -111,3 +112,4 @@ target("licht.demo")
         })
 
     end)
+    

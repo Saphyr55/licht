@@ -13,7 +13,7 @@ TEST_CASE("Append elements to an array.", "[Array::append]") {
     Array<uint32> items;
     REQUIRE(items.size() == 0);
     REQUIRE(items.empty());
-        
+
     items.append(5);
     items.append(4);
     items.append(3);
@@ -23,6 +23,36 @@ TEST_CASE("Append elements to an array.", "[Array::append]") {
 
 	REQUIRE(items[0] == 5);
     REQUIRE(items[1] == 4);
+}
+
+TEST_CASE("Reserve elements to an array.", "[Array::reserve]") {
+
+    Array<uint32> items;
+    items.reserve(60);
+
+    REQUIRE(items.capacity() == 60);
+    REQUIRE(items.size() == 0);
+}
+
+TEST_CASE("Reserve with default elements to an array.", "[Array::reserve]") {
+    Array<uint32> items;
+    items.reserve(60, 465);
+    
+    REQUIRE(items.data()[40] == 465);
+}
+
+TEST_CASE("Resize elements to an array.", "[Array::resize]") {
+    Array<uint32> items;
+    items.resize(60);
+
+    REQUIRE(items.size() == 60);
+}
+
+TEST_CASE("Resize with default elements to an array.", "[Array::resize]") {
+    Array<uint32> items;
+    items.resize(60, 465);
+
+    REQUIRE(items[55] == 465);
 }
 
 TEST_CASE("Append ptr elements to an array.", "[Array::append]") {

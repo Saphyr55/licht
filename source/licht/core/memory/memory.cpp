@@ -8,12 +8,12 @@
 
 namespace licht {
 
-void* Memory::allocate(size_t size) {
+void* Memory::allocate(usize size) {
     MemoryTrace::global_add_allocate_bytes(size);
     return ::malloc(size);
 }
 
-void Memory::free(void* block, size_t size) {
+void Memory::free(void* block, usize size) {
     LCHECK_MSG(block, "Attempt to free a null pointer.");
     MemoryTrace::global_add_freed_bytes(size);
     ::free(block);
@@ -21,43 +21,33 @@ void Memory::free(void* block, size_t size) {
 
 void* Memory::copy(void* destination,
                    const void* source,
-                   size_t size) {
-    LCHECK(destination && source)
+                   usize size) {
+    LCHECK_MSG(destination, "The destination must be not a null pointer.");
     return memcpy(destination, source, size);
 }
 
 void* Memory::copy_move(void* destination,
-                   const void* source,
-                   size_t size) {
-    LCHECK(destination && source)
+                        const void* source,
+                        usize size) {
+    LCHECK_MSG(destination, "The destination must be not a null pointer.");
     return memmove(destination, source, size);
 }
 
-void* Memory::write(void* destination, int32 value, size_t size) {
+void* Memory::write(void* destination, int32 value, usize size) {
+    LCHECK_MSG(destination, "The destination must be not a null pointer.");
     return memset(destination, value, size);
 }
 
-int Memory::compare(const void* buffer1, const void* buffer2, size_t size) {
+int Memory::compare(const void* buffer1, const void* buffer2, usize size) {
     return memcmp(buffer1, buffer2, size);
 }
 
 }  // namespace licht
 
-namespace pf = ::licht;
-
-void* operator new(size_t size) {
-    return ::pf::Memory::allocate(size);
+void* operator new(usize size, LichtMemoryTag tag) {
+    return ::licht::Memory::allocate(size);
 }
 
-void* operator new(size_t size, void* (*alloc)(size_t size)) {
-    return alloc(size);
+void operator delete(void* resource, usize size) noexcept {
+    return ::licht::Memory::free(resource, size);
 }
-
-void operator delete(void* resource, size_t size) noexcept {
-    return ::pf::Memory::free(resource, size);
-}
-
-void operator delete(void* resource, size_t size, void* (*dealloc)(void* resource, size_t size)) noexcept {
-    dealloc(resource, size);
-}
-

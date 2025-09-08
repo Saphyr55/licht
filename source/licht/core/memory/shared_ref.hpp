@@ -60,9 +60,8 @@ public:
 
     explicit operator bool() const { return is_valid(); }
 
-    SharedRef()
-        : resource_(nullptr)
-        , reference_counter_(nullptr) {}
+public:
+    SharedRef() noexcept = default;
 
     explicit SharedRef(ResourceType* resource) noexcept
         : resource_(resource)

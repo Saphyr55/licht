@@ -21,6 +21,11 @@
 
 namespace licht {
 
+RHIVulkanModule::RHIVulkanModule() 
+    : framebuffer_memory_pool_(1024) // 1 kB
+    , framebuffers_(2, RHIFramebufferRegistryAllocator(&framebuffer_memory_pool_)) {
+}
+
 void RHIVulkanModule::initialize() {
     LLOG_INFO("[RHIVulkanModule::initialize]", "Initializing Vulkan RHI module...");
 
@@ -29,7 +34,7 @@ void RHIVulkanModule::initialize() {
 
     void* window_handle = Display::get_default().get_native_window_handle(Display::MAIN_WINDOW_HANDLE);
     WindowStatues window_statues = Display::get_default().query_window_statues(Display::MAIN_WINDOW_HANDLE);
-
+    
     vulkan_context_initialize(context_, window_handle);
 
     // -- Device --
@@ -108,8 +113,8 @@ void RHIVulkanModule::initialize() {
     }
 
     // -- Framebuffers --
-    {
-        framebuffers_.reserve(swapchain_->get_texture_views().size());
+    {   
+        framebuffers_.reserve(swapchain_->get_texture_views().size(), RHIFramebufferHandle(nullptr));
         for (RHITextureViewHandle texture : swapchain_->get_texture_views()) {
             RHIFramebufferDescription description = {};
             description.height = swapchain_->get_height();
@@ -148,13 +153,12 @@ void RHIVulkanModule::initialize() {
 }
 
 void RHIVulkanModule::tick() {
-    
     if (pause_) {
         return;
     }
 
     swapchain_->acquire_next_frame(frame_context_);
-    
+
     if (frame_context_.out_of_date) {
         reset();
         return;
@@ -239,6 +243,7 @@ void RHIVulkanModule::reset() {
         device_->destroy_framebuffer(framebuffer);
     }
     framebuffers_.clear();
+    framebuffer_memory_pool_.reset();
 
     device_->recreate_swapchain(swapchain_, frame_context_.frame_width, frame_context_.frame_height);
 

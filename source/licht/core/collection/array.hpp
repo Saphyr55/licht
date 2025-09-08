@@ -8,20 +8,28 @@
 namespace licht {
 
 template <typename ElementType,
-          typename AllocatorType = DefaultAllocator<ElementType>,
+          CAllocator<ElementType> AllocatorType = DefaultAllocator<ElementType>,
           typename SizeType = usize>
 class Array {
 public:
     using IteratorType = ElementType*;
 
+    template <typename NewElement>
+    using ReboundAllocator = typename AllocatorType::template rebind<NewElement>::other;
+
 public:
 
-    template <typename OtherType>
-    Array<OtherType> map(auto&& mapper) const {
-        Array<OtherType> other;
+    template <typename OtherElementType = ElementType,
+              CAllocator<OtherElementType> OtherAllocatorType = ReboundAllocator<OtherElementType>,
+              typename OtherSizeType = SizeType>
+    Array<OtherElementType, OtherAllocatorType, OtherSizeType> map(auto&& mapper,
+                                                                   const OtherAllocatorType& other_allocator = OtherAllocatorType()) const {
+        Array<OtherElementType, OtherAllocatorType, OtherSizeType> other(size_, other_allocator);
+
         for (SizeType i = 0; i < size_; i++) {
             other.append(mapper(data_[i]));
         }
+
         return other;
     }
 
@@ -115,16 +123,28 @@ public:
         size_ = new_size;
     }
 
-    void resize(SizeType size) {
-        reserve(size);
-        if (size_ != size) {
-            size_ = size;
+    void resize(SizeType size, const ElementType& default_element = ElementType()) {
+
+        if (size > capacity_) {
+            reserve(size, default_element);
         }
+
+        if (size > size_) {
+            for (SizeType i = size_; i < size; ++i) {
+                new (data_ + i) ElementType(default_element);
+            }
+        } else {
+            for (SizeType i = size; i < size_; ++i) {
+                data_[i].~ElementType();
+            }
+        }
+
+        size_ = size;
     }
 
-    void reserve(SizeType capacity) {
+    void reserve(SizeType capacity, const ElementType& default_element = ElementType()) {
         if (capacity > capacity_) {
-            allocate_resize(capacity);
+            reallocate(capacity, default_element);
         }
     }
 
@@ -182,7 +202,7 @@ public:
     }
 
 public:
-    constexpr Array(AllocatorType&& allocator = AllocatorType()) noexcept
+    constexpr Array(const AllocatorType& allocator = AllocatorType()) noexcept
         : data_(nullptr)
         , size_(0)
         , capacity_(2)
@@ -191,7 +211,7 @@ public:
     }
 
     constexpr Array(usize capacity,
-                    AllocatorType&& allocator = AllocatorType()) noexcept
+                    const AllocatorType& allocator = AllocatorType()) noexcept
         : data_(nullptr)
         , size_(0)
         , capacity_(capacity)
@@ -304,7 +324,7 @@ private:
         }
     }
 
-    void allocate_resize(SizeType new_capacity) {
+    void reallocate(SizeType new_capacity, const ElementType& default_element) {
         if (new_capacity == capacity_) {
             return;
         }
@@ -313,8 +333,12 @@ private:
 
         SizeType elements_to_move = (size_ < new_capacity) ? size_ : new_capacity;
 
-        for (SizeType i = 0; i < elements_to_move; ++i) {
+        for (SizeType i = 0; i < elements_to_move; i++) {
             new (new_data + i) ElementType(std::move(data_[i]));
+        }
+
+        for (SizeType i = elements_to_move; i < new_capacity; i++) {
+            new (new_data + i) ElementType(default_element);
         }
 
         for (SizeType i = 0; i < size_; ++i) {
@@ -334,7 +358,9 @@ private:
     }
 
     inline ElementType* allocator_allocate(SizeType n) {
-        return allocator_.allocate(n);
+        ElementType* elements = allocator_.allocate(n);
+        LCHECK(elements);
+        return elements;
     }
 
     void allocator_deallocate(ElementType* p, SizeType n) {
@@ -351,8 +377,8 @@ private:
 };
 
 template <typename ElementType, typename AllocatorType>
-constexpr bool operator==(const Array<ElementType, AllocatorType>& lhs,
-                          const Array<ElementType, AllocatorType>& rhs) {
+inline constexpr bool operator==(const Array<ElementType, AllocatorType>& lhs,
+                                 const Array<ElementType, AllocatorType>& rhs) {
     if (lhs.size() != rhs.size()) {
         return false;
     }
