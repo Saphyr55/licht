@@ -148,9 +148,13 @@ void RHIVulkanModule::initialize() {
 }
 
 void RHIVulkanModule::tick() {
-    device_->wait_fence(frame_context_.in_flight_fences[frame_context_.current_frame]);
+    
+    if (pause_) {
+        return;
+    }
 
     swapchain_->acquire_next_frame(frame_context_);
+    
     if (frame_context_.out_of_date) {
         reset();
         return;
@@ -223,6 +227,7 @@ void RHIVulkanModule::tick() {
     }
 
     LCHECK(frame_context_.success);
+    device_->wait_fence(frame_context_.in_flight_fences[frame_context_.current_frame]);
 
     frame_context_.next_frame();
 }

@@ -3,8 +3,8 @@
 
 namespace licht {
 
-StringRef key_to_string(Key p_key) {
-    switch (p_key) {
+StringRef key_to_string(Key key) {
+    switch (key) {
         case Key::A: return "A";
         case Key::B: return "B";
         case Key::C: return "C";

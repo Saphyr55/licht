@@ -6,6 +6,7 @@
 #include "licht/core/defines.hpp"
 #include "licht/core/function/function.hpp"
 #include "licht/core/memory/shared_ref.hpp"
+#include "licht/platform/window_handle.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_module.hpp"
 
 namespace licht::demo {
@@ -19,11 +20,15 @@ void DemoMessageHandler::on_window_close(WindowHandle window) {
 
 void DemoMessageHandler::on_window_resized(WindowHandle window, uint32 width, uint32 height) {
     LLOG_INFO("[DemoMessageHandler::on_window_resized]", vformat("Window resized to %dx%d", width, height));
+    rhi_module_->update_resized(width, height);
+}
 
-    if (rhi_module_) {
-        rhi_module_->update_resized(width, height);
-    }
+void DemoMessageHandler::on_window_minized(WindowHandle window) {
+    rhi_module_->pause();
+}
 
+void DemoMessageHandler::on_window_shown(WindowHandle handle) {
+    rhi_module_->unpause();
 }
 
 void DemoMessageHandler::on_mouse_wheel(float32 p_delta) {

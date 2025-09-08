@@ -120,7 +120,7 @@ void vulkan_context_initialize(VulkanContext& context, void* window_handle) {
 
         context.surface = RHIVulkanRenderSurface::create(context, window_handle);
         context.surface->initialize();
-            
+
         LCHECK(context.surface->get_handle());
 
         VulkanPhysicalDeviceSelector selector(context, g_physical_device_extensions);
@@ -129,7 +129,6 @@ void vulkan_context_initialize(VulkanContext& context, void* window_handle) {
         vulkan_query_queue(context, RHIQueueType::Graphics);
         vulkan_query_queue(context, RHIQueueType::Transfer);
     }
-
 }
 
 void vulkan_context_destroy(VulkanContext& context) {

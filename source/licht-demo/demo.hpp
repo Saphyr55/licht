@@ -14,22 +14,27 @@
 #include <licht/platform/display.hpp>
 #include <licht/platform/platform.hpp>
 #include <licht/platform/display_message_handler.hpp>
+#include "licht/platform/window_handle.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_module.hpp"
 
 namespace licht::demo {
 
 class DemoMessageHandler : public DisplayMessageHandler {
 public:
-    virtual void on_window_close(WindowHandle p_window) override;
+    virtual void on_window_close(WindowHandle window) override;
 
-    virtual void on_window_resized(WindowHandle p_window, uint32 p_width, uint32 p_height) override;
+    virtual void on_window_resized(WindowHandle window, uint32 width, uint32 height) override;
 
-    virtual void on_mouse_wheel(float32 p_delta) override;
+    virtual void on_window_minized(WindowHandle window) override;
 
-    virtual void on_key_down(Key p_key) override;
+    virtual void on_window_shown(WindowHandle window) override;
 
-    inline void set_rhi_module(RHIVulkanModule* p_rhi_module) {
-        rhi_module_ = p_rhi_module;
+    virtual void on_mouse_wheel(float32 delta) override;
+
+    virtual void on_key_down(Key key) override;
+
+    inline void set_rhi_module(RHIVulkanModule* rhi_module) {
+        rhi_module_ = rhi_module;
     }
 
 private:
