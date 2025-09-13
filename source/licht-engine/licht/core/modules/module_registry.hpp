@@ -51,7 +51,7 @@ public:
 
 #define LICHT_REGISTER_MODULE_WITH_CUSTOM_VARIABLE(ModuleType, ModuleName, VariableName) \
     namespace {                                                                          \
-    static const auto VariableName = []() {                                                     \
+    static const auto VariableName = []() {                                              \
         return ::licht::ModuleRegistrant<ModuleType>(ModuleName);                        \
     }();                                                                                 \
     }

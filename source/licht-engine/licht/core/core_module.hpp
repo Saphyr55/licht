@@ -14,4 +14,7 @@ class CoreModule : public Module {
     virtual void on_unload() {}
 };
 
+LICHT_REGISTER_MODULE(CoreModule, "licht.core")
+
 }  //namespace licht
+

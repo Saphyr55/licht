@@ -33,7 +33,7 @@ public:
 
     virtual void rename(StringRef path, StringRef new_name) = 0;
 
-    virtual void move(StringRef subject, StringRef toPath) = 0;
+    virtual void move(StringRef subject, StringRef to_path) = 0;
     
     virtual FileHandleResult open_write(StringRef filepath) const = 0;
 

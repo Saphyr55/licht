@@ -49,20 +49,20 @@ struct LICHT_CORE_API LogMessage {
     bool verbose = false;
 
     LogMessage() = default;
-    LogMessage(LogSeverity p_severity,
-               StringRef p_channel,
-               StringRef p_message,
-               uint32 p_line,
-               StringRef p_function,
-               StringRef p_file,
-               bool p_verbose)
-        : severity(p_severity)
-        , channel(p_channel)
-        , message(p_message)
-        , line(p_line)
-        , function(p_function)
-        , file(p_file)
-        , verbose(p_verbose) {}
+    LogMessage(LogSeverity severity,
+               StringRef channel,
+               StringRef message,
+               uint32 line,
+               StringRef function,
+               StringRef file,
+               bool verbose)
+        : severity(severity)
+        , channel(channel)
+        , message(message)
+        , line(line)
+        , function(function)
+        , file(file)
+        , verbose(verbose) {}
 
     ~LogMessage() = default;
 };

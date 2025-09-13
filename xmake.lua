@@ -15,7 +15,7 @@ end
 function licht_engine_add_includedirs(includedirs)
     add_includedirs("source/licht-engine")
     if (includedirs == nil) then 
-        return 
+        return
     end
     local dirs = {unpack(includedirs)}
     for _, dir in ipairs(dirs) do
@@ -25,13 +25,15 @@ end
 
 includes("scripts/**.lua")
 
-add_requires("libsdl3", "catch2", "vulkan-headers")
+local project_dir = path.absolute("$(projectdir)")
+add_defines(format("LICHT_PROJECT_DIR=\"%s\"", project_dir))
 
+add_requires("libsdl3", "catch2", "vulkan-headers", "lua")
 
 target("licht.core")
     set_kind("shared")
 
-    add_packages("libsdl3")
+    add_packages("libsdl3", "lua")
 
     licht_engine_add_includedirs()
 

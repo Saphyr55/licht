@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+#include <ostream>
 #include "licht/core/containers/array.hpp"
 #include "licht/core/core_exports.hpp"
 
@@ -32,25 +34,36 @@ template <typename CharType>
 class StringBase {
 public:
     usize size() const {
-        return buffer_.size();
+        return buffer_.size() > 0 ? buffer_.size() - 1 : 0;
     }
 
     usize capacity() const {
         return buffer_.capacity();
     }
 
-    StringBase& append(const char* p_str) {
-        usize size = string_length(p_str);
-        buffer_.pop();
-        for (int i = 0; i < size; i++) {
-            buffer_.append(p_str[i]);
+    StringBase& append(const CharType* str) {
+        usize len = string_length(str);
+        if (buffer_.size() > 0) {
+            buffer_.pop();  // Remove null terminator.
         }
-        buffer_.append('\0');
+        for (usize i = 0; i < len; i++) {
+            buffer_.append(str[i]);
+        }
+        buffer_.append(CharType('\0'));
         return *this;
     }
 
-    StringBase& append(const StringBase& p_string) {
-        append(p_string.data());
+    StringBase& append(CharType c) {
+        if (buffer_.size() > 0) {
+            buffer_.pop();  // Remove null terminator.
+        }
+        buffer_.append(c);
+        buffer_.append(CharType('\0'));
+        return *this;
+    }
+
+    StringBase& append(const StringBase& string) {
+        append(string.data());
         return *this;
     }
 
@@ -64,31 +77,32 @@ public:
 
     void clear() {
         buffer_.clear();
+        buffer_.append(CharType('\0'));
     }
 
     void resize(usize size) {
-        buffer_.resize(size);
+        buffer_.resize(size + 1);
+        buffer_[size] = CharType('\0');
     }
 
     void reserve(usize capacity) {
-        buffer_.reserve(capacity);
+        buffer_.reserve(capacity + 1);
     }
 
 public:
     StringBase()
         : buffer_() {
-        buffer_.append('\0');
+        buffer_.append(CharType('\0'));
     }
 
     explicit StringBase(usize capacity)
-        : buffer_(capacity) {
-        LCHECK(capacity != 0)
-        buffer_.append('\0');
+        : buffer_() {
+        reserve(capacity);
+        buffer_.append(CharType('\0'));
     }
 
     StringBase(const CharType* str)
-        : buffer_(string_length(str) + 1) {
-        append('\0'); // Will be removed with the second append.
+        : buffer_() {
         append(str);
     }
 
@@ -102,11 +116,46 @@ public:
         return *this;
     }
 
+    StringBase& operator+=(const CharType* p_str) {
+        return append(p_str);
+    }
+
+    StringBase& operator+=(const StringBase& p_string) {
+        return append(p_string);
+    }
+
+    StringBase& operator+=(CharType p_char) {
+        if (buffer_.size() > 0) {
+            buffer_.pop();
+        }
+        buffer_.append(p_char);
+        buffer_.append(CharType('\0'));
+        return *this;
+    }
+
+    StringBase operator+(const CharType* p_str) const {
+        StringBase result(*this);
+        result += p_str;
+        return result;
+    }
+
+    StringBase operator+(const StringBase& p_string) const {
+        StringBase result(*this);
+        result += p_string;
+        return result;
+    }
+
+    StringBase operator+(CharType p_char) const {
+        StringBase result(*this);
+        result += p_char;
+        return result;
+    }
+
     virtual ~StringBase() {}
 
 protected:
     void ensure_capacity(usize required_capacity) {
-        if (required_capacity > buffer_.capacity()) {
+        if (required_capacity + 1 > buffer_.capacity()) {
             reserve(required_capacity);
         }
     }
@@ -117,14 +166,16 @@ protected:
 
 class WString : public StringBase<wchar_t> {
 public:
-    WString() : StringBase<wchar_t>() { }
+    WString()
+        : StringBase<wchar_t>() {}
 
     explicit WString(usize capacity)
         : StringBase<wchar_t>(capacity) {
     }
 
     WString(const wchar_t* str)
-        : StringBase<wchar_t>(string_length(str) + 1) {
+        : StringBase<wchar_t>() {
+        append(str);
     }
 
     WString(const WString& other)
@@ -142,7 +193,6 @@ class String : public StringBase<char> {
 public:
     String()
         : StringBase<char>() {
-        buffer_.append('\0');
     }
 
     explicit String(usize capacity)
@@ -150,13 +200,9 @@ public:
     }
 
     String(const char* str)
-        : StringBase<char>(string_length(str) + 1) {
+        : StringBase<char>(str) {
     }
 
-    String(const char* str, usize size)
-        : StringBase<char>(size) {
-        append(str);
-    }
     String(const String& other)
         : StringBase<char>(other) {}
 
@@ -177,7 +223,7 @@ std::ostream& operator<<(std::ostream& os, const licht::StringBase<CharType>& st
 }
 
 template <>
-struct LICHT_CORE_API std::hash<licht::String> {
+struct std::hash<licht::String> {
     usize operator()(const licht::String& s) const noexcept {
         return std::hash<const char*>{}(s.data());
     }

@@ -252,8 +252,8 @@ public:
     }
 
     ~Array() {
-        clear();
         if (data_) {
+            clear();
             allocator_deallocate(data_, capacity_);
             data_ = nullptr;
         }

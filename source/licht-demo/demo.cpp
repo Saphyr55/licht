@@ -1,71 +1,45 @@
 #include "demo.hpp"
+#include "app_message_handler.hpp"
+#include "licht/core/modules/module_manifest.hpp"
+#include "licht/core/string/format.hpp"
 
 #include <cstdlib>
-#include "licht/core/defines.hpp"
-#include "licht/core/memory/shared_ref.hpp"
-#include "licht/core/platform/window_handle.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_module.hpp"
+#include <licht/core/defines.hpp>
+#include <licht/core/memory/shared_ref.hpp>
+#include <licht/core/platform/window_handle.hpp>
+#include <licht/rhi_vulkan/rhi_vulkan_module.hpp>
 
 namespace licht::demo {
 
-LICHT_REGISTER_MODULE(DemoModule, "licht.demo")
+int32 launch(int32 argc, const char** argv) {
 
-static bool g_is_running = false;
+    ModuleManifest manifest;
+    if (!manifest.load_from_lua_manifest("../../../manifest.lua")) {
+        return EXIT_FAILURE;
+    }
 
-void DemoMessageHandler::on_window_close(WindowHandle window) {
-    LLOG_INFO("[DemoMessageHandler::on_window_close]", "Window closed.");
-    g_is_running = false;
-}
+    log_module_manifest(manifest);
 
-void DemoMessageHandler::on_window_resized(WindowHandle window, uint32 width, uint32 height) {
-    LLOG_INFO("[DemoMessageHandler::on_window_resized]", vformat("Window resized to %dx%d", width, height));
-    rhi_module_->update_resized(width, height);
-}
-
-void DemoMessageHandler::on_window_minized(WindowHandle window) {
-    rhi_module_->pause();
-}
-
-void DemoMessageHandler::on_window_shown(WindowHandle handle) {
-    rhi_module_->unpause();
-}
-
-void DemoMessageHandler::on_mouse_wheel(float32 p_delta) {
-    LLOG_INFO("[DemoMessageHandler::on_mouse_wheel]", vformat("Mouse wheel scrolled by %d", p_delta));
-}
-
-void DemoMessageHandler::on_key_down(Key p_key) {
-    LLOG_INFO("[DemoMessageHandler::on_key_down]", vformat("Key down: %s", key_to_string(p_key)));
-}
-
-int32 launch(int32 p_argc, const char** p_argv) {
-
-    LLOG_INFO("[main]", "Launch application.");
-
-    platform_start();
-
-    Display& display = Display::get_default();
     SharedRef<DemoMessageHandler> demo_message_handler = new_ref<DemoMessageHandler>();
-    display.set_message_handler(demo_message_handler);
+    Display::get_default().set_message_handler(demo_message_handler);
 
-    WindowHandle window_handle = display.create_window_handle({"Demo Window", 800, 600, 100, 100});
-    LCHECK(window_handle == Display::MAIN_WINDOW_HANDLE)
+    WindowStatues window_statues("Demo Window", 800, 600, 100, 100);
+    WindowHandle window_handle = Display::get_default().create_window_handle(window_statues);
 
     RHIVulkanModule rhi_module(window_handle);
-    demo_message_handler->set_rhi_module(&rhi_module);
     rhi_module.initialize();
 
-    display.show(window_handle);
+    demo_message_handler->set_rhi_module(&rhi_module);
+
+    Display::get_default().show(window_handle);
 
     g_is_running = true;
     while (g_is_running) {
-        display.handle_events();
+        Display::get_default().handle_events();
         rhi_module.tick();
     }
-        
-    rhi_module.shutdown();
 
-    platform_end();
+    rhi_module.shutdown();
 
     return EXIT_SUCCESS;
 }
@@ -73,5 +47,10 @@ int32 launch(int32 p_argc, const char** p_argv) {
 }
 
 int32 main(int32 p_argc, const char** p_argv) {
-    return licht::demo::launch(p_argc, p_argv);
+    LLOG_INFO("[main]", "Launch application.");
+    ::licht::platform_start();
+    int32 result = licht::demo::launch(p_argc, p_argv);
+    ::licht::platform_end();
+    return result;
 }
+

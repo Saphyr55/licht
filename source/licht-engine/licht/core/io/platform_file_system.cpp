@@ -12,34 +12,34 @@ FileSystem& FileSystem::get_platform() {
     return platfom_file_system;
 }
 
-bool PlatformFileSystem::file_exists(StringRef p_filepath) const {
+bool PlatformFileSystem::file_exists(StringRef filepath) const {
 #ifdef _MSC_VER
     struct _stat buffer {};
 
-    return _stat(p_filepath, &buffer) == 0;
+    return _stat(filepath, &buffer) == 0;
 #else
     stat buffer{};
     return stat(filepath, &buffer) == 0;
 #endif
 }
 
-void PlatformFileSystem::make_directory(StringRef p_path) {}
+void PlatformFileSystem::make_directory(StringRef path) {}
 
-void PlatformFileSystem::remove_file(StringRef p_filepath) {}
+void PlatformFileSystem::remove_file(StringRef filepath) {}
 
-void PlatformFileSystem::rename(StringRef p_path, StringRef p_new_name) {}
+void PlatformFileSystem::rename(StringRef path, StringRef new_name) {}
 
-void PlatformFileSystem::move(StringRef p_subject, StringRef p_to_path) {}
+void PlatformFileSystem::move(StringRef subject, StringRef to_path) {}
 
-FileOpenError<SharedRef<FileHandle>> PlatformFileSystem::open_write(StringRef p_filepath) const {
+FileOpenError<SharedRef<FileHandle>> PlatformFileSystem::open_write(StringRef filepath) const {
     using FileOpenErrorType = FileOpenError<SharedRef<FileHandle>>;
 
-    if (!file_exists(p_filepath)) {
+    if (!file_exists(filepath)) {
         return FileOpenErrorType::Failure(FileSystemOpenError::FileNotExist);
     }
 
     FILE* stream;
-    errno_t error = fopen_s(&stream, p_filepath, "wb");
+    errno_t error = fopen_s(&stream, filepath, "wb");
 
     if (!stream) {
         return FileOpenErrorType::Failure(FileSystemOpenError::Unkown);
@@ -50,15 +50,15 @@ FileOpenError<SharedRef<FileHandle>> PlatformFileSystem::open_write(StringRef p_
     return FileOpenErrorType::Success(file);
 }
 
-FileOpenError<SharedRef<FileHandle>> PlatformFileSystem::open_read(StringRef p_filepath) const {
+FileOpenError<SharedRef<FileHandle>> PlatformFileSystem::open_read(StringRef filepath) const {
     using FileOpenErrorType = FileOpenError<SharedRef<FileHandle>>;
 
-    if (!file_exists(p_filepath)) {
+    if (!file_exists(filepath)) {
         return FileOpenErrorType::Failure(FileSystemOpenError::FileNotExist);
     }
 
     FILE* stream;
-    errno_t error = fopen_s(&stream, p_filepath, "rb");
+    errno_t error = fopen_s(&stream, filepath, "rb");
 
     if (!stream) {
         return FileOpenErrorType::Failure(FileSystemOpenError::Unkown);

@@ -15,7 +15,7 @@ void DisplayProvider::set_display(Display* display) {
 
 Display& Display::get_default() {
     Display* display = DisplayProvider::get_display();
-    LCHECK_MSG(display != nullptr, "Display is not initialized.");
+    LCHECK_MSG(display, "Display is not initialized.");
     return *display;
 }
 

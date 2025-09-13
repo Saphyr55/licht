@@ -11,7 +11,7 @@
 namespace licht {
 
 void platform_start() {
-    
+
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         LLOG_ERROR("[platform_start]", vformat("Failed to initialize SDL: %s", SDL_GetError()));
         return;
@@ -33,7 +33,6 @@ void platform_end() {
     }
 
     SDL_Quit();
-    
     
     LLOG_INFO("[platform_end]", "SDL cleaned up successfully.");
 }
