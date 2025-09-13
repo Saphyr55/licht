@@ -19,3 +19,6 @@ out/
 .xmake/
 vsxmake2022
 vsxmake2017
+
+# Developers 
+.notes/*

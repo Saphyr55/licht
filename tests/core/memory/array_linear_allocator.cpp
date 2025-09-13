@@ -1,6 +1,6 @@
 #include <catch2/catch_all.hpp>
 
-#include "licht/core/collection/array.hpp"
+#include "licht/core/containers/array.hpp"
 #include "licht/core/memory/linear_allocator.hpp"
 
 using namespace licht;
@@ -58,7 +58,6 @@ TEST_CASE("Array with LinearAllocator basic behavior.", "[Array][LinearAllocator
             return static_cast<float64>(v) + 0.5;
         },
                                                                                                        float64Alloc);
-
         REQUIRE(doubles.size() == ints.size());
         REQUIRE(doubles[0] == Catch::Approx(1.5));
         REQUIRE(doubles[1] == Catch::Approx(2.5));

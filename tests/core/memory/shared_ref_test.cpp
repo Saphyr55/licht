@@ -1,6 +1,6 @@
 #include <catch2/catch_all.hpp>
 
-#include "licht/core/collection/array.hpp"
+#include "licht/core/containers/array.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 
 using namespace licht;
