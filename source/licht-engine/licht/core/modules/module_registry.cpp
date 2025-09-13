@@ -37,7 +37,7 @@ bool ModuleRegistry::is_module_loaded(StringRef name) const {
 
 void ModuleRegistry::register_module(StringRef name, ModuleInitializerRef initializer) {
     pending_modules_.append({name, initializer});
-    LLOG_DEBUG("[Module]", vformat("%s was registed.", "name"));
+    LLOG_DEBUG("[Module]", vformat("%s was registed.", name));
 }
 
 }  //namespace licht

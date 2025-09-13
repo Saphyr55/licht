@@ -1,18 +1,21 @@
 #include "licht/core/trace/logger.hpp"
-#include "licht/core/containers/hash_map.hpp"
 #include "licht/core/string/string_ref.hpp"
 
 #include <iostream>
 
 namespace licht {
 
-static const HashMap<LogSeverity, StringRef> g_severity_map = {
-    {LogSeverity::Info, "Info"},
-    {LogSeverity::Warn, "Warn"},
-    {LogSeverity::Error, "Error"},
-    {LogSeverity::Fatal, "Fatal"},
-    {LogSeverity::Debug, "Debug"}};
+const HashMap<LogSeverity, StringRef>& Logger::get_severity_map() {
 
+    static const HashMap<LogSeverity, StringRef> s_severity_map = {
+        {LogSeverity::Info, "Info"},
+        {LogSeverity::Warn, "Warn"},
+        {LogSeverity::Error, "Error"},
+        {LogSeverity::Fatal, "Fatal"},
+        {LogSeverity::Debug, "Debug"}};
+
+    return s_severity_map;
+}
 
 Logger& Logger::get_default() {
     
@@ -46,7 +49,7 @@ Logger::Logger(LogFn fn)
 ConsoleLogger::ConsoleLogger() {
     console_log_fn_ = [](const LogMessage& log_message) {
 
-        const char* severity_str = g_severity_map[log_message.severity];
+        const char* severity_str = Logger::get_severity_map()[log_message.severity];
 
         if (!severity_str) {
             severity_str = "UNKNOWN";

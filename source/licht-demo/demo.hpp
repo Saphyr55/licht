@@ -40,8 +40,6 @@ public:
 
 };
 
-LICHT_REGISTER_MODULE(DemoModule, "licht.demo")
-
 class DemoMessageHandler : public DisplayMessageHandler {
 public:
     virtual void on_window_close(WindowHandle window) override;
@@ -65,3 +63,4 @@ private:
 };
 
 }  //namespace licht::demo
+

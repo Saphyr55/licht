@@ -78,7 +78,7 @@ public:
             return current_ != other.current_;
         }
 
-        Iterator(HashMap<KeyType, ValueType>& map, size_t i, ElementType* element)
+        Iterator(HashMap<KeyType, ValueType>& map, usize i, ElementType* element)
             : map_(map)
             , index_(i)
             , current_(element) {
@@ -98,13 +98,13 @@ public:
     private:
         HashMap<KeyType, ValueType>& map_;
         ElementType* current_;
-        size_t index_;
+        usize index_;
     };
 
 public:
 
     void remove(const KeyType& key) {
-        size_t index = hash(key);
+        usize index = hash(key);
 
         ElementType* current = elements_[index];
         ElementType* prev = nullptr;
@@ -202,7 +202,7 @@ public:
             return;
         }
 
-        for (size_t i = 0; i < capacity_; i++) {
+        for (usize i = 0; i < capacity_; i++) {
             if (elements_[i]) {
                 allocator_.deallocate(elements_[i], 1);
                 elements_[i] = nullptr;
@@ -212,15 +212,15 @@ public:
         size_ = 0;
     }
 
-     size_t size() {
+     usize size() {
         return size_;
     }
 
-     size_t capacity() {
+     usize capacity() {
         return capacity_;
     }
 
-    HashMap(size_t capacity = 8)
+    constexpr HashMap(usize capacity = 8)
         : size_(0)
         , capacity_(capacity)
         , elements_(nullptr)
@@ -228,7 +228,7 @@ public:
         elements_ = allocate_elements(capacity_);
     }
 
-    HashMap(std::initializer_list<EntryType> init)
+    constexpr HashMap(std::initializer_list<EntryType> init)
         : size_(0)
         , capacity_(init.size())
         , elements_(nullptr)
@@ -239,7 +239,7 @@ public:
         }
     }
 
-    HashMap(const HashMap& other)
+    constexpr HashMap(const HashMap& other)
         : size_(other.size_)
         , capacity_(other.capacity_)
         , elements_(nullptr)
@@ -321,14 +321,14 @@ private:
         return nullptr;
     }
 
-    void resize_rehash(size_t new_capacity) {
-        size_t old_capacity = capacity_;
+    void resize_rehash(usize new_capacity) {
+        usize old_capacity = capacity_;
         ElementType** old_elements = elements_;
 
-        size_t old_allocation_size = old_capacity * sizeof(ElementType*);
+        usize old_allocation_size = old_capacity * sizeof(ElementType*);
         ElementType** new_elements = allocate_elements(new_capacity);
 
-        for (size_t i = 0; i < old_capacity; i++) {
+        for (usize i = 0; i < old_capacity; i++) {
             ElementType* old_element = old_elements[i];
             while (old_element != nullptr) {
                 insert(old_element->entry.key, old_element->entry.value);
@@ -348,8 +348,8 @@ private:
         return new_element;
     }
 
-    void copy_from_other(ElementType** other_elements, size_t other_capacity) {
-        for (size_t i = 0; i < other_capacity; ++i) {
+    void copy_from_other(ElementType** other_elements, usize other_capacity) {
+        for (usize i = 0; i < other_capacity; ++i) {
             ElementType* current = allocator_.allocate(1);
             Memory::copy(current, other_elements[i], sizeof(ElementType));
             while (current != nullptr) {
@@ -363,10 +363,10 @@ private:
         return Hasher::hash<KeyType>(key) % capacity_;
     }
 
-    static ElementType** allocate_elements(size_t capacity) {
-        size_t allocation_size = capacity * sizeof(ElementType*);
+    static ElementType** allocate_elements(usize capacity) {
+        usize allocation_size = capacity * sizeof(ElementType*);
         ElementType** elements = static_cast<ElementType**>(Memory::allocate(allocation_size));
-        for (size_t i = 0; i < capacity; i++) {
+        for (usize i = 0; i < capacity; i++) {
             elements[i] = nullptr;
         }
         return elements;
@@ -375,8 +375,8 @@ private:
 private:
     ElementType** elements_;
     AllocatorType allocator_;
-    size_t size_{};
-    size_t capacity_{};
+    usize size_{};
+    usize capacity_;
 };
 
 }  //namespace licht

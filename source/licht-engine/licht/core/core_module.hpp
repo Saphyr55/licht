@@ -15,5 +15,3 @@ class CoreModule : public Module {
 };
 
 }  //namespace licht
-
-LICHT_REGISTER_MODULE(::licht::CoreModule, "licht.core")

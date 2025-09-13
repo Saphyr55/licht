@@ -6,6 +6,7 @@
 #include "licht/core/containers/array.hpp"
 #include "licht/core/core_exports.hpp"
 #include "licht/core/string/string_ref.hpp"
+#include "licht/core/containers/hash_map.hpp"
 
 namespace licht {
 
@@ -83,6 +84,8 @@ public:
      * @return Reference to the default logger.
      */
     static Logger& get_default();
+        
+    static const HashMap<LogSeverity, StringRef>& get_severity_map();
 
     /**
      * @brief Logs a message using the registered delegate.

@@ -8,6 +8,8 @@
 
 namespace licht::demo {
 
+LICHT_REGISTER_MODULE(DemoModule, "licht.demo")
+
 static bool g_is_running = false;
 
 void DemoMessageHandler::on_window_close(WindowHandle window) {

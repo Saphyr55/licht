@@ -49,5 +49,12 @@ public:
 
 }  //namespace licht
 
+#define LICHT_REGISTER_MODULE_WITH_CUSTOM_VARIABLE(ModuleType, ModuleName, VariableName) \
+    namespace {                                                                          \
+    static const auto VariableName = []() {                                                     \
+        return ::licht::ModuleRegistrant<ModuleType>(ModuleName);                        \
+    }();                                                                                 \
+    }
+
 #define LICHT_REGISTER_MODULE(ModuleType, ModuleName) \
-    static ::licht::ModuleRegistrant<ModuleType> g_module_registrant_(ModuleName);
+    LICHT_REGISTER_MODULE_WITH_CUSTOM_VARIABLE(ModuleType, ModuleName, g_module_registrant)
