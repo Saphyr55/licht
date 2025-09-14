@@ -67,6 +67,18 @@ std::ostream& operator<<(std::ostream& os, const licht::StringRefBase<CharType>&
 template <>
 struct LICHT_CORE_API std::hash<::licht::StringRef> {
     usize operator()(const licht::StringRef& s) const noexcept {
-        return std::hash<const char*>{}(s.data());
+        const char* data = s.data();
+        usize len = s.size();
+
+        // FNV-1a 64-bit
+        uint64 hash = 14695981039346656037ULL;
+        constexpr uint64_t prime = 1099511628211ULL;
+
+        for (usize i = 0; i < len; ++i) {
+            hash ^= static_cast<uint8>(data[i]);
+            hash *= prime;
+        }
+
+        return static_cast<usize>(hash);
     }
 };

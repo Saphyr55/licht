@@ -5,11 +5,13 @@
 namespace licht {
 
 usize string_length(const char* cstr) {
+    LCHECK(cstr)
     return ::strlen(cstr);
 }
 
-usize string_length(const wchar_t* p_str) {
-    return ::wcslen(p_str);
+usize string_length(const wchar_t* wcstr) {
+    LCHECK(wcstr)
+    return ::wcslen(wcstr);
 }
 
 errno_t string_copy(char* dst, usize bytes_size, const char* src) {

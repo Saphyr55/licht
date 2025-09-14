@@ -85,7 +85,7 @@ public:
      */
     static Logger& get_default();
         
-    static const HashMap<LogSeverity, StringRef>& get_severity_map();
+    static HashMap<LogSeverity, StringRef>& get_severity_map();
 
     /**
      * @brief Logs a message using the registered delegate.

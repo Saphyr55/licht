@@ -5,7 +5,7 @@
 #include "licht/core/defines.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/rhi/command_buffer.hpp"
-#include "licht/rhi/rhi.hpp"
+#include "licht/rhi/rhi_types.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 
 namespace licht {

@@ -1,22 +1,35 @@
-return {
+local _modules = {
     {
-        name = "licht.core",
+        name = "licht.engine.core",
         version = "0.0.1-dev",
         dependencies = {}
     },
     {
-        name = "licht.rhi",
+        name = "licht.engine.rhi",
         version = "0.0.1-dev",
         dependencies = {
-            "licht.core"
+            "licht.engine.core"
         }
     },
     {
-        name = "licht.rhi.vulkan",
+        name = "licht.engine.rhi.vulkan",
         version = "0.0.1-dev",
         dependencies = {
-            "licht.core",
-            "licht.rhi"
+            "licht.engine.core",
+            "licht.engine.rhi"
+        }
+    },
+    {
+        name = "licht.demo",
+        version = "0.0.1-dev",
+        dependencies = {
+            "licht.engine.core",
+            "licht.engine.rhi",
+            "licht.engine.rhi.vulkan"
         }
     }
+}
+
+return {
+    modules = _modules
 }

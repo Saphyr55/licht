@@ -6,8 +6,13 @@
 #include "licht/core/memory/memory.hpp"
 #include "licht/core/string/format.hpp"
 
+#include <cstring>
+#include <functional>
 #include <initializer_list>
+#include <stdexcept>
 #include <type_traits>
+#include <utility>
+
 
 namespace licht {
 
@@ -21,18 +26,29 @@ struct HashMapEntry {
     HashMapEntry(const KeyType& p_key, const ValueType& p_value)
         : key(p_key)
         , value(p_value) {}
+
+    HashMapEntry(KeyType&& p_key, ValueType&& p_value)
+        : key(std::move(p_key))
+        , value(std::move(p_value)) {}
 };
 
 template <typename KeyType, typename ValueType>
 struct HashMapElement {
     HashMapEntry<KeyType, ValueType> entry;
     HashMapElement<KeyType, ValueType>* next = nullptr;
+    size_t hash = 0;
 
     HashMapElement() = default;
 
-    HashMapElement(const KeyType& p_key, const ValueType& p_value)
+    HashMapElement(const KeyType& p_key, const ValueType& p_value, size_t p_hash)
         : entry(p_key, p_value)
-        , next(nullptr) {}
+        , next(nullptr)
+        , hash(p_hash) {}
+
+    HashMapElement(KeyType&& p_key, ValueType&& p_value, size_t p_hash)
+        : entry(std::move(p_key), std::move(p_value))
+        , next(nullptr)
+        , hash(p_hash) {}
 };
 
 template <typename KeyType,
@@ -44,228 +60,300 @@ public:
     using ElementType = HashMapElement<KeyType, ValueType>;
     using EntryType = HashMapEntry<KeyType, ValueType>;
 
-public:
-
     class Iterator {
     public:
-        EntryType& operator*() {
-            return current_->entry;
-        }
+        Iterator(HashMap* map = nullptr, usize bucket_index = 0, ElementType* elem = nullptr)
+            : map_(map), bucket_index_(bucket_index), elem_(elem) {}
 
-        const EntryType& operator*() const {
-            return current_->entry;
-        }
+        EntryType& operator*() const { return elem_->entry; }
 
-        EntryType* operator->() {
-            return current_->entry;
-        }
-
-        const EntryType* operator->() const {
-            return current_->entry;
-        }
+        EntryType* operator->() const { return &elem_->entry; }
 
         Iterator& operator++() {
-            if (current_ != nullptr) {
-                current_ = current_->next;
-                if (current_ == nullptr) {
-                    next();
-                }
+            if (!map_ || !elem_) {
+                // become end
+                bucket_index_ = map_ ? map_->capacity_ : 0;
+                elem_ = nullptr;
+                return *this;
             }
+
+            if (elem_->next) {
+                elem_ = elem_->next;
+                return *this;
+            }
+
+            // find next non-empty bucket
+            ++bucket_index_;
+            while (bucket_index_ < map_->capacity_) {
+                if (map_->buckets_[bucket_index_]) {
+                    elem_ = map_->buckets_[bucket_index_];
+                    return *this;
+                }
+                ++bucket_index_;
+            }
+
+            // end
+            elem_ = nullptr;
             return *this;
         }
 
-        bool operator!=(const Iterator& other) const {
-            return current_ != other.current_;
+        Iterator operator++(int) {
+            Iterator tmp = *this;
+            ++(*this);
+            return tmp;
         }
 
-        Iterator(HashMap<KeyType, ValueType>& map, usize i, ElementType* element)
-            : map_(map)
-            , index_(i)
-            , current_(element) {
-            if (current_ == nullptr) {
-                next();
-            }
+        bool operator==(const Iterator& other) const {
+            return map_ == other.map_ && bucket_index_ == other.bucket_index_ && elem_ == other.elem_;
         }
 
-    private:
-        void next() {
-            while (current_ == nullptr && index_ < map_.capacity_ - 1) {
-                ++index_;
-                current_ = map_.elements_[index_];
-            }
-        }
+        bool operator!=(const Iterator& other) const { return !(*this == other); }
 
     private:
-        HashMap<KeyType, ValueType>& map_;
-        ElementType* current_;
-        usize index_;
+        HashMap* map_;
+        usize bucket_index_;
+        ElementType* elem_;
+    };
+
+    class ConstIterator {
+    public:
+        ConstIterator(const HashMap* map = nullptr, usize bucket_index = 0, const ElementType* elem = nullptr)
+            : map_(map), bucket_index_(bucket_index), elem_(elem) {}
+
+        const EntryType& operator*() const { return elem_->entry; }
+
+        const EntryType* operator->() const { return &elem_->entry; }
+
+        ConstIterator& operator++() {
+            if (!map_ || !elem_) {
+                bucket_index_ = map_ ? map_->capacity_ : 0;
+                elem_ = nullptr;
+                return *this;
+            }
+
+            if (elem_->next) {
+                elem_ = elem_->next;
+                return *this;
+            }
+
+            ++bucket_index_;
+            while (bucket_index_ < map_->capacity_) {
+                if (map_->buckets_[bucket_index_]) {
+                    elem_ = map_->buckets_[bucket_index_];
+                    return *this;
+                }
+                ++bucket_index_;
+            }
+
+            elem_ = nullptr;
+            return *this;
+        }
+
+        ConstIterator operator++(int) {
+            ConstIterator tmp = *this;
+            ++(*this);
+            return tmp;
+        }
+
+        bool operator==(const ConstIterator& other) const {
+            return map_ == other.map_ && bucket_index_ == other.bucket_index_ && elem_ == other.elem_;
+        }
+
+        bool operator!=(const ConstIterator& other) const { return !(*this == other); }
+
+    private:
+        const HashMap* map_;
+        usize bucket_index_;
+        const ElementType* elem_;
     };
 
 public:
-
-    void remove(const KeyType& key) {
-        usize index = hash(key);
-
-        ElementType* current = elements_[index];
-        ElementType* prev = nullptr;
-
-        while (current != nullptr) {
-            if (current->entry.key == key) {
-                if (prev == nullptr) {
-                    elements_[index] = current->next;
-                } else {
-                    prev->next = current->next;
-                }
-
-                allocator_.deallocate(current, 1);
-                --size_;
-
-                return;
-            }
-            prev = current;
-            current = current->next;
-        }
-    }
-
-    EntryType& insert(const KeyType& key, const ValueType& value) {
-        if (size_ >= capacity_) {
-            resize_rehash(capacity_ * 2);
-        }
-        
-        uint32 index = hash(key);
-
-        ElementType* old_element = elements_[index];
-        ElementType* current = old_element;
-
-        while (current != nullptr) {
-            if (current->entry.key == key) {  // TODO: Use a comparator.
-                current->entry.value = value;
-                return old_element->entry;
-            }
-            current = current->next;
-        }
-
-        ElementType* new_element = create_element(key, value);
-        new_element->next = old_element;
-        elements_[index] = new_element;
-        size_++;
-
-        return new_element->entry;
-    }
-
-    bool contains(const KeyType& key) const {
-        return get_ptr(key) != nullptr;
-    }
-
-    ValueType& get(const KeyType& key) {
-        uint32 index = hash(key);
-
-        ElementType* element = lookup(index, key);
-        LCHECK(element);
-
-        return element->entry.value;
-    }
-
-    ValueType* get_ptr(const KeyType& key) {
-        uint32 index = hash(key);
-
-        ElementType* element = lookup(index, key);
-        if (element) {
-            return &element->entry.value;
-        }
-
-        return nullptr;
-    }
-
-    const ValueType& get(const KeyType& key) const {
-        uint32 index = hash(key);
-
-        ElementType* element = lookup(index, key);
-        LCHECK(element);
-
-        return element->entry.value;
-    }
-
-    const ValueType* get_ptr(const KeyType& key) const {
-        uint32 index = hash(key);
-        ElementType* element = lookup(index, key);
-
-        if (element) {
-            return &element->entry.value;
-        }
-
-        return nullptr;
-    }
-
-    void clear() {
-        if (!elements_ || size_ == 0) {
-            return;
-        }
-
-        for (usize i = 0; i < capacity_; i++) {
-            if (elements_[i]) {
-                allocator_.deallocate(elements_[i], 1);
-                elements_[i] = nullptr;
-            }
-        }
-
-        size_ = 0;
-    }
-
-     usize size() {
-        return size_;
-    }
-
-     usize capacity() {
-        return capacity_;
-    }
-
-    constexpr HashMap(usize capacity = 8)
+    HashMap(usize capacity = 8)
         : size_(0)
         , capacity_(capacity)
-        , elements_(nullptr)
-        , allocator_(AllocatorType()) {
-        elements_ = allocate_elements(capacity_);
+        , buckets_(nullptr)
+        , allocator_() {
+        initialize_buckets();
     }
 
-    constexpr HashMap(std::initializer_list<EntryType> init)
+    HashMap(std::initializer_list<EntryType> init)
         : size_(0)
-        , capacity_(init.size())
-        , elements_(nullptr)
-        , allocator_(AllocatorType()) {
-        elements_ = allocate_elements(capacity_);
-        for (const EntryType& entry : init) {
-            insert(entry.key, entry.value);
+        , capacity_(8)
+        , buckets_(nullptr)
+        , allocator_() {
+        initialize_buckets();
+        for (const auto& e : init) {
+            put(e.key, e.value);
         }
     }
 
-    constexpr HashMap(const HashMap& other)
+    HashMap(const HashMap& other)
+        : size_(0)
+        , capacity_(other.capacity_)
+        , buckets_(nullptr)
+        , allocator_() {
+        initialize_buckets();
+
+        for (usize i = 0; i < other.capacity_; ++i) {
+            ElementType* cur = other.buckets_[i];
+            ElementType** tail = &buckets_[i];
+            while (cur) {
+                ElementType* copy = allocator_.allocate(1);
+                copy->entry.key = cur->entry.key;
+                copy->entry.value = cur->entry.value;
+                copy->hash = cur->hash;
+                *tail = copy;
+                tail = &((*tail)->next);
+                cur = cur->next;
+                ++size_;
+            }
+        }
+
+    }
+
+    HashMap(HashMap&& other) noexcept
         : size_(other.size_)
         , capacity_(other.capacity_)
-        , elements_(nullptr)
-        , allocator_(AllocatorType()) {
-        elements_ = allocate_elements(capacity_);
-        copy_from_other(other.elements_, other.capacity_);
+        , buckets_(other.buckets_)
+        , allocator_(std::move(other.allocator_)) {
+        other.size_ = 0;
+        other.capacity_ = 0;
+        other.buckets_ = nullptr;
     }
 
     ~HashMap() {
         clear();
-
-        if (elements_) {
-            Memory::free(elements_, capacity_ * sizeof(ElementType*));
-        }
+        delete[] buckets_;
+        buckets_ = nullptr;
     }
 
     HashMap& operator=(const HashMap& other) {
-        if (this != &other) {
-            clear();
-            capacity_ = other.capacity_;
-            size_ = 0;
-            elements_ = static_cast<ElementType**>(Memory::allocate(capacity_ * sizeof(ElementType*)));
-            copy_from_other(other.elements_, other.capacity_);
+        if (this == &other) {
+            return *this;
         }
 
+        HashMap tmp(other);
+        swap(tmp);
         return *this;
+    }
+
+    HashMap& operator=(HashMap&& other) noexcept {
+        if (this == &other) {
+            return *this;
+        }
+        clear();
+        delete[] buckets_;
+        allocator_ = std::move(other.allocator_);
+        size_ = other.size_;
+        capacity_ = other.capacity_;
+        buckets_ = other.buckets_;
+        other.size_ = 0;
+        other.capacity_ = 0;
+        other.buckets_ = nullptr;
+        return *this;
+    }
+
+    void remove(const KeyType& key) {
+        if (!buckets_) {
+            return;
+        }
+        size_t h = hash(key);
+        usize idx = static_cast<usize>(h % capacity_);
+
+        ElementType* cur = buckets_[idx];
+        ElementType* prev = nullptr;
+        while (cur) {
+            if (cur->entry.key == key) {
+                if (prev) {
+                    prev->next = cur->next;
+                } else {
+                    buckets_[idx] = cur->next;
+                }
+                allocator_.deallocate(cur, 1);
+                --size_;
+                return;
+            }
+            prev = cur;
+            cur = cur->next;
+        }
+    }
+
+    EntryType& put(const KeyType& key, const ValueType& value) {
+        if (!buckets_) {
+            initialize_buckets();
+        }
+
+        if (static_cast<float64>(size_ + 1) > static_cast<float64>(capacity_) * load_factor_) {
+            resize_rehash(capacity_ * 2);
+        }
+
+        size_t h = hash(key);
+        usize idx = static_cast<usize>(h % capacity_);
+
+        ElementType* cur = buckets_[idx];
+        while (cur) {
+            if (cur->entry.key == key) {
+                cur->entry.value = value;
+                return cur->entry;
+            }
+            cur = cur->next;
+        }
+
+        ElementType* ne = create_element(key, value, h);
+        ne->next = buckets_[idx];
+        buckets_[idx] = ne;
+        ++size_;
+        return ne->entry;
+    }
+
+    bool contains(const KeyType& key) const {
+        return find_element(key) != nullptr;
+    }
+
+    ValueType& get(const KeyType& key) {
+        ElementType* e = find_element(key);
+        LCHECK_MSG(e, "HashMap: key not found");
+        return e->entry.value;
+    }
+
+    ValueType* get_ptr(const KeyType& key) {
+        ElementType* e = find_element(key);
+        return e ? &e->entry.value : nullptr;
+    }
+
+    const ValueType& get(const KeyType& key) const {
+        const ElementType* e = find_element(key);
+        LCHECK_MSG(e, "HashMap: key not found");
+        return e->entry.value;
+    }
+
+    const ValueType* get_ptr(const KeyType& key) const {
+        const ElementType* e = find_element(key);
+        return e ? &e->entry.value : nullptr;
+    }
+
+    void clear() {
+        if (!buckets_) {
+            return;
+        }
+        for (usize i = 0; i < size_; ++i) {
+            ElementType* cur = buckets_[i];
+            while (cur) {
+                ElementType* next = cur->next;
+                allocator_.deallocate(cur, 1);
+                cur = next;
+            }
+            buckets_[i] = nullptr;
+        }
+        size_ = 0;
+    }
+
+    usize size() const {
+        return size_;
+    }
+
+    usize capacity() const {
+        return capacity_;
     }
 
     const ValueType& operator[](const KeyType& key) const {
@@ -273,110 +361,127 @@ public:
     }
 
     ValueType& operator[](const KeyType& key) {
-        uint32 index = hash(key);
-
-        ElementType* element = lookup(index, key);
-        if (element == nullptr) {
-            if constexpr (std::is_default_constructible_v<ValueType>) {
-                return insert(key, ValueType()).value;
-            } else if constexpr (std::is_pointer_v<ValueType>) {
-                return insert(key, (ValueType)(nullptr)).value;
-            } else {
-                auto name = typeid(ValueType).name();
-                LCHECK_MSG(false, vformat("No default construstor found for ValueType: %s", name));
-            }
+        ElementType* e = find_element(key);
+        if (e) {
+            return e->entry.value;
         }
-
-        return element->entry.value;
+        EntryType& ent = put(key, ValueType{});
+        return ent.value;
     }
 
-public:
     Iterator begin() {
-        return Iterator(*this, 0, elements_[0]);
+        if (!buckets_) {
+            return end();
+        }
+        for (usize i = 0; i < capacity_; ++i) {
+            if (buckets_[i]) {
+                return Iterator(this, i, buckets_[i]);
+            }
+        }
+        return end();
     }
 
     Iterator end() {
-        return Iterator(*this, capacity_ - 1, nullptr);
+        return Iterator(this, capacity_, nullptr);
     }
 
-    const Iterator cbegin() {
-        return Iterator(*this, 0, elements_[0]);
+    ConstIterator begin() const {
+        if (!buckets_) {
+            return end();
+        }
+        for (usize i = 0; i < capacity_; ++i) {
+            if (buckets_[i]) {
+                return ConstIterator(this, i, buckets_[i]);
+            }
+        }
+        return end();
     }
 
-    const Iterator cend() {
-        return Iterator(*this, capacity_ - 1, nullptr);
+    ConstIterator end() const {
+        return ConstIterator(this, capacity_, nullptr);
+    }
+
+    ConstIterator cbegin() const {
+        return begin();
+    }
+
+    ConstIterator cend() const {
+        return end();
     }
 
 private:
-    ElementType* lookup(uint32 index, const KeyType& key) const {
-        ElementType* element = elements_[index];
-
-        while (element != nullptr) {
-            if (element->entry.key == key) {  // TODO: Use a comparator.
-                return element;
-            }
-            element = element->next;
+    ElementType* find_element(const KeyType& key) const {
+        if (!buckets_) {
+            return nullptr;
         }
-
+        size_t h = hash(key);
+        usize idx = static_cast<usize>(h % capacity_);
+        ElementType* cur = buckets_[idx];
+        while (cur) {
+            if (cur->entry.key == key) {
+                return cur;
+            }
+            cur = cur->next;
+        }
         return nullptr;
     }
 
     void resize_rehash(usize new_capacity) {
-        usize old_capacity = capacity_;
-        ElementType** old_elements = elements_;
-
-        usize old_allocation_size = old_capacity * sizeof(ElementType*);
-        ElementType** new_elements = allocate_elements(new_capacity);
-
-        for (usize i = 0; i < old_capacity; i++) {
-            ElementType* old_element = old_elements[i];
-            while (old_element != nullptr) {
-                insert(old_element->entry.key, old_element->entry.value);
-                ElementType* temp = old_element;
-                old_element = old_element->next;
-            }
-            new_elements[i] = old_element;
+        if (new_capacity == 0) {
+            return;
         }
 
-        elements_ = new_elements;
-        Memory::free(old_elements, old_allocation_size);
-    }
+        ElementType** new_buckets = new ElementType*[new_capacity];
+        Memory::write(new_buckets, 0, sizeof(ElementType*) * new_capacity);
 
-    ElementType* create_element(const KeyType& key, const ValueType& value) {
-        ElementType* new_element = allocator_.allocate(1);
-        new_element->entry = EntryType(key, value);
-        return new_element;
-    }
-
-    void copy_from_other(ElementType** other_elements, usize other_capacity) {
-        for (usize i = 0; i < other_capacity; ++i) {
-            ElementType* current = allocator_.allocate(1);
-            Memory::copy(current, other_elements[i], sizeof(ElementType));
-            while (current != nullptr) {
-                insert(current->entry.key, current->entry.value);
-                current = current->next;
+        for (usize i = 0; i < capacity_; ++i) {
+            ElementType* cur = buckets_[i];
+            while (cur) {
+                ElementType* next = cur->next;
+                usize idx = static_cast<usize>(cur->hash % new_capacity);
+                cur->next = new_buckets[idx];
+                new_buckets[idx] = cur;
+                cur = next;
             }
         }
-    }
-    
-    uint32_t hash(const KeyType& key) const {
-        return Hasher::hash<KeyType>(key) % capacity_;
+
+        delete[] buckets_;
+        buckets_ = new_buckets;
+        capacity_ = new_capacity;
     }
 
-    static ElementType** allocate_elements(usize capacity) {
-        usize allocation_size = capacity * sizeof(ElementType*);
-        ElementType** elements = static_cast<ElementType**>(Memory::allocate(allocation_size));
-        for (usize i = 0; i < capacity; i++) {
-            elements[i] = nullptr;
+    ElementType* create_element(const KeyType& key, const ValueType& value, size_t h) {
+        ElementType* raw = allocator_.allocate(1);
+        ElementType* element = new (raw) ElementType(key, value, h);
+        return element;
+
+    }
+
+    size_t hash(const KeyType& key) const {
+        return std::hash<KeyType>{}(key);
+    }
+
+    void initialize_buckets() {
+        if (capacity_ == 0) {
+            capacity_ = 1;
         }
-        return elements;
+        buckets_ = new ElementType*[capacity_];
+        Memory::write(buckets_, 0, sizeof(ElementType*) * capacity_);
+    }
+
+    void swap(HashMap& other) noexcept {
+        std::swap(buckets_, other.buckets_);
+        std::swap(size_, other.size_);
+        std::swap(capacity_, other.capacity_);
+        std::swap(allocator_, other.allocator_);
     }
 
 private:
-    ElementType** elements_;
+    ElementType** buckets_;
     AllocatorType allocator_;
-    usize size_{};
+    usize size_;
     usize capacity_;
+    static constexpr float64 load_factor_ = 0.75;
 };
 
-}  //namespace licht
+}  // namespace licht

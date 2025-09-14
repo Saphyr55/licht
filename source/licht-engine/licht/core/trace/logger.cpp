@@ -5,9 +5,9 @@
 
 namespace licht {
 
-const HashMap<LogSeverity, StringRef>& Logger::get_severity_map() {
+HashMap<LogSeverity, StringRef>& Logger::get_severity_map() {
 
-    static const HashMap<LogSeverity, StringRef> s_severity_map = {
+    static HashMap<LogSeverity, StringRef> s_severity_map = {
         {LogSeverity::Info, "Info"},
         {LogSeverity::Warn, "Warn"},
         {LogSeverity::Error, "Error"},

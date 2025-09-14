@@ -42,8 +42,8 @@ public:
     }
 
 public:
-    ModuleRegistrant(StringRef name) {
-        ModuleRegistry::get_instance().register_module(name, ModuleRegistrant<ModuleType>::initialize);
+    ModuleRegistrant(StringRef unique_name) {
+        ModuleRegistry::get_instance().register_module(unique_name, ModuleRegistrant<ModuleType>::initialize);
     }
 };
 

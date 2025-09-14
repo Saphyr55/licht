@@ -4,7 +4,7 @@
 #include "licht/core/trace/trace.hpp"
 #include "licht/core/platform/dynamic_library.hpp"
 #include "licht/rhi/command_queue.hpp"
-#include "licht/rhi/rhi.hpp"
+#include "licht/rhi/rhi_types.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_render_surface.hpp"
 #include "licht/rhi_vulkan/vulkan_physical_device.hpp"
 

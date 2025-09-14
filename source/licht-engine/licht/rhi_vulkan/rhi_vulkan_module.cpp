@@ -3,28 +3,45 @@
 #include "licht/core/io/file_handle.hpp"
 #include "licht/core/io/file_system.hpp"
 #include "licht/core/memory/shared_ref.hpp"
-#include "licht/core/trace/trace.hpp"
 #include "licht/core/platform/display.hpp"
 #include "licht/core/platform/window_handle.hpp"
+#include "licht/core/trace/trace.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/command_queue.hpp"
 #include "licht/rhi/fence.hpp"
 #include "licht/rhi/framebuffer.hpp"
 #include "licht/rhi/pipeline/compiled_shader.hpp"
 #include "licht/rhi/render_pass.hpp"
-#include "licht/rhi/rhi.hpp"
+#include "licht/rhi/rhi_types.hpp"
 #include "licht/rhi/texture.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_device.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
+
 
 #include <vulkan/vulkan_core.h>
 
 namespace licht {
 
-RHIVulkanModule::RHIVulkanModule(WindowHandle window_handle) 
-    : window_handle_(window_handle)
-    , framebuffer_memory_pool_(1024) // 1 kB
+RHIVulkanModule::RHIVulkanModule()
+    : window_handle_(Display::INVALID_WINDOW_HANDLE)
+    , framebuffer_memory_pool_(1024)  // 1 kB
     , framebuffers_(2, RHIFramebufferRegistryAllocator(&framebuffer_memory_pool_)) {
+}
+
+void RHIVulkanModule::on_load() { 
+
+}
+
+void RHIVulkanModule::on_activate() { 
+    
+}
+
+void RHIVulkanModule::on_shutdown() { 
+
+}
+
+void RHIVulkanModule::on_unload() { 
+
 }
 
 void RHIVulkanModule::initialize() {
@@ -35,7 +52,7 @@ void RHIVulkanModule::initialize() {
 
     void* window_handle = Display::get_default().get_native_window_handle(window_handle_);
     WindowStatues window_statues = Display::get_default().query_window_statues(window_handle_);
-    
+
     vulkan_context_initialize(context_, window_handle);
 
     // -- Device --
@@ -114,8 +131,8 @@ void RHIVulkanModule::initialize() {
     }
 
     // -- Framebuffers --
-    {   
-        framebuffers_.reserve(swapchain_->get_texture_views().size(), RHIFramebufferHandle(nullptr));
+    {
+        framebuffers_.reserve(swapchain_->get_texture_views().size());
         for (RHITextureViewHandle texture : swapchain_->get_texture_views()) {
             RHIFramebufferDescription description = {};
             description.height = swapchain_->get_height();

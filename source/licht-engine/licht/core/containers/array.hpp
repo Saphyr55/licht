@@ -16,6 +16,13 @@ public:
 
     template <typename NewElement>
     using ReboundAllocator = typename AllocatorType::template rebind<NewElement>::other;
+    
+    using value_type = ElementType;
+    using size_type = SizeType;
+    using reference = ElementType&;
+    using const_reference = const ElementType&;
+    using iterator = ElementType*;
+    using const_iterator = const ElementType*;
 
 public:
 
@@ -33,11 +40,35 @@ public:
         return other;
     }
 
+    const_reference front() const {
+        LCHECK_MSG(!empty(), "Call front with an empty array.");
+        return data_[0];
+    }
+
+    reference front() {
+        LCHECK_MSG(!empty(), "Call front with an empty array.");
+        return data_[0];
+    }
+
+    const_reference back() const {
+        LCHECK_MSG(!empty(), "Call front with an empty array.");
+        return data_[size_ - 1];
+    }
+
+    reference back() {
+        LCHECK_MSG(!empty(), "Call front with an empty array.");
+        return data_[size_ - 1];
+    }
+
     void append(const ElementType& element) {
+        if (!data_) {
+            reallocate(capacity_);
+        }
+
         if (size_ >= capacity_) {
             reserve(capacity_ == 0 ? 1 : capacity_ * 2);
         }
-
+        
         new (data_ + size_) ElementType(element);
 
         ++size_;
@@ -126,7 +157,7 @@ public:
     void resize(SizeType size, const ElementType& default_element = ElementType()) {
 
         if (size > capacity_) {
-            reserve(size, default_element);
+            reserve(size);
         }
 
         if (size > size_) {
@@ -142,15 +173,15 @@ public:
         size_ = size;
     }
 
-    void reserve(SizeType capacity, const ElementType& default_element = ElementType()) {
+    void reserve(SizeType capacity) {
         if (capacity > capacity_) {
-            reallocate(capacity, default_element);
+            reallocate(capacity);
         }
     }
 
     void shrink() {
         if (size_ < capacity_) {
-            reserve(size_);
+            reallocate(size_);
         }
     }
 
@@ -225,13 +256,13 @@ public:
         , data_(nullptr)
         , size_(init.size())
         , capacity_(init.size()) {
-        if (capacity_ > 0) {
-            data_ = allocator_allocate(capacity_);
-            SizeType i = 0;
-            for (const ElementType& item : init) {
-                new (data_ + i) ElementType(item);
-                ++i;
-            }
+        if (capacity_ == 0) {
+            capacity_ = 2;
+        }
+        data_ = allocator_allocate(capacity_);
+        SizeType i = 0;
+        for (const ElementType& item : init) {
+            new (data_ + i++) ElementType(item);
         }
     }
 
@@ -319,15 +350,12 @@ private:
         }
 
         data_ = allocator_allocate(capacity_);
-        for (SizeType i = 0; i < size_; ++i) {
+        for (SizeType i = 0; i < size_; i++) {
             new (data_ + i) ElementType(source[i]);
         }
     }
 
-    void reallocate(SizeType new_capacity, const ElementType& default_element) {
-        if (new_capacity == capacity_) {
-            return;
-        }
+    void reallocate(SizeType new_capacity) {
 
         ElementType* new_data = allocator_allocate(new_capacity);
 
@@ -337,11 +365,7 @@ private:
             new (new_data + i) ElementType(std::move(data_[i]));
         }
 
-        for (SizeType i = elements_to_move; i < new_capacity; i++) {
-            new (new_data + i) ElementType(default_element);
-        }
-
-        for (SizeType i = 0; i < size_; ++i) {
+        for (SizeType i = 0; i < size_; i++) {
             data_[i].~ElementType();
         }
 
@@ -383,7 +407,7 @@ inline constexpr bool operator==(const Array<ElementType, AllocatorType>& lhs,
         return false;
     }
 
-    for (size_t i = 0; i < lhs.size(); ++i) {
+    for (usize i = 0; i < lhs.size(); i++) {
         if (!(lhs[i] == rhs[i])) {
             return false;
         }

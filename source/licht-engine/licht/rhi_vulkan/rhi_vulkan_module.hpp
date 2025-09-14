@@ -2,6 +2,8 @@
 
 #include "licht/core/defines.hpp"
 #include "licht/core/memory/linear_allocator.hpp"
+#include "licht/core/modules/module.hpp"
+#include "licht/core/modules/module_registry.hpp"
 #include "licht/core/platform/window_handle.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/device.hpp"
@@ -18,8 +20,16 @@ namespace licht {
 
 struct VulkanContext;
 
+class LICHT_RHI_VULKAN_API RHIVulkanModule : public Module {
+public:
+    virtual void on_load() override;
 
-class LICHT_RHI_VULKAN_API RHIVulkanModule {
+    virtual void on_activate() override;
+
+    virtual void on_shutdown() override;
+
+    virtual void on_unload() override;
+
 public:
     void initialize();
 
@@ -27,6 +37,7 @@ public:
 
     void shutdown();
 
+public:
     inline void update_resized(uint32 width, uint32 height) {
         window_resized_ = true;
         frame_context_.frame_width = width;
@@ -41,8 +52,12 @@ public:
         pause_ = false;
     }
 
+    inline void set_window_handle(WindowHandle window_handle) {
+        window_handle_ = window_handle;
+    }
+
 public:
-    RHIVulkanModule(WindowHandle window_handle);
+    RHIVulkanModule();
 
 private:
     void reset();
@@ -50,7 +65,7 @@ private:
 private:
     using RHIFramebufferRegistryAllocator = LinearAllocator<RHIFramebufferHandle>;
     using RHIFramebufferRegistry = Array<RHIFramebufferHandle, RHIFramebufferRegistryAllocator>;
-    
+
     WindowHandle window_handle_;
 
     VulkanContext context_;
@@ -60,15 +75,17 @@ private:
     RHISwapchainHandle swapchain_;
     RHIRenderPassHandle render_pass_;
     RHIPipelineHandle pipeline_;
-    
+
     LinearMemoryPool framebuffer_memory_pool_;
     RHIFramebufferRegistry framebuffers_;
-    
+
     RHICommandAllocatorRef command_allocator_;
     RHIFrameContext frame_context_;
 
     bool pause_ = false;
     bool window_resized_ = false;
 };
+
+LICHT_REGISTER_MODULE(RHIVulkanModule, "licht.engine.rhi.vulkan")
 
 }  //namespace licht

@@ -2,7 +2,7 @@
 
 #include "licht/core/containers/array.hpp"
 #include "licht/core/memory/shared_ref.hpp"
-#include "licht/rhi/rhi.hpp"
+#include "licht/rhi/rhi_types.hpp"
 
 namespace licht {
 

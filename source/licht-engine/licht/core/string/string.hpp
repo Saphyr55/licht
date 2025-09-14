@@ -4,6 +4,7 @@
 #include <ostream>
 #include "licht/core/containers/array.hpp"
 #include "licht/core/core_exports.hpp"
+#include "licht/core/defines.hpp"
 
 namespace licht {
 
@@ -89,6 +90,10 @@ public:
         buffer_.reserve(capacity + 1);
     }
 
+    bool empty() {
+        return size() == 0;
+    }
+
 public:
     StringBase()
         : buffer_() {
@@ -116,41 +121,45 @@ public:
         return *this;
     }
 
-    StringBase& operator+=(const CharType* p_str) {
-        return append(p_str);
+    StringBase& operator+=(const CharType* cstr) {
+        return append(cstr);
     }
 
-    StringBase& operator+=(const StringBase& p_string) {
-        return append(p_string);
+    StringBase& operator+=(const StringBase& str) {
+        return append(str);
     }
 
-    StringBase& operator+=(CharType p_char) {
+    StringBase& operator+=(CharType c) {
         if (buffer_.size() > 0) {
             buffer_.pop();
         }
-        buffer_.append(p_char);
+        buffer_.append(c);
         buffer_.append(CharType('\0'));
         return *this;
     }
 
-    StringBase operator+(const CharType* p_str) const {
+    StringBase operator+(const CharType* cstr) const {
         StringBase result(*this);
-        result += p_str;
+        result += cstr;
         return result;
     }
 
-    StringBase operator+(const StringBase& p_string) const {
+    StringBase operator+(const StringBase& str) const {
         StringBase result(*this);
-        result += p_string;
+        result += str;
         return result;
     }
 
-    StringBase operator+(CharType p_char) const {
+    StringBase operator+(CharType c) const {
         StringBase result(*this);
-        result += p_char;
+        result += c;
         return result;
     }
-
+    
+    bool operator==(const StringBase& str) const {
+        return string_compare(buffer_.data(), str.data()) == 0;
+    }
+    
     virtual ~StringBase() {}
 
 protected:
@@ -225,6 +234,18 @@ std::ostream& operator<<(std::ostream& os, const licht::StringBase<CharType>& st
 template <>
 struct std::hash<licht::String> {
     usize operator()(const licht::String& s) const noexcept {
-        return std::hash<const char*>{}(s.data());
+        const char* data = s.data();
+        usize len = s.size();
+
+        // FNV-1a 64-bit
+        uint64 hash = 14695981039346656037ULL;
+        constexpr uint64_t prime = 1099511628211ULL;
+
+        for (usize i = 0; i < len; ++i) {
+            hash ^= static_cast<uint8>(data[i]);
+            hash *= prime;
+        }
+
+        return static_cast<usize>(hash);
     }
 };

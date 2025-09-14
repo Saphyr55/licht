@@ -4,7 +4,7 @@
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/rhi/framebuffer.hpp"
 #include "licht/rhi/pipeline/pipeline.hpp"
-#include "licht/rhi/rhi.hpp"
+#include "licht/rhi/rhi_types.hpp"
 
 namespace licht {
 

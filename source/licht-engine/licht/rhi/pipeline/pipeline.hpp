@@ -5,7 +5,7 @@
 #include "licht/rhi/pipeline/compiled_shader.hpp"
 #include "licht/rhi/pipeline/shader.hpp"
 #include "licht/rhi/render_pass.hpp"
-#include "licht/rhi/rhi.hpp"
+#include "licht/rhi/rhi_types.hpp"
 
 namespace licht {
 

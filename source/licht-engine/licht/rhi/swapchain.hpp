@@ -3,7 +3,7 @@
 #include "licht/core/containers/array.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/rhi/fence.hpp"
-#include "licht/rhi/rhi.hpp"
+#include "licht/rhi/rhi_types.hpp"
 #include "licht/rhi/semaphore.hpp"
 #include "licht/rhi/texture.hpp"
 
