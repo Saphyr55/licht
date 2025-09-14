@@ -13,6 +13,8 @@ struct DynamicLibrary {
 
 class DynamicLibraryLoader {
 public:
+    LICHT_CORE_API static StringRef extension();
+
     LICHT_CORE_API static SharedRef<DynamicLibrary> load(StringRef name);
 
     LICHT_CORE_API static void unload(SharedRef<DynamicLibrary> library);

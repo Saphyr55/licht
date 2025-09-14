@@ -82,3 +82,6 @@ using usize = size_t;
 #define LCRASH(msg)         \
     LCHECK_MSG(false, msg); \
     abort();
+
+#define CONCAT_INNER(a, b) a##b
+#define CONCAT(a, b) CONCAT_INNER(a, b)

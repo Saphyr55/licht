@@ -8,7 +8,7 @@ class CoreModule : public Module {
 public:
     virtual void on_load() override;
 
-    virtual void on_activate() override;
+    virtual void on_startup() override;
 
     virtual void on_shutdown() override;
 

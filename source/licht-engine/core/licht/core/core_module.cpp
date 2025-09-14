@@ -5,7 +5,7 @@ namespace licht {
 void CoreModule::on_load() {
 }
 
-void CoreModule::on_activate() {
+void CoreModule::on_startup() {
 }
 
 void CoreModule::on_shutdown() {

@@ -2,7 +2,8 @@
 
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/rhi/render_surface.hpp"
-#include "vulkan/vulkan_core.h"
+
+#include <vulkan/vulkan_core.h>
 
 namespace licht {
 

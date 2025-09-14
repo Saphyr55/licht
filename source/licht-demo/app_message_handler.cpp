@@ -1,4 +1,5 @@
 #include "app_message_handler.hpp"
+#include "licht/core/trace/trace.hpp"
 
 namespace licht {
 

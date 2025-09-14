@@ -277,7 +277,7 @@ public:
             cur = cur->next;
         }
     }
-
+    
     EntryType& put(const KeyType& key, const ValueType& value) {
         if (!buckets_) {
             initialize_buckets();

@@ -1,79 +1,46 @@
-#include "rhi_vulkan_module.hpp"
-#include "licht/core/defines.hpp"
+#include "licht/rhi/rhi_module.hpp"
 #include "licht/core/io/file_handle.hpp"
 #include "licht/core/io/file_system.hpp"
-#include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/platform/display.hpp"
-#include "licht/core/platform/window_handle.hpp"
 #include "licht/core/trace/trace.hpp"
-#include "licht/rhi/command_buffer.hpp"
-#include "licht/rhi/command_queue.hpp"
-#include "licht/rhi/fence.hpp"
-#include "licht/rhi/framebuffer.hpp"
 #include "licht/rhi/pipeline/compiled_shader.hpp"
-#include "licht/rhi/render_pass.hpp"
-#include "licht/rhi/rhi_types.hpp"
-#include "licht/rhi/texture.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_device.hpp"
-#include "licht/rhi_vulkan/vulkan_context.hpp"
-
-
-#include <vulkan/vulkan_core.h>
 
 namespace licht {
 
-RHIVulkanModule::RHIVulkanModule()
+RHIModule::RHIModule()
     : window_handle_(Display::INVALID_WINDOW_HANDLE)
-    , framebuffer_memory_pool_(1024)  // 1 kB
-    , framebuffers_(2, RHIFramebufferRegistryAllocator(&framebuffer_memory_pool_)) {
+    , framebuffer_memory_pool_(1024 /* 1 kB */)
+    , framebuffers_(4, RHIFramebufferAllocator(&framebuffer_memory_pool_))
+    , frame_context_() {}
+
+void RHIModule::on_load() {
 }
 
-void RHIVulkanModule::on_load() { 
+void RHIModule::on_startup() {
+    LLOG_INFO("[RHIModule]", "Start up RHI Module.");
 
-}
+    LLOG_FATAL_WHEN(!Display::get_default().is_valid(window_handle_), "[RHIModule]",
+                    "Failed to retrieve a valid window handle. Ensure a window is created before initializing the RHI Module.");
 
-void RHIVulkanModule::on_activate() { 
-    
-}
-
-void RHIVulkanModule::on_shutdown() { 
-
-}
-
-void RHIVulkanModule::on_unload() { 
-
-}
-
-void RHIVulkanModule::initialize() {
-    LLOG_INFO("[RHIVulkanModule::initialize]", "Initializing Vulkan RHI module...");
-
-    LLOG_FATAL_WHEN(!Display::get_default().is_valid(window_handle_), "[RHIVulkanModule::initialize]",
-                    "Failed to retrieve a valid window handle. Ensure a window is created before initializing the Vulkan RHI module.");
-
-    void* window_handle = Display::get_default().get_native_window_handle(window_handle_);
+    ModuleRegistry& module_registry = ModuleRegistry::get_instance();
+    Module* module = module_registry.get_module_interface("licht.engine.rhi.vulkan");
     WindowStatues window_statues = Display::get_default().query_window_statues(window_handle_);
-
-    vulkan_context_initialize(context_, window_handle);
-
-    // -- Device --
-    {
-        device_ = new_ref<RHIVulkanDevice>(context_);
-    }
+    module->on_startup();
 
     // -- Swapchain --
     {
-        frame_context_.frame_height = window_statues.height;
-        frame_context_.frame_width = window_statues.width;
+        frame_context_.frame_height = static_cast<uint32>(window_statues.height);
+        frame_context_.frame_width = static_cast<uint32>(window_statues.width);
         swapchain_ = device_->create_swapchain(frame_context_.frame_width, frame_context_.frame_height);
     }
 
     // -- Render Pass --
     {
-        RHIAttachmentDescription render_pass_color_attachement = {};
-        render_pass_color_attachement.format = swapchain_->get_format();
+        RHIAttachmentDescription render_pass_color_attachment = {};
+        render_pass_color_attachment.format = swapchain_->get_format();
 
         RHIRenderPassDescription render_pass_description = {};
-        render_pass_description.attachment_decriptions = {render_pass_color_attachement};
+        render_pass_description.attachment_decriptions = {render_pass_color_attachment};
 
         render_pass_ = device_->create_render_pass(render_pass_description);
     }
@@ -170,7 +137,52 @@ void RHIVulkanModule::initialize() {
     }
 }
 
-void RHIVulkanModule::tick() {
+void RHIModule::on_shutdown() {
+    device_->wait_idle();
+
+    // -- Frame Context Sync --
+    {
+        for (uint32 i = 0; i < frame_context_.frame_count; i++) {
+            device_->destroy_semaphore(frame_context_.frame_available_semaphores[i]);
+            device_->destroy_semaphore(frame_context_.render_finished_semaphores[i]);
+            device_->destroy_fence(frame_context_.in_flight_fences[i]);
+        }
+        frame_context_.frame_available_semaphores.clear();
+        frame_context_.render_finished_semaphores.clear();
+        frame_context_.in_flight_fences.clear();
+        frame_context_.frame_in_flight_fences.clear();
+    }
+
+    // -- Allocator
+    {
+        device_->destroy_command_allocator(command_allocator_);
+    }
+
+    // -- Framebuffers --
+    {
+        for (RHIFramebufferHandle framebuffer : framebuffers_) {
+            device_->destroy_framebuffer(framebuffer);
+        }
+        framebuffers_.clear();
+    }
+
+    device_->destroy_graphics_pipeline(pipeline_);
+
+    device_->destroy_render_pass(render_pass_);
+
+    device_->destroy_swapchain(swapchain_);
+    
+    ModuleRegistry& module_registry = ModuleRegistry::get_instance();
+    Module* module = module_registry.get_module_interface("licht.engine.rhi.vulkan");
+    module->on_shutdown();
+
+    LLOG_INFO("[RHIModule]", "Shutting down RHI module...");
+}
+
+void RHIModule::on_unload() {
+}
+
+void RHIModule::on_tick() {
     if (pause_) {
         return;
     }
@@ -186,13 +198,16 @@ void RHIVulkanModule::tick() {
     RHICommandBufferHandle command_buffer = command_allocator_->open(frame_context_.current_frame);
     command_allocator_->reset_command_buffer(command_buffer);
 
+    float32 width = static_cast<float32>(swapchain_->get_width());
+    float32 height = static_cast<float32>(swapchain_->get_height());
+    
     command_buffer->begin();
     {
         Rect2D render_pass_area = {};
         render_pass_area.x = 0.0f;
         render_pass_area.y = 0.0f;
-        render_pass_area.width = swapchain_->get_width();
-        render_pass_area.height = swapchain_->get_height();
+        render_pass_area.width = width;
+        render_pass_area.height = height;
 
         RHIRenderPassBeginInfo render_pass_begin_info = {};
         render_pass_begin_info.render_pass = render_pass_;
@@ -205,8 +220,8 @@ void RHIVulkanModule::tick() {
             Viewport viewport = {};
             viewport.x = 0.0f;
             viewport.y = 0.0f;
-            viewport.width = swapchain_->get_width();
-            viewport.height = swapchain_->get_height();
+            viewport.width = width;
+            viewport.height = height;
             viewport.min_depth = 0.0f;
             viewport.max_depth = 1.0f;
             command_buffer->set_viewports(&viewport, 1);
@@ -214,8 +229,8 @@ void RHIVulkanModule::tick() {
             Rect2D scissor = {};
             scissor.x = 0.0f;
             scissor.y = 0.0f;
-            scissor.width = swapchain_->get_width();
-            scissor.height = swapchain_->get_height();
+            scissor.width = width;
+            scissor.height = height;
             command_buffer->set_scissors(&scissor, 1);
 
             RHIDrawCommand draw_command = {};
@@ -254,7 +269,7 @@ void RHIVulkanModule::tick() {
     frame_context_.next_frame();
 }
 
-void RHIVulkanModule::reset() {
+void RHIModule::reset() {
     device_->wait_idle();
 
     for (RHIFramebufferHandle framebuffer : framebuffers_) {
@@ -277,46 +292,6 @@ void RHIVulkanModule::reset() {
         RHIFramebufferHandle framebuffer = device_->create_framebuffer(render_pass_, description);
         framebuffers_.append(framebuffer);
     }
-}
-
-void RHIVulkanModule::shutdown() {
-    device_->wait_idle();
-
-    // -- Frame Context Sync --
-    {
-        for (uint32 i = 0; i < frame_context_.frame_count; i++) {
-            device_->destroy_semaphore(frame_context_.frame_available_semaphores[i]);
-            device_->destroy_semaphore(frame_context_.render_finished_semaphores[i]);
-            device_->destroy_fence(frame_context_.in_flight_fences[i]);
-        }
-        frame_context_.frame_available_semaphores.clear();
-        frame_context_.render_finished_semaphores.clear();
-        frame_context_.in_flight_fences.clear();
-        frame_context_.frame_in_flight_fences.clear();
-    }
-
-    // -- Allocator
-    {
-        device_->destroy_command_allocator(command_allocator_);
-    }
-
-    // -- Framebuffers --
-    {
-        for (RHIFramebufferHandle framebuffer : framebuffers_) {
-            device_->destroy_framebuffer(framebuffer);
-        }
-        framebuffers_.clear();
-    }
-
-    device_->destroy_graphics_pipeline(pipeline_);
-
-    device_->destroy_render_pass(render_pass_);
-
-    device_->destroy_swapchain(swapchain_);
-
-    vulkan_context_destroy(context_);
-
-    LLOG_INFO("[RHIVulkanModule::shutdown]", "Shutting down Vulkan RHI module...");
 }
 
 }  //namespace licht

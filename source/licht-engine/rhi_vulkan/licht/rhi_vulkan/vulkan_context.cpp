@@ -105,7 +105,7 @@ VkQueue vulkan_query_queue(VulkanContext& context, RHIQueueType type) {
     return queue;
 }
 
-void vulkan_context_initialize(VulkanContext& context, void* window_handle) {
+void vulkan_context_initialize(VulkanContext& context, void* native_window) {
     LLOG_INFO("[Vulkan]", "Initializing Vulkan RHI context...");
     {
         context.library = vulkan_library_load();
@@ -118,7 +118,7 @@ void vulkan_context_initialize(VulkanContext& context, void* window_handle) {
 
         vulkan_debug_messenger_init(context);
 
-        context.surface = RHIVulkanRenderSurface::create(context, window_handle);
+        context.surface = RHIVulkanRenderSurface::create(context, native_window);
         context.surface->initialize();
 
         LCHECK(context.surface->get_handle());

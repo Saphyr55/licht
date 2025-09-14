@@ -1,44 +1,30 @@
 #pragma once
 
-#include "licht/core/defines.hpp"
 #include "licht/core/memory/linear_allocator.hpp"
 #include "licht/core/modules/module.hpp"
 #include "licht/core/modules/module_registry.hpp"
 #include "licht/core/platform/window_handle.hpp"
-#include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/device.hpp"
 #include "licht/rhi/framebuffer.hpp"
-#include "licht/rhi/pipeline/pipeline.hpp"
-#include "licht/rhi/render_pass.hpp"
 #include "licht/rhi/render_surface.hpp"
-#include "licht/rhi/swapchain.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_exports.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_render_surface.hpp"
-#include "licht/rhi_vulkan/vulkan_context.hpp"
+#include "licht/rhi/rhi_exports.hpp"
 
 namespace licht {
 
-struct VulkanContext;
-
-class LICHT_RHI_VULKAN_API RHIVulkanModule : public Module {
+class LICHT_RHI_API RHIModule : public Module {
 public:
     virtual void on_load() override;
 
-    virtual void on_activate() override;
+    virtual void on_startup() override;
 
     virtual void on_shutdown() override;
 
     virtual void on_unload() override;
 
-public:
-    void initialize();
-
-    void tick();
-
-    void shutdown();
+    void on_tick();
 
 public:
-    inline void update_resized(uint32 width, uint32 height) {
+    inline void update_resized(const uint32 width, const uint32 height) {
         window_resized_ = true;
         frame_context_.frame_width = width;
         frame_context_.frame_height = height;
@@ -56,19 +42,24 @@ public:
         window_handle_ = window_handle;
     }
 
-public:
-    RHIVulkanModule();
+    inline WindowHandle get_window_handle() {
+        return window_handle_;
+    }
+
+    inline void set_device(RHIDeviceHandle device) {
+        device_ = device;
+    }
 
 private:
     void reset();
 
+public:
+    RHIModule();
+
 private:
-    using RHIFramebufferRegistryAllocator = LinearAllocator<RHIFramebufferHandle>;
-    using RHIFramebufferRegistry = Array<RHIFramebufferHandle, RHIFramebufferRegistryAllocator>;
-
+    using RHIFramebufferAllocator = LinearAllocator<RHIFramebufferHandle>;
+    using RHIFramebufferRegistry = Array<RHIFramebufferHandle, RHIFramebufferAllocator>;
     WindowHandle window_handle_;
-
-    VulkanContext context_;
 
     RHIRenderSurfaceHandle surface_;
     RHIDeviceHandle device_;
@@ -86,6 +77,6 @@ private:
     bool window_resized_ = false;
 };
 
-LICHT_REGISTER_MODULE(RHIVulkanModule, "licht.engine.rhi.vulkan")
+LICHT_REGISTER_MODULE(RHIModule, "licht.engine.rhi")
 
 }  //namespace licht

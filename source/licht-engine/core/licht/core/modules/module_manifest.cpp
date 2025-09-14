@@ -1,43 +1,14 @@
 #include "licht/core/modules/module_manifest.hpp"
 
 #include "licht/core/containers/hash_map.hpp"
-#include "licht/core/modules/module.hpp"
 #include "licht/core/string/format.hpp"
 #include "licht/core/string/string.hpp"
 #include "licht/core/string/string_ref.hpp"
 #include "licht/core/trace/trace.hpp"
 
-#include <deque>
-
 #include <lua.hpp>
 
 namespace licht {
-
-static bool module_manifest_information_lua_validate(lua_State* L, int index) {
-    bool valid = true;
-
-    lua_getfield(L, index, ModuleManifestKeyNames::Name);
-    if (!lua_isstring(L, -1)) {
-        valid = false;
-    }
-    lua_pop(L, 1);
-
-    lua_getfield(L, index, ModuleManifestKeyNames::Version);
-    if (!lua_isstring(L, -1)) {
-        valid = false;
-    }
-    lua_pop(L, 1);
-
-    lua_getfield(L, index, ModuleManifestKeyNames::Dependencies);
-    if (!lua_istable(L, -1) && !lua_isnil(L, -1)) {
-        StringRef message = lua_tostring(L, -2);
-        LLOG_ERROR("[ModuleManifest]", vformat("Module '%s' ' has invalid 'dependencies', must be a table.", message))
-        valid = false;
-    }
-    lua_pop(L, 1);
-
-    return valid;
-}
 
 static ModuleManifestInformation module_manifest_information_lua_parse(lua_State* L, int32 table_index) {
     ModuleManifestInformation description;
@@ -80,7 +51,7 @@ static ModuleManifestInformation module_manifest_information_lua_parse(lua_State
     return description;
 }
 
-bool ModuleManifest::load_from_lua_manifest(StringRef filepath) {
+bool ModuleManifest::load_lua(StringRef filepath) {
     lua_State* L = luaL_newstate();
     luaL_openlibs(L);
 
@@ -134,7 +105,7 @@ void module_manifest_log(const ModuleManifest& manifest) {
             continue;
         }
 
-        usize dependency_count = module_information.dependencies.size();
+        const usize dependency_count = module_information.dependencies.size();
         String dependency_names(256);
         for (usize j = 0; j < dependency_count; j++) {
             dependency_names.append(module_information.dependencies[j]);
@@ -157,7 +128,7 @@ const Array<ModuleManifestInformation>& ModuleManifest::get_manifest_information
 
 bool module_manifest_dependencies_resolve(const ModuleManifest& manifest, Array<const ModuleManifestInformation*>& out_order) {
 
-    usize size = manifest.get_manifest_informations().size();
+    const usize size = manifest.get_manifest_informations().size();
     out_order.reserve(size);
 
     HashMap<StringRef, const ModuleManifestInformation*> module_map(size);
@@ -178,23 +149,22 @@ bool module_manifest_dependencies_resolve(const ModuleManifest& manifest, Array<
         }
     }
 
-    std::deque<StringRef> pending;
+    Array<StringRef> pending(size);
     for (auto& [name, dependency] : indegree) {
         if (dependency == 0) {
-            pending.push_back(name);
+            pending.append(name);
         }
     }
 
     while (!pending.empty()) {
 
-        StringRef current = pending.front();
-        pending.pop_front();
+        StringRef current = pending.back();
+        pending.pop();
         out_order.append(module_map[current]);
 
-        Array<StringRef>& successors = graph[current];
-        for (StringRef next : successors) {
+        for (StringRef next : graph[current]) {
             if (--indegree[next] == 0) {
-                pending.push_back(next);
+                pending.append(next);
             }
         }
 

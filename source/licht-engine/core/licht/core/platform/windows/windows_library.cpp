@@ -11,14 +11,20 @@
 
 namespace licht {
 
-SharedRef<DynamicLibrary> DynamicLibraryLoader::load(StringRef p_name) {
+StringRef DynamicLibraryLoader::extension() {
+    return ".dll";
+}
 
-    WString wname = unicode_of_str(p_name.data());
+SharedRef<DynamicLibrary> DynamicLibraryLoader::load(StringRef name) {
+
+    WString wname = unicode_of_str(name.data());
     HMODULE handle = ::LoadLibraryW(wname.data());
 
-    SharedRef<DynamicLibrary> library = new_ref<DynamicLibrary>(handle, p_name);
+    if (!handle) {
+        return SharedRef<DynamicLibrary>(nullptr);
+    }
 
-    return library;    
+    return new_ref<DynamicLibrary>(handle, name);
 }
 
 void DynamicLibraryLoader::unload(SharedRef<DynamicLibrary> p_library) {

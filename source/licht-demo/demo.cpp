@@ -1,53 +1,61 @@
 #include "demo.hpp"
 #include "app_message_handler.hpp"
 
+#include <licht/core/modules/module_registry.hpp>
+#include <licht/core/platform/display.hpp>
+#include <licht/core/platform/platform.hpp>
+#include <licht/rhi/rhi_module.hpp>
 #include <licht/core/modules/module_manifest.hpp>
 #include <licht/core/string/format.hpp>
 #include <licht/core/trace/trace.hpp>
 #include <licht/core/defines.hpp>
 #include <licht/core/memory/shared_ref.hpp>
 #include <licht/core/platform/window_handle.hpp>
-#include <licht/rhi_vulkan/rhi_vulkan_module.hpp>
 
 namespace licht::demo {
 
-int32 launch(int32 argc, const char** argv) {
+static int32 launch(int32 argc, const char** argv) {
 
     ModuleManifest manifest;
-    if (!manifest.load_from_lua_manifest("../../../manifest.lua")) {
+    if (!manifest.load_lua("../../../manifest.lua")) {
         return EXIT_FAILURE;
     }
     module_manifest_log(manifest);
 
-    Array<const ModuleManifestInformation *> order;
-    module_manifest_dependencies_resolve(manifest, order);
-
-    for (const ModuleManifestInformation* info : order) {
-        LLOG_INFO("[ModuleManifest][main]", vformat("%s", info->name.data()))
+    Array<const ModuleManifestInformation*> order;
+    if (!module_manifest_dependencies_resolve(manifest, order)) {
+        LLOG_ERROR("[ModuleManifest][main]", "Dependencies cycle.");
+        return EXIT_FAILURE;
     }
-    
+
+    ModuleRegistry& module_registry = ModuleRegistry::get_instance();        
+    for (const ModuleManifestInformation* info : order) {
+        if (!module_registry.load_module(info->name)) {
+            return EXIT_FAILURE;
+        }
+    }
+
     SharedRef<DemoMessageHandler> demo_message_handler = new_ref<DemoMessageHandler>();
     Display::get_default().set_message_handler(demo_message_handler);
 
-    WindowStatues window_statues("Demo Window", 800, 600, 100, 100);
-    WindowHandle window_handle = Display::get_default().create_window_handle(window_statues);
-
-    RHIVulkanModule rhi_module;
-    rhi_module.set_window_handle(window_handle);
+    const WindowStatues window_statues("Demo Window", 800, 600, 100, 100);
+    const WindowHandle window_handle = Display::get_default().create_window_handle(window_statues);
     
-    rhi_module.initialize();
+    RHIModule* rhi_module = module_registry.get_module<RHIModule>("licht.engine.rhi");
+    rhi_module->set_window_handle(window_handle);
+    rhi_module->on_startup();
 
-    demo_message_handler->set_rhi_module(&rhi_module);
+    demo_message_handler->set_rhi_module(rhi_module);
 
     Display::get_default().show(window_handle);
 
     g_is_running = true;
     while (g_is_running) {
         Display::get_default().handle_events();
-        rhi_module.tick();
+        rhi_module->on_tick();
     }
 
-    rhi_module.shutdown();
+    rhi_module->on_shutdown();
 
     return EXIT_SUCCESS;
 }

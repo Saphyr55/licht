@@ -2,7 +2,7 @@
 
 #include "licht/core/platform/display_message_handler.hpp"
 #include "licht/core/platform/window_handle.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_module.hpp"
+#include "licht/rhi/rhi_module.hpp"
 
 namespace licht {
 
@@ -20,12 +20,12 @@ public:
 
     virtual void on_key_down(Key key) override;
 
-    inline void set_rhi_module(RHIVulkanModule* rhi_module) {
+    inline void set_rhi_module(RHIModule* rhi_module) {
         rhi_module_ = rhi_module;
     }
 
 private:
-    RHIVulkanModule* rhi_module_ = nullptr;
+    RHIModule* rhi_module_ = nullptr;
 };
 
 inline bool g_is_running = false;

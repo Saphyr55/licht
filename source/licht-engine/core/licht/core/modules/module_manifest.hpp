@@ -25,7 +25,7 @@ public:
 
 class LICHT_CORE_API ModuleManifest {
 public:
-    bool load_from_lua_manifest(StringRef filepath);
+    bool load_lua(StringRef filepath);
 
 public:
     Array<ModuleManifestInformation>& get_manifest_informations();
