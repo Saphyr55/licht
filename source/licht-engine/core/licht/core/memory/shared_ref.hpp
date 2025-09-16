@@ -60,7 +60,7 @@ public:
 public:
     SharedRef() noexcept = default;
 
-    explicit SharedRef(ResourceType* resource) noexcept
+    SharedRef(ResourceType* resource) noexcept
         : resource_(resource)
         , reference_counter_(nullptr) {
         if (resource_) {

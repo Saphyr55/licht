@@ -16,11 +16,11 @@ RHIVulkanModule::RHIVulkanModule()
 }
 
 void RHIVulkanModule::on_load() { 
-    LLOG_DEBUG("[RHIVulkanModule]", "Loading RHI Vulkan Module.");
+    LLOG_INFO("[RHIVulkanModule]", "Loading RHI Vulkan Module.");
 }
 
 void RHIVulkanModule::on_startup() { 
-    LLOG_DEBUG("[RHIVulkanModule]", "Startup RHI Vulkan Module.");
+    LLOG_INFO("[RHIVulkanModule]", "Startup RHI Vulkan Module.");
 
     ModuleRegistry& registry = ModuleRegistry::get_instance();
     RHIModule* module = registry.get_module<RHIModule>("licht.engine.rhi");
@@ -34,9 +34,11 @@ void RHIVulkanModule::on_startup() {
 
 void RHIVulkanModule::on_shutdown() { 
     vulkan_context_destroy(context_);
+    LLOG_INFO("[RHIVulkanModule]", "Shuting down RHI Vulkan Module...");
 }
 
 void RHIVulkanModule::on_unload() { 
+    LLOG_INFO("[RHIVulkanModule]", "Unload RHI Vulkan Module.");
 }
 
 }  //namespace licht

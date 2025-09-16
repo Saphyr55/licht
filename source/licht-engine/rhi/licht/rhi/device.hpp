@@ -16,7 +16,6 @@
 
 namespace licht {
 
-
 class RHIDevice {
 public:
     virtual void wait_idle() = 0;

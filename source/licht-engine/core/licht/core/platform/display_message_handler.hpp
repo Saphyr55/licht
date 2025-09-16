@@ -15,7 +15,7 @@ public:
     virtual void on_window_resized(WindowHandle window, uint32 width, uint32 height) {
     }
 
-    virtual void on_window_minized(WindowHandle window) {
+    virtual void on_window_minimized(WindowHandle window) {
     }
 
     virtual void on_window_shown(WindowHandle window) {
@@ -38,6 +38,8 @@ public:
 
     virtual void on_mouse_move(float32 pos_rel_x, float32 pos_rel_y, float32 pos_x, float32 pos_y) {
     }
+
+    virtual ~DisplayMessageHandler() = default;
 };
 
 }  //namespace licht

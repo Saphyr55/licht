@@ -134,11 +134,13 @@ bool SDLDisplay::is_valid(WindowHandle window) {
 
 void SDLDisplay::handle_events() {
     SDL_Event event;
-
+    
     while (SDL_PollEvent(&event)) {
+        
         if (!message_handler_) {
             break;
         }
+        
         switch (event.type) {
             case SDL_EVENT_WINDOW_CLOSE_REQUESTED: {
                 message_handler_->on_window_close(event.window.windowID);
@@ -153,7 +155,7 @@ void SDLDisplay::handle_events() {
                 break;
             }
             case SDL_EVENT_WINDOW_MINIMIZED: {
-                message_handler_->on_window_minized(event.window.windowID);
+                message_handler_->on_window_minimized(event.window.windowID);
                 break;
             }
             case SDL_EVENT_MOUSE_WHEEL: {
@@ -178,6 +180,9 @@ void SDLDisplay::handle_events() {
             }
             case SDL_EVENT_MOUSE_MOTION: {
                 message_handler_->on_mouse_move(event.motion.xrel, event.motion.yrel, event.motion.x, event.motion.y);
+                break;
+            }
+            default: {
                 break;
             }
         }

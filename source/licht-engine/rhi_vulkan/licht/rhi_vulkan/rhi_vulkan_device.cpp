@@ -35,16 +35,16 @@ void RHIVulkanDevice::wait_fence(RHIFenceHandle fence) {
     }
 
     SharedRef<RHIVulkanFence> rhi_vk_fence = static_ref_cast<RHIVulkanFence>(fence);
-    VkFence& vkfence = rhi_vk_fence->get_handle();
+    const VkFence& vkfence = rhi_vk_fence->get_handle();
 
-    VkResult result = VulkanAPI::lvkWaitForFences(context_.device, 1, &vkfence, VK_TRUE, UINT64_MAX);
-    switch (result) {
+    VkResult result_wait = VulkanAPI::lvkWaitForFences(context_.device, 1, &vkfence, VK_TRUE, UINT64_MAX);
+    switch (result_wait) {
         case VK_SUCCESS: {
             rhi_vk_fence->set_signaled(true);
             return;
         }
         default: {
-            LICHT_VULKAN_CHECK(result)
+            LICHT_VULKAN_CHECK(result_wait)
             break;
         }
     }

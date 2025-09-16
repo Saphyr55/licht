@@ -7,13 +7,24 @@
 
 namespace licht {
 
+StringRef graphics_api_module_name(const GraphicsAPI graphics_api) {
+    switch (graphics_api) {
+        case GraphicsAPI::Vulkan: {
+            return "licht.engine.rhi.vulkan";
+        }
+    }
+    return "licht.engine.rhi.vulkan";
+}
+
 RHIModule::RHIModule()
     : window_handle_(Display::INVALID_WINDOW_HANDLE)
+    , graphics_api_(GraphicsAPI::Vulkan)
     , framebuffer_memory_pool_(1024 /* 1 kB */)
     , framebuffers_(4, RHIFramebufferAllocator(&framebuffer_memory_pool_))
     , frame_context_() {}
 
 void RHIModule::on_load() {
+    LLOG_INFO("[RHIModule]", "Loading RHI Module.");
 }
 
 void RHIModule::on_startup() {
@@ -23,7 +34,7 @@ void RHIModule::on_startup() {
                     "Failed to retrieve a valid window handle. Ensure a window is created before initializing the RHI Module.");
 
     ModuleRegistry& module_registry = ModuleRegistry::get_instance();
-    Module* module = module_registry.get_module_interface("licht.engine.rhi.vulkan");
+    Module* module = module_registry.get_module_interface(graphics_api_module_name(graphics_api_));
     WindowStatues window_statues = Display::get_default().query_window_statues(window_handle_);
     module->on_startup();
 
@@ -47,6 +58,9 @@ void RHIModule::on_startup() {
 
     // -- Graphics Pipeline --
     {
+        float32 width = static_cast<float32>(swapchain_->get_width());
+        float32 height = static_cast<float32>(swapchain_->get_height());
+    
         FileSystem& file_system = FileSystem::get_platform();
 
         FileHandleResult vertex_file_open_error = file_system.open_read("shaders/main.vert.spv");
@@ -74,16 +88,16 @@ void RHIModule::on_startup() {
         Viewport viewport = {};
         viewport.x = 0.0f;
         viewport.y = 0.0f;
-        viewport.width = swapchain_->get_width();
-        viewport.height = swapchain_->get_height();
+        viewport.width = width;
+        viewport.height = height;
         viewport.min_depth = 0.0f;
         viewport.max_depth = 1.0f;
 
         Rect2D scissor = {};
         scissor.x = 0.0f;
         scissor.y = 0.0f;
-        scissor.width = swapchain_->get_width();
-        scissor.height = swapchain_->get_height();
+        scissor.width = width;
+        scissor.height = height;
 
         RHIPipelineViewportStateInformation viewport_info;
         viewport_info.viewport = viewport;
@@ -138,6 +152,8 @@ void RHIModule::on_startup() {
 }
 
 void RHIModule::on_shutdown() {
+    LLOG_INFO("[RHIModule]", "Shuting down RHI Module...");
+
     device_->wait_idle();
 
     // -- Frame Context Sync --
@@ -175,11 +191,10 @@ void RHIModule::on_shutdown() {
     ModuleRegistry& module_registry = ModuleRegistry::get_instance();
     Module* module = module_registry.get_module_interface("licht.engine.rhi.vulkan");
     module->on_shutdown();
-
-    LLOG_INFO("[RHIModule]", "Shutting down RHI module...");
 }
 
 void RHIModule::on_unload() {
+    LLOG_INFO("[RHIModule]", "Unload RHI Module.");
 }
 
 void RHIModule::on_tick() {

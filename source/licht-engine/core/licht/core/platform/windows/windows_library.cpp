@@ -27,20 +27,21 @@ SharedRef<DynamicLibrary> DynamicLibraryLoader::load(StringRef name) {
     return new_ref<DynamicLibrary>(handle, name);
 }
 
-void DynamicLibraryLoader::unload(SharedRef<DynamicLibrary> p_library) {
-    
-    HMODULE handle = static_cast<HMODULE>(p_library->handle);
-    LCHECK(handle != nullptr);
+void DynamicLibraryLoader::unload(SharedRef<DynamicLibrary> library) {
+    LCHECK(library);
+
+    HMODULE handle = static_cast<HMODULE>(library->handle);
+    LCHECK(handle);
 
     ::FreeLibrary(handle);
 }
 
-void* DynamicLibraryLoader::load_function(SharedRef<DynamicLibrary> p_library, StringRef p_function_name) {
+void* DynamicLibraryLoader::load_function(SharedRef<DynamicLibrary> library, StringRef function_name) {
+    LCHECK(library);
+    LCHECK(library->handle);
 
-    LCHECK(p_library->handle != nullptr);
-
-    HMODULE handle = static_cast<HMODULE>(p_library->handle);
-    FARPROC function = ::GetProcAddress(handle, p_function_name);
+    HMODULE handle = static_cast<HMODULE>(library->handle);
+    FARPROC function = ::GetProcAddress(handle, function_name);
 
     if (function == nullptr) {
         return nullptr;

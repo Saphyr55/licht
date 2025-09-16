@@ -11,6 +11,12 @@
 
 namespace licht {
 
+enum class GraphicsAPI {
+    Vulkan,
+};
+
+StringRef graphics_api_module_name(GraphicsAPI graphics_api);
+
 class LICHT_RHI_API RHIModule : public Module {
 public:
     virtual void on_load() override;
@@ -50,6 +56,14 @@ public:
         device_ = device;
     }
 
+    inline GraphicsAPI get_graphics_api() {
+        return graphics_api_;
+    }
+    
+    inline void set_graphics_api(GraphicsAPI graphics_api) {
+        graphics_api_ = graphics_api;
+    }
+
 private:
     void reset();
 
@@ -61,6 +75,7 @@ private:
     using RHIFramebufferRegistry = Array<RHIFramebufferHandle, RHIFramebufferAllocator>;
     WindowHandle window_handle_;
 
+    GraphicsAPI graphics_api_;
     RHIRenderSurfaceHandle surface_;
     RHIDeviceHandle device_;
     RHISwapchainHandle swapchain_;

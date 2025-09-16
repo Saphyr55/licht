@@ -7,8 +7,7 @@ local _modules = {
     {
         name = "licht.engine.rhi",
         version = "0.0.1-dev",
-        dependencies = {
-        }
+        dependencies = {}
     },
     {
         name = "licht.engine.rhi.vulkan",
@@ -18,9 +17,10 @@ local _modules = {
         }
     },
     {
-        name = "licht.demo",
+        name = "ludo",
         version = "0.0.1-dev",
         dependencies = {
+            "licht.engine.core",
             "licht.engine.rhi",
             "licht.engine.rhi.vulkan"
         }

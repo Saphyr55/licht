@@ -6,9 +6,9 @@
 namespace licht {
 
 struct ModuleManifestInformation {
+    Array<String> dependencies = {};
     String name = "";
     String version = "";
-    Array<String> dependencies = {};
 };
 
 class LICHT_CORE_API ManifestKeyNames {
@@ -35,7 +35,7 @@ private:
     Array<ModuleManifestInformation> manifest_informations_;
 };
 
-LICHT_CORE_API bool module_manifest_dependencies_resolve(const ModuleManifest& manifest, Array<const ModuleManifestInformation*>& out_order);
+LICHT_CORE_API bool module_manifest_resolve_dependencies(const ModuleManifest& manifest, Array<const ModuleManifestInformation*>& out_order);
 LICHT_CORE_API void module_manifest_log(const ModuleManifest& manifest);
 
 }

@@ -15,41 +15,54 @@ Module* ModuleRegistry::load_module(const StringRef name) {
     if (is_module_loaded(name)) {
         return get_module(name);
     }
-
-    String filepath_lib = String(name.data());
+    
+    String filepath_lib(name.data());
     filepath_lib += DynamicLibraryLoader::extension();
-
-    SharedRef<DynamicLibrary> library = DynamicLibraryLoader::load(filepath_lib.data());
-
+    
+    SharedRef<DynamicLibrary> library = nullptr;
+    if (PlatformFileSystem::get_platform().file_exists(filepath_lib)) {
+        library = DynamicLibraryLoader::load(filepath_lib.data());
+    } else {
+        return nullptr;
+    }
+        
     if (!pending_modules_.contains(name)) {
         return nullptr;
     }
 
-    ModuleInitializerFunc& module_initializer = pending_modules_.get(name);
+    const ModuleInitializerFunc& module_initializer = pending_modules_.get(name);
     Module* module = module_initializer();
-
+    
     if (!module) {
         return nullptr;
     }
     
-    pending_modules_.remove(name);
-    
-    const LoadedModule loaded_module(name, module, library);
     module->on_load();
-    
-    loaded_modules_.put(name, loaded_module);
+
+    pending_modules_.remove(name);
+    loaded_modules_.put(name, LoadedModule(name, module, library));
     
     return module;
 }
 
 void ModuleRegistry::unload_module(const StringRef name) {
-    LoadedModule& loaded_module = loaded_modules_.get(name);
-    DynamicLibraryLoader::unload(loaded_module.library);
-    loaded_module.module->on_unload();
+
+    LoadedModule* loaded_module = loaded_modules_.get_ptr(name);
+    if (!loaded_module) {
+        return; 
+    }
+    
+    if (!loaded_module->module) {
+        return;
+    }
+    
+    loaded_module->module->on_unload();
+
+    if (loaded_module->library) {
+        DynamicLibraryLoader::unload(loaded_module->library);
+    }
+
     loaded_modules_.remove(name);
-    pending_modules_.put(name, [&loaded_module]() -> Module* {
-        return loaded_module.module;
-    });
 }
 
 bool ModuleRegistry::exists_module(const StringRef name) const {
@@ -71,8 +84,12 @@ Module* ModuleRegistry::get_module_interface(const StringRef name) {
 void ModuleRegistry::register_module(const StringRef name, const ModuleInitializerFunc& initializer) {
     if (!pending_modules_.contains(name)) {
         pending_modules_.put(name, initializer);
-        LLOG_DEBUG("[ModuleRegistry]", vformat("%s was registed.", name));
+        LLOG_DEBUG("[ModuleRegistry]", vformat("The module has been registered.", name));
     }
+}
+
+void ModuleRegistry::unregister_module(const StringRef name) {
+    pending_modules_.remove(name);
 }
 
 }  //namespace licht

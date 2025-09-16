@@ -126,7 +126,7 @@ const Array<ModuleManifestInformation>& ModuleManifest::get_manifest_information
     return manifest_informations_;
 }
 
-bool module_manifest_dependencies_resolve(const ModuleManifest& manifest, Array<const ModuleManifestInformation*>& out_order) {
+bool module_manifest_resolve_dependencies(const ModuleManifest& manifest, Array<const ModuleManifestInformation*>& out_order) {
 
     const usize size = manifest.get_manifest_informations().size();
     out_order.reserve(size);

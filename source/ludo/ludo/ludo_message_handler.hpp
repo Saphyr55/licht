@@ -4,15 +4,15 @@
 #include "licht/core/platform/window_handle.hpp"
 #include "licht/rhi/rhi_module.hpp"
 
-namespace licht {
+using namespace licht;
 
-class DemoMessageHandler : public DisplayMessageHandler {
+class DemoMessageHandler final : public DisplayMessageHandler {
 public:
     virtual void on_window_close(WindowHandle window) override;
 
     virtual void on_window_resized(WindowHandle window, uint32 width, uint32 height) override;
 
-    virtual void on_window_minized(WindowHandle window) override;
+    virtual void on_window_minimized(WindowHandle window) override;
 
     virtual void on_window_shown(WindowHandle window) override;
 
@@ -29,5 +29,3 @@ private:
 };
 
 inline bool g_is_running = false;
-
-}  //namespace licht

@@ -1,11 +1,15 @@
 #pragma once
 
+#include "ludo_exports.hpp"
+
 #include <licht/core/modules/module.hpp>
 #include <licht/core/modules/module_registry.hpp>
 
-namespace licht::demo {
+using namespace licht;
 
-class DemoModule : public Module {
+LICHT_LUDO_API int32 ludo_application_launch(int32 argc, const char** argv);
+
+class LICHT_LUDO_API LudoModule : public Module {
 public:
     virtual void on_load() override {
     }
@@ -18,10 +22,6 @@ public:
 
     virtual void on_unload() override {
     }
-
 };
 
-LICHT_REGISTER_MODULE(DemoModule, "licht.demo")
-
-}  //namespace licht::demo
-
+LICHT_REGISTER_MODULE(LudoModule, "ludo")

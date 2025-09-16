@@ -6,14 +6,14 @@
 
 namespace licht {
 
-void* LinearMemoryPool::allocate(usize size, usize alignment) {
+void* LinearMemoryPool::allocate(const usize size, const usize alignment) noexcept {
     usize space = size_ - offset_;
 
     void* block = buffer_ + offset_;
     void* aligned = std::align(alignment, size, block, space);
     
     if (!aligned || static_cast<uint8*>(aligned) + size > buffer_ + size_) {
-        return nullptr;  // not enough space
+        return nullptr;  // Not enough space.
     }
 
     offset_ = static_cast<uint8*>(aligned) - buffer_ + size;
@@ -21,15 +21,14 @@ void* LinearMemoryPool::allocate(usize size, usize alignment) {
     return aligned;
 }
 
-void LinearMemoryPool::deallocate(void* block) {
+void LinearMemoryPool::deallocate(void* block) noexcept {
+    
 }
 
 void LinearMemoryPool::initialize(usize size) noexcept {
     size_ = size;
-    if (size_ != size || buffer_) {
-        if (buffer_) {
-            destroy();
-        }
+    if (buffer_) {
+        destroy();
     }
     buffer_ = static_cast<uint8*>(Memory::allocate(size_));
     if (buffer_) {
@@ -54,15 +53,15 @@ void LinearMemoryPool::reset() {
 
 LinearMemoryPool::LinearMemoryPool(usize size)
     : size_(32)
-    , buffer_(nullptr)
-    , offset_(0) {
+    , offset_(0)
+    , buffer_(nullptr) {
     initialize(size);
 }
 
 LinearMemoryPool::LinearMemoryPool()
     : size_(32)
-    , buffer_(nullptr)
-    , offset_(0) {
+    , offset_(0)
+    , buffer_(nullptr) {
     initialize(size_);
 }
 

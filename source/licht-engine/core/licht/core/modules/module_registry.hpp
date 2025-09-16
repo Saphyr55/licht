@@ -27,7 +27,7 @@ public:
     Module* get_module_interface(StringRef name);
 
     template <typename ModuleType = Module>
-    ModuleType* get_module(StringRef name) {
+    ModuleType* get_module(const StringRef name) {
         return static_cast<ModuleType*>(get_module_interface(name));
     }
 
@@ -37,11 +37,11 @@ public:
 
 private:
     struct LoadedModule {
-        StringRef name;
-        Module* module;
+        StringRef name = "";
+        Module* module = nullptr;
         SharedRef<DynamicLibrary> library;
 
-        LoadedModule(StringRef name, Module* module, SharedRef<DynamicLibrary> library)
+        LoadedModule(const StringRef name, Module* module, const SharedRef<DynamicLibrary> library)
             : name(name), module(module), library(library) {}
     };
 
@@ -63,9 +63,8 @@ public:
 
 #define LICHT_REGISTER_MODULE_WITH_CUSTOM_VARIABLE(ModuleType, ModuleName, VariableName) \
     namespace {                                                                          \
-    static const auto* VariableName = []() {                                             \
-        static auto registrant = ::licht::ModuleRegistrant<ModuleType>(ModuleName);      \
-        return &registrant;                                                              \
+    static const auto (VariableName) = []() {                                            \
+        return ::licht::ModuleRegistrant<ModuleType>(ModuleName);                        \
     }();                                                                                 \
     }
 

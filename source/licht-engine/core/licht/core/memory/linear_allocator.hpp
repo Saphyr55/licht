@@ -7,9 +7,9 @@ namespace licht {
 
 class LICHT_CORE_API LinearMemoryPool {
 public:
-    void* allocate(usize size, usize alignement);
+    void* allocate(usize size, usize alignment) noexcept;
 
-    void deallocate(void* block);
+    void deallocate(void* block) noexcept;
 
     void initialize(usize size) noexcept;
 
@@ -18,7 +18,7 @@ public:
     void reset();
 
 public:
-    LinearMemoryPool(usize size);
+    explicit LinearMemoryPool(usize size);
     LinearMemoryPool();
     ~LinearMemoryPool() noexcept;
 
@@ -37,16 +37,16 @@ public:
     };
 
 public:
-    ElementType* allocate(usize n) noexcept {
+    ElementType* allocate(const usize n) noexcept {
         void* element = memory_pool_->allocate(n * sizeof(ElementType), alignof(ElementType));
-        return reinterpret_cast<ElementType*>(element);
+        return static_cast<ElementType*>(element);
     }
-
-    void deallocate(ElementType* element, usize n) noexcept {
+    
+    void deallocate(ElementType* /* element */, usize /* n */) noexcept {
     }
 
 public:
-    LinearAllocator(LinearMemoryPool* memory_pool)
+    explicit LinearAllocator(LinearMemoryPool* memory_pool)
         : memory_pool_(memory_pool) {}
 
 private:
