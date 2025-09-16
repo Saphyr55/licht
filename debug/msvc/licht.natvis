@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <!-- Array -->
+  <Type Name="licht::Array&lt;*&gt;">
+    <DisplayString>{{ size={size_}, capacity={capacity_} }}</DisplayString>
+    <Expand>
+      <Item Name="Size" ExcludeView="simple">(size_t)size_</Item>
+      <Item Name="Capacity" ExcludeView="simple">(size_t)capacity_</Item>
+      <Item Name="Data">data_</Item>
+      <ArrayItems>
+        <Size>size_</Size>
+        <ValuePointer>data_</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+  <!-- String types -->
+  <Type Name="licht::StringBase&lt;*&gt;">
+    <DisplayString>{buffer_.data_,su}</DisplayString>
+    <StringView>buffer_.data_,su</StringView>
+    <Expand>
+      <Item Name="Size">buffer_.size_ - 1</Item>
+      <Item Name="Capacity">buffer_.capacity_</Item>
+      <Item Name="[raw view]">buffer_</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="licht::String">
+    <DisplayString>{buffer_.data_,s}</DisplayString>
+    <StringView>buffer_.data_,s</StringView>
+    <Expand>
+      <Item Name="Size">buffer_.size_ - 1</Item>
+      <Item Name="Capacity">buffer_.capacity_</Item>
+      <Item Name="[raw view]">buffer_</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="licht::WString">
+    <DisplayString>{buffer_.data_,su}</DisplayString>
+    <StringView>buffer_.data_,su</StringView>
+    <Expand>
+      <Item Name="Size">buffer_.size_ - 1</Item>
+      <Item Name="Capacity">buffer_.capacity_</Item>
+      <Item Name="[raw view]">buffer_</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="licht::StringRefBase&lt;*&gt;">
+    <DisplayString>{data_,s}</DisplayString>
+    <StringView>data_,s</StringView>
+    <Expand>
+      <Item Name="Size">string_length(data_)</Item>
+      <Item Name="[raw data]">data_,s</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="licht::StringRef">
+    <DisplayString>{data_,s}</DisplayString>
+    <StringView>data_,s</StringView>
+    <Expand>
+      <Item Name="Size">string_length(data_)</Item>
+      <Item Name="[raw data]">data_,s</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="licht::WStringRef">
+    <DisplayString>{data_,su}</DisplayString>
+    <StringView>data_,su</StringView>
+    <Expand>
+      <Item Name="Size">string_length(data_)</Item>
+      <Item Name="[raw data]">data_,su</Item>
+    </Expand>
+  </Type>
+
+  <!-- HashMap types -->
+  <Type Name="licht::HashMap&lt;*&gt;">
+    <DisplayString>{{ size={size_}, capacity={capacity_} }}</DisplayString>
+    <DisplayString>{buckets_}</DisplayString>
+    <Expand>
+      <Item Name="Size">size_</Item>
+      <Item Name="Capacity">capacity_</Item>
+      <Item Name="Data">buckets_</Item>
+      <ExpandedItem>buckets_,view(simple)</ExpandedItem>
+      <ArrayItems Name="Buckets">
+        <Size>capacity_</Size>
+        <ValuePointer>buckets_</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+  <Type Name="licht::HashMapElement&lt;*&gt;">
+    <DisplayString>{entry.key} - {entry.value}</DisplayString>
+    <Expand>
+      <Item Name="Key">entry.key</Item>
+      <Item Name="Value">entry.value</Item>
+      <Item Name="Hash">hash</Item>
+      <Item Name="Next">next</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="licht::HashMapEntry&lt;*&gt;">
+    <DisplayString>{key} - {value}</DisplayString>
+    <Expand>
+      <Item Name="Key">key</Item>
+      <Item Name="Value">value</Item>
+    </Expand>
+  </Type>
+</AutoVisualizer>
