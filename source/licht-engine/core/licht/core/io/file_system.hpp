@@ -22,7 +22,6 @@ using FileHandleResult = FileOpenError<SharedRef<FileHandle>>;
 
 class LICHT_CORE_API FileSystem {
 public:
-
     static FileSystem& get_platform();
 
     virtual bool file_exists(StringRef filepath) const = 0;

@@ -6,7 +6,7 @@ namespace licht {
 
 class LICHT_CORE_API PlatformFileHandle : public FileHandle {
 public:
-    bool Close();
+    bool close();
 
     virtual int64 tell() override;
 

@@ -51,6 +51,22 @@ static ModuleManifestInformation module_manifest_information_lua_parse(lua_State
     return description;
 }
 
+bool ModuleManifest::merge(const ModuleManifest& other) {
+    for (const ModuleManifestInformation& info : other.manifest_informations_) {
+        bool found = false;
+        for (const ModuleManifestInformation& existing_info : manifest_informations_) {
+            if (existing_info.name == info.name) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            manifest_informations_.append(info);
+        }
+    }
+    return true;
+}
+
 bool ModuleManifest::load_lua(StringRef filepath) {
     lua_State* L = luaL_newstate();
     luaL_openlibs(L);

@@ -27,6 +27,8 @@ class LICHT_CORE_API ModuleManifest {
 public:
     bool load_lua(StringRef filepath);
 
+    bool merge(const ModuleManifest& other);
+
 public:
     Array<ModuleManifestInformation>& get_manifest_informations();
     const Array<ModuleManifestInformation>& get_manifest_informations() const;

@@ -15,26 +15,26 @@ public:
     template <typename Callable,
               typename = std::enable_if_t<!std::is_same_v<std::decay_t<Callable>, FunctionRef>>>
     FunctionRef(Callable&& c) {
-        obj = (void*)std::addressof(c);
-        callback = [](void* obj, ArgumentTypes&&... args) -> ReturnType {
+        obj_ = (void*)std::addressof(c);
+        callback_ = [](void* obj, ArgumentTypes&&... args) -> ReturnType {
             return (*reinterpret_cast<std::add_pointer_t<Callable>>(obj))(
                 std::forward<ArgumentTypes>(args)...);
         };
     }
 
     ReturnType operator()(ArgumentTypes... args) const {
-        return callback(obj, std::forward<ArgumentTypes>(args)...);
+        return callback_(obj_, std::forward<ArgumentTypes>(args)...);
     }
 
     explicit operator bool() const noexcept {
-        return callback != nullptr;
+        return callback_ != nullptr;
     }
 
 private:
     using Callback = ReturnType (*)(void*, ArgumentTypes&&...);
 
-    void* obj = nullptr;
-    Callback callback = nullptr;
+    void* obj_ = nullptr;
+    Callback callback_ = nullptr;
 };
 
 template <typename ReturnType, typename... Args>

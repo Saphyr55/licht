@@ -1,8 +1,7 @@
 #pragma once
 
-#include <cstdlib>
-
 #include "licht/core/defines.hpp"
+#include "licht/core/io/platform_file_system.hpp"
 #include "licht/core/modules/module_manifest.hpp"
 #include "licht/core/modules/module_registry.hpp"
 #include "licht/core/platform/platform.hpp"
@@ -17,11 +16,23 @@ inline Array<const ModuleManifestInformation*> g_manifest_informations_order;
 
 inline bool main_load_manifest() {
 
-    if (!g_manifest.load_lua("../../../manifest.lua")) {
+    ModuleManifest app_manifest;
+
+    StringRef app_manifest_filepath = "ludo/manifest.lua";
+    StringRef engine_manifest_filepath = "licht.engine/manifest.lua";
+
+    if (!app_manifest.load_lua(app_manifest_filepath)) {
         LLOG_ERROR("[ModuleManifest]", "Cannot load manifest.lua");
         return false;
     }
 
+    if (!g_manifest.load_lua(engine_manifest_filepath)) {
+        LLOG_ERROR("[ModuleManifest]", "Cannot load manifest.lua");
+        return false;
+    }
+
+    g_manifest.merge(app_manifest);
+    
     module_manifest_log(g_manifest);
 
     if (!module_manifest_resolve_dependencies(g_manifest, g_manifest_informations_order)) {

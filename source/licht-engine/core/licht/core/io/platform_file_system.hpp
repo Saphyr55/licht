@@ -6,6 +6,8 @@ namespace licht {
 
 class LICHT_CORE_API PlatformFileSystem : public FileSystem {
 public:
+    static StringRef executable_path();
+
     virtual bool file_exists(StringRef filepath) const override;
 
     virtual void make_directory(StringRef path) override;

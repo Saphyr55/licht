@@ -98,7 +98,7 @@ Array<uint8> PlatformFileHandle::read_all_bytes() {
     return buffer;
 }
 
-bool PlatformFileHandle::Close() {
+bool PlatformFileHandle::close() {
     if (stream_) {
         fclose(stream_);
         stream_ = nullptr;
@@ -112,7 +112,7 @@ PlatformFileHandle::PlatformFileHandle(FILE* stream)
     : stream_(stream), position_(0) {}
 
 PlatformFileHandle::~PlatformFileHandle() {
-    Close();
+    close();
 }
 
 }  // namespace licht

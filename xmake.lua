@@ -14,7 +14,7 @@ if is_mode("debug") then
     add_defines("LDEBUG")
 end
 
-includes("scripts/**.lua")
+includes("scripts/xmake/**.lua")
 
 add_requires("libsdl3", "catch2", "vulkan-headers", "lua")
 
@@ -23,7 +23,7 @@ add_requires("libsdl3", "catch2", "vulkan-headers", "lua")
 ----------------------------------------------------
 target("licht.engine.core", function()
     set_kind("shared")
-    set_group("licht.engine/source")
+    set_group("engine/modules")
 
     add_packages("libsdl3", "lua")
 
@@ -38,7 +38,7 @@ end)
 
 target("licht.engine.rhi", function()
     set_kind("shared")
-    set_group("licht.engine/source")
+    set_group("engine/modules")
 
     add_deps("licht.engine.core")
 
@@ -52,7 +52,7 @@ end)
 
 target("licht.engine.rhi.vulkan", function()
     set_kind("shared")
-    set_group("licht.engine/source")
+    set_group("engine/modules")
 
     add_deps("licht.engine.core", "licht.engine.rhi")
 
@@ -79,7 +79,7 @@ end)
 
 target("licht.engine.launcher", function()
     set_kind("shared")
-    set_group("licht.engine/source")
+    set_group("engine/modules")
 
     add_deps("licht.engine.core")
 
@@ -112,7 +112,7 @@ target("licht.engine.core.tests", function()
 
     add_includedirs("source/licht-engine/core")
 
-    add_files("tests/core/**.cpp")
+    add_files("tests/licht-engine/core/**.cpp")
 
 end)
 
@@ -122,7 +122,7 @@ end)
 
 target("ludo", function()
     set_kind("shared")
-    set_group("ludo/source")
+    set_group("ludo/modules")
 
     add_deps("licht.engine.core", "licht.engine.rhi", "licht.engine.rhi.vulkan")
 
@@ -135,7 +135,7 @@ target("ludo", function()
 
     add_files("source/ludo/ludo/**.cpp")
     add_headerfiles("source/ludo/ludo/**.hpp")
-    
+
     add_defines("LICHT_LUDO_EXPORTS")
 end)
 
@@ -143,10 +143,8 @@ target("ludo.app", function()
     set_kind("binary")
     set_group("ludo/app")
 
-    add_defines("LICHT_MAIN")
-
     add_deps("ludo", "licht.engine.core")
-    
+
     add_includedirs(unpack({
         "source/licht-engine/core",
         "source/licht-engine/rhi",
@@ -164,11 +162,21 @@ target("ludo.app", function()
     }
 
     after_build(function(target)
-
         import("core.base.task")
         import("core.project.project")
 
-        local output_shaders = path.join(target:targetdir(), "shaders")
+        local target_dir = target:targetdir()
+
+        local engine_manifest_dir = path.join(target_dir, "licht.engine")
+        local app_manifest_dir = path.join(target_dir, "ludo")
+
+        os.mkdir(engine_manifest_dir)
+        os.mkdir(app_manifest_dir)
+
+        os.cp("source/licht-engine/manifest.lua", engine_manifest_dir)
+        os.cp("source/ludo/manifest.lua", app_manifest_dir)
+
+        local output_shaders = path.join(target_dir, "shaders")
 
         task.run("compile-shaders", {
             files = shaders_file,

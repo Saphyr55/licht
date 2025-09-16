@@ -4,12 +4,19 @@
 #include "licht/core/string/string_ref.hpp"
 
 #include <stdio.h>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 namespace licht {
 
 FileSystem& FileSystem::get_platform() {
     static PlatformFileSystem platfom_file_system;
     return platfom_file_system;
+}
+
+StringRef PlatformFileSystem::executable_path() {
+    return fs::current_path().generic_string().c_str();
 }
 
 bool PlatformFileSystem::file_exists(StringRef filepath) const {
