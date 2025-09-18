@@ -1,10 +1,12 @@
 #pragma once
 
+#include "licht/core/containers/array.hpp"
 #include "licht/core/containers/hash_map.hpp"
 #include "licht/core/function/function_ref.hpp"
 #include "licht/core/memory/memory.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/modules/module.hpp"
+#include "licht/core/modules/module_manifest.hpp"
 #include "licht/core/platform/dynamic_library.hpp"
 #include "licht/core/string/string_ref.hpp"
 

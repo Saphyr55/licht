@@ -144,7 +144,7 @@ TEST_CASE("StringBase - Capacity management", "[string]") {
 
     SECTION("Reserve operation") {
         String str;
-        usize initial_capacity = str.capacity();
+        size_t initial_capacity = str.capacity();
 
         str.reserve(100);
 

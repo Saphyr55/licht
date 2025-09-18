@@ -22,20 +22,20 @@ bool PlatformFileHandle::flush() {
     return true;
 }
 
-usize PlatformFileHandle::size() {
+size_t PlatformFileHandle::size() {
     int64 current = tell();
     fseek(stream_, 0, SEEK_END);
     int64 end = ftell(stream_);
     seek(current);
-    return static_cast<usize>(end);
+    return static_cast<size_t>(end);
 }
 
-bool PlatformFileHandle::write(const uint8* buffer, usize nbytes) {
+bool PlatformFileHandle::write(const uint8* buffer, size_t nbytes) {
     if (!stream_) {
         return false;
     }
 
-    usize s = fwrite(buffer, sizeof(uint8), nbytes, stream_);
+    size_t s = fwrite(buffer, sizeof(uint8), nbytes, stream_);
     if (s != nbytes) {
         return false;
     }
@@ -43,12 +43,12 @@ bool PlatformFileHandle::write(const uint8* buffer, usize nbytes) {
     return true;
 }
 
-bool PlatformFileHandle::read(uint8* destination, usize nbytes) {
+bool PlatformFileHandle::read(uint8* destination, size_t nbytes) {
     if (!destination || nbytes == 0) {
         return false;
     }
 
-    usize bytes_read = fread(destination, sizeof(uint8), nbytes, stream_);
+    size_t bytes_read = fread(destination, sizeof(uint8), nbytes, stream_);
     if (bytes_read != nbytes) {
         return false;
     }
@@ -86,8 +86,8 @@ Array<uint8> PlatformFileHandle::read_all_bytes() {
 
     // Allocate buffer
     Array<uint8> buffer;
-    buffer.resize(static_cast<usize>(file_size));
-    usize bytes_read = fread(buffer.data(), sizeof(uint8), buffer.size(), stream_);
+    buffer.resize(static_cast<size_t>(file_size));
+    size_t bytes_read = fread(buffer.data(), sizeof(uint8), buffer.size(), stream_);
     if (bytes_read != buffer.size()) {
         return {};  // Read error or incomplete read
     }

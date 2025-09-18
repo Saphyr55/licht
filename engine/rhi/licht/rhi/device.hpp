@@ -1,6 +1,5 @@
 #pragma once
 
-#include "licht/core/containers/array.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/rhi/buffer.hpp"

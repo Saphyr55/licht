@@ -117,13 +117,13 @@ TEST_CASE("Map & map result type", "[Array::map]") {
     auto mapped = a.map<float64>([](int32 v) { return static_cast<float64>(v) / 2.0; });
 
     REQUIRE(mapped.size() == a.size());
-    for (usize i = 0; i < mapped.size(); ++i) {
+    for (size_t i = 0; i < mapped.size(); ++i) {
         REQUIRE(mapped[i] == Catch::Approx(static_cast<float64>(a[i]) / 2.0));
     }
 
     auto to_counter = a.map<Counter>([](int32 v) { return Counter(v * 10); });
     REQUIRE(to_counter.size() == a.size());
-    for (usize i = 0; i < to_counter.size(); ++i) {
+    for (size_t i = 0; i < to_counter.size(); ++i) {
         REQUIRE(to_counter[i].value == a[i] * 10);
     }
 }

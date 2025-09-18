@@ -25,53 +25,53 @@ public:
         AllocatorType*>;
 
 public:
-    ElementType* allocate(usize n)
+    ElementType* allocate(size_t n)
         requires(ownership == MemoryOwnership::Owner)
     {
         return static_cast<ElementType*>(
             allocator_.allocate(n * sizeof(ElementType), alignof(ElementType)));
     }
 
-    ElementType* allocate(usize n)
+    ElementType* allocate(size_t n)
         requires(ownership == MemoryOwnership::NonOwner)
     {
         return static_cast<ElementType*>(
             allocator_->allocate(n * sizeof(ElementType), alignof(ElementType)));
     }
 
-    void deallocate(ElementType* element, usize n)
+    void deallocate(ElementType* element, size_t n)
         requires(ownership == MemoryOwnership::Owner)
     {
         allocator_.deallocate(element, n * sizeof(ElementType), alignof(ElementType));
     }
 
-    void deallocate(ElementType* element, usize n)
+    void deallocate(ElementType* element, size_t n)
         requires(ownership == MemoryOwnership::NonOwner)
     {
         allocator_->deallocate(element, n * sizeof(ElementType), alignof(ElementType));
     }
 
-    ElementType* allocate(usize n, usize alignment)
+    ElementType* allocate(size_t n, size_t alignment)
         requires(ownership == MemoryOwnership::Owner)
     {
         return static_cast<ElementType*>(
             allocator_.allocate(n * sizeof(ElementType), alignment));
     }
 
-    ElementType* allocate(usize n, usize alignment)
+    ElementType* allocate(size_t n, size_t alignment)
         requires(ownership == MemoryOwnership::NonOwner)
     {
         return static_cast<ElementType*>(
             allocator_->allocate(n * sizeof(ElementType), alignment));
     }
 
-    void deallocate(ElementType* element, usize n, usize alignment)
+    void deallocate(ElementType* element, size_t n, size_t alignment)
         requires(ownership == MemoryOwnership::Owner)
     {
         allocator_.deallocate(element, n * sizeof(ElementType), alignment);
     }
 
-    void deallocate(ElementType* element, usize n, usize alignment)
+    void deallocate(ElementType* element, size_t n, size_t alignment)
         requires(ownership == MemoryOwnership::NonOwner)
     {
         allocator_->deallocate(element, n * sizeof(ElementType), alignment);
@@ -101,15 +101,8 @@ public:
         }
     }
 
+protected:
     AllocatorType& get_allocator() {
-        if constexpr (ownership == MemoryOwnership::Owner) {
-            return allocator_;
-        } else {
-            return *allocator_;
-        }
-    }
-
-    const AllocatorType& get_allocator() const {
         if constexpr (ownership == MemoryOwnership::Owner) {
             return allocator_;
         } else {
@@ -128,7 +121,7 @@ public:
         requires(ownership == MemoryOwnership::NonOwner)
         : allocator_(&memory) {}
 
-    TypedAllocator(usize size)
+    TypedAllocator(size_t size)
         requires(ownership == MemoryOwnership::Owner)
         : allocator_(size) {}
 

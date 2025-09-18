@@ -12,6 +12,21 @@ local _modules = {
         }
     },
     {
+        name = "licht.engine",
+        version = "0.0.1-dev",
+        dependencies = {
+            "licht.core"
+        }
+    },
+    {
+        name = "licht.launcher",
+        version = "0.0.1-dev",
+        dependencies = {
+            "licht.core",
+            "licht.engine"
+        }
+    },
+    {
         name = "licht.rhi.vulkan",
         version = "0.0.1-dev",
         dependencies = {

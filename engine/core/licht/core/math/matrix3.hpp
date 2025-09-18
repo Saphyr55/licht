@@ -14,7 +14,7 @@ struct Matrix3 {
 
     Mat operator*(Mat m);
     Vec operator*(Vec v);
-    Vec& operator[](usize i);
+    Vec& operator[](size_t i);
     Vec col(uint32 index) const;
 
     Matrix3() = default;
@@ -147,7 +147,7 @@ Vector3<R> Matrix3<R>::operator*(Vector3<R> v) {
 }
 
 template <Real R>
-Vector3<R>& Matrix3<R>::operator[](usize i) {
+Vector3<R>& Matrix3<R>::operator[](size_t i) {
     return value[i];
 }
 

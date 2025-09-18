@@ -14,8 +14,8 @@ struct Matrix4 {
 
     Mat operator*(const Mat& m) const;
     Vec operator*(const Vector4<R>& v) const;
-    Vec& operator[](usize i);
-    const Vec& operator[](usize i) const;
+    Vec& operator[](size_t i);
+    const Vec& operator[](size_t i) const;
     Vec col(uint32 index) const;
 
     Matrix4() = default;
@@ -259,12 +259,12 @@ Vector4<R> Matrix4<R>::operator*(const Vector4<R>& v) const {
 }
 
 template <Real R>
-const Vector4<R>& Matrix4<R>::operator[](usize i) const {
+const Vector4<R>& Matrix4<R>::operator[](size_t i) const {
     return value[i];
 }
 
 template <Real R>
-Vector4<R>& Matrix4<R>::operator[](usize i) {
+Vector4<R>& Matrix4<R>::operator[](size_t i) {
     return value[i];
 }
 

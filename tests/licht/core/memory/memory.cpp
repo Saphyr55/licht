@@ -46,8 +46,8 @@ TEST_CASE("Memory allocation and deallocation.", "[Memory][Allocation]") {
     }
 
     SECTION("Aligned allocation and free.") {
-        const usize alignment = 16;
-        const usize size = 100;
+        const size_t alignment = 16;
+        const size_t size = 100;
         
         void* ptr = Memory::allocate(size, alignment);
         REQUIRE(ptr != nullptr);
@@ -59,11 +59,11 @@ TEST_CASE("Memory allocation and deallocation.", "[Memory][Allocation]") {
     }
 
     SECTION("Aligned allocation with various alignments.") {
-        const usize sizes[] = {10, 100, 1024};
-        const usize alignments[] = {2, 4, 8, 16, 32, 64, 128};
+        const size_t sizes[] = {10, 100, 1024};
+        const size_t alignments[] = {2, 4, 8, 16, 32, 64, 128};
         
-        for (usize size : sizes) {
-            for (usize alignment : alignments) {
+        for (size_t size : sizes) {
+            for (size_t alignment : alignments) {
                 void* ptr = Memory::allocate(size, alignment);
                 REQUIRE(ptr != nullptr);
                 
@@ -95,7 +95,7 @@ TEST_CASE("Memory utility functions.", "[Memory][Utility]") {
     }
 
     SECTION("write() function works correctly.") {
-        constexpr usize size = 10;
+        constexpr size_t size = 10;
         char buffer[size];
         
         void* result = Memory::write(buffer, int32('A'), size);
@@ -125,14 +125,14 @@ TEST_CASE("Edge cases and stress tests", "[Memory][Edge]") {
     }
 
     SECTION("Large allocation.") {
-        constexpr usize large_size = 1024 * 1024;  // 1MB
+        constexpr size_t large_size = 1024 * 1024;  // 1MB
         void* ptr = Memory::allocate(large_size);
         REQUIRE(ptr != nullptr);
         Memory::free(ptr, large_size);
     }
 
     SECTION("Maximum alignment.") {
-        constexpr usize max_alignment = 128;
+        constexpr size_t max_alignment = 128;
         void* ptr = Memory::allocate(100, max_alignment);
         REQUIRE(ptr != nullptr);
         REQUIRE(Memory::is_aligned(reinterpret_cast<uintptr_t>(ptr), max_alignment));

@@ -12,9 +12,9 @@ namespace licht {
 
 class LICHT_CORE_API Display {
 public:
-    static constexpr WindowHandle INVALID_WINDOW_HANDLE = UINT32_MAX;
-    static constexpr WindowHandle MAIN_WINDOW_HANDLE = 1;
-    static constexpr WindowHandle DESKTOP_WINDOW_HANDLE = 0;
+    static constexpr WindowHandle InvalidWindowHandle = UINT32_MAX;
+    static constexpr WindowHandle MainWindowHandle = 1;
+    static constexpr WindowHandle DesktopWindowHandle = 0;
 
 public:
     static Display& get_default();

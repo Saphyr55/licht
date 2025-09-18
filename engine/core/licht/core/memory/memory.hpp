@@ -24,14 +24,14 @@ enum class MemoryCategory {
 
 }  //namespace licht
 
-LICHT_CORE_API void* operator new(usize size, licht::MemoryCategory category) noexcept;
-LICHT_CORE_API void* operator new[](usize size, licht::MemoryCategory category) noexcept;
+LICHT_CORE_API void* operator new(size_t size, licht::MemoryCategory category) noexcept;
+LICHT_CORE_API void* operator new[](size_t size, licht::MemoryCategory category) noexcept;
 
 LICHT_CORE_API void operator delete(void* resource, licht::MemoryCategory category) noexcept;
 LICHT_CORE_API void operator delete[](void* resource, licht::MemoryCategory category) noexcept;
 
-LICHT_CORE_API void operator delete(void* resource, usize size, licht::MemoryCategory category) noexcept;
-LICHT_CORE_API void operator delete[](void* resource, usize size, licht::MemoryCategory category) noexcept;
+LICHT_CORE_API void operator delete(void* resource, size_t size, licht::MemoryCategory category) noexcept;
+LICHT_CORE_API void operator delete[](void* resource, size_t size, licht::MemoryCategory category) noexcept;
 
 namespace licht {
 
@@ -54,10 +54,10 @@ public:
      * @param alignment The alignment boundary, in bytes.
      * @return The aligned memory address.
      */
-    LICHT_CORE_API static uintptr_t align_address(uintptr_t address, usize alignment);
+    LICHT_CORE_API static uintptr_t align_address(uintptr_t address, size_t alignment);
 
     template <typename ResourceType>
-    static ResourceType* align(ResourceType* memory, usize alignment) {
+    static ResourceType* align(ResourceType* memory, size_t alignment) {
         return reinterpret_cast<ResourceType*>(align_address(reinterpret_cast<uintptr_t>(memory), alignment));
     }
 
@@ -68,7 +68,7 @@ public:
      * @param alignment The alignment boundary, in bytes.
      * @return The number of bytes needed for alignment adjustment.
      */
-    LICHT_CORE_API static usize align_adjustment(const uintptr_t address, usize alignment);
+    LICHT_CORE_API static size_t align_adjustment(const uintptr_t address, size_t alignment);
 
     /**
      * @brief Calculates the next aligned size based on the given the memory address size and alignment.
@@ -77,7 +77,7 @@ public:
      * @param alignment The alignment boundary, in bytes.
      * @return The next aligned size.
      */
-    LICHT_CORE_API static usize aligned_size(usize size, usize alignment);
+    LICHT_CORE_API static size_t aligned_size(size_t size, size_t alignment);
 
     /**
      * @brief Checks if a memory block address is aligned to the specified alignment.
@@ -86,7 +86,7 @@ public:
      * @param alignment The alignment boundary, in bytes.
      * @return `true` if the block is aligned, `false` otherwise.
      */
-    LICHT_CORE_API static bool is_aligned(const uintptr_t address, usize alignment);
+    LICHT_CORE_API static bool is_aligned(const uintptr_t address, size_t alignment);
 
     /**
      * @brief Allocates a block of memory of the specified size.
@@ -94,8 +94,8 @@ public:
      * @param size The size of the memory block to allocate, in bytes.
      * @return A pointer to the allocated memory block.
      */
-    LICHT_CORE_API static void* allocate(usize size) noexcept;
-    LICHT_CORE_API static void* allocate(usize size, usize alignment) noexcept;
+    LICHT_CORE_API static uint8* allocate(size_t size, MemoryCategory category = MemoryCategory::General) noexcept;
+    LICHT_CORE_API static uint8* allocate(size_t size, size_t alignment, MemoryCategory category = MemoryCategory::General) noexcept;
 
     /**
      * @brief Frees a previously allocated block of memory.
@@ -103,8 +103,8 @@ public:
      * @param block A pointer to the memory block to free.
      * @param size The size of the memory block, in bytes.
      */
-    LICHT_CORE_API static void free(void* block, usize size) noexcept;
-    LICHT_CORE_API static void free(void* block, usize size, usize alignment) noexcept;
+    LICHT_CORE_API static void free(void* block, size_t size) noexcept;
+    LICHT_CORE_API static void free(void* block, size_t size, size_t alignment) noexcept;
 
     /**
      * @brief Writes a specified value into a memory block.
@@ -116,7 +116,7 @@ public:
      */
     LICHT_CORE_API static void* write(void* destination,
                                       int32 value,
-                                      usize size);
+                                      size_t size);
 
     /**
      * @brief Copies a block of memory from the source to the destination.
@@ -128,13 +128,13 @@ public:
      */
     LICHT_CORE_API static void* copy(void* destination,
                                      const void* source,
-                                     usize size);
+                                     size_t size);
 
     LICHT_CORE_API static void* copy_move(void* destination,
                                           const void* source,
-                                          usize size);
+                                          size_t size);
 
-    LICHT_CORE_API static int compare(const void* buffer1, const void* buffer2, usize size);
+    LICHT_CORE_API static int compare(const void* buffer1, const void* buffer2, size_t size);
 
 public:
     Memory() = delete;

@@ -33,7 +33,7 @@ void RHIVulkanCommandBuffer::bind_pipeline(RHIPipelineHandle pipeline) {
 void RHIVulkanCommandBuffer::set_scissors(const Rect2D* scissors, uint32 count) {
     Array<VkRect2D> vk_scissors;
     vk_scissors.resize(count);
-    for (usize i = 0; i < count; i++) {
+    for (size_t i = 0; i < count; i++) {
         vk_scissors[i].offset.x = static_cast<int32>(scissors[i].x);
         vk_scissors[i].offset.y = static_cast<int32>(scissors[i].y);
         vk_scissors[i].extent.width = static_cast<uint32>(scissors[i].width);

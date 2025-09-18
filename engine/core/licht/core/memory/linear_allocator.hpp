@@ -10,25 +10,37 @@ namespace licht {
 
 class LICHT_CORE_API LinearAllocator : public AlignedAllocator {
 public:
-    virtual void* allocate(usize size, usize alignment) override;
+    virtual void* allocate(size_t size, size_t alignment) override;
 
-    virtual void deallocate(void* block, usize size, usize alignment) override;
+    virtual void deallocate(void* block, size_t size, size_t alignment) override;
 
 public:
-    void initialize(usize size);
+    void initialize(size_t size);
 
     void destroy();
 
     void reset();
 
-public:
-    explicit LinearAllocator(usize size);
-    LinearAllocator();
+    inline size_t get_size() const {
+        return size_;
+    }
+
+    inline size_t get_offset() const {
+        return offset_;
+    }
+
+    inline bool is_valid() const {
+        return buffer_ != nullptr;
+    }
+
+public: 
+    explicit LinearAllocator(size_t size);
+    LinearAllocator(); // Default constructor creates an uninitialized allocator.
     ~LinearAllocator();
 
 private:
-    usize size_;
-    usize offset_;
+    size_t size_;
+    size_t offset_;
     uint8* buffer_;
 };
 

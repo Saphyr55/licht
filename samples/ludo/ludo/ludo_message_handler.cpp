@@ -8,15 +8,15 @@ void DemoMessageHandler::on_window_close(const WindowHandle window) {
 
 void DemoMessageHandler::on_window_resized(const WindowHandle window, const uint32 width, const uint32 height) {
     LLOG_INFO("[DemoMessageHandler::on_window_resized]", vformat("Window resized to %dx%d", width, height));
-    rhi_module_->update_resized(width, height);
+    frame_script_->update_resized(width, height);
 }
 
 void DemoMessageHandler::on_window_minimized(const WindowHandle window) {
-    rhi_module_->pause();
+    frame_script_->pause();
 }
 
 void DemoMessageHandler::on_window_shown(const WindowHandle window) {
-    rhi_module_->unpause();
+    frame_script_->unpause();
 }
 
 void DemoMessageHandler::on_mouse_wheel(const float32 delta) {

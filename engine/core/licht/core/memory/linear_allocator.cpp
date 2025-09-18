@@ -4,27 +4,28 @@
 
 namespace licht {
 
-void* LinearAllocator::allocate(const usize size, usize alignment) {
-    usize space = size_ - offset_;
+void* LinearAllocator::allocate(const size_t size, size_t alignment) {
+    
+    size_t space = size_ - offset_;
+    uint8* block = buffer_ + offset_;
+    uint8* aligned_block = Memory::align(block, alignment);
 
-    void* block = buffer_ + offset_;
-    void* aligned = Memory::align(block, alignment);
-
-    if (!aligned || static_cast<uint8*>(aligned) + size > buffer_ + size_) {
-        return nullptr;  // Not enough space.
+    if (!aligned_block || aligned_block + size > buffer_ + size_) {
+         // Not enough space.
+        return nullptr;
     }
 
-    offset_ = static_cast<uint8*>(aligned) - buffer_ + size;
+    offset_ = aligned_block - buffer_ + size;
 
-    return aligned;
+    return aligned_block;
 }
 
-void LinearAllocator::deallocate(void* /* block */, usize /* size */, usize /* alignment */) {
+void LinearAllocator::deallocate(void* /* block */, size_t /* size */, size_t /* alignment */) {
     // Linear allocator does not support deallocation of individual blocks.
     // Deallocation is done by resetting the entire allocator.
 }
 
-void LinearAllocator::initialize(usize size) {
+void LinearAllocator::initialize(size_t size) {
     size_ = size;
     if (buffer_) {
         destroy();
@@ -50,7 +51,7 @@ void LinearAllocator::reset() {
     offset_ = 0;
 }
 
-LinearAllocator::LinearAllocator(usize size)
+LinearAllocator::LinearAllocator(size_t size)
     : size_(32)
     , offset_(0)
     , buffer_(nullptr) {
@@ -61,7 +62,6 @@ LinearAllocator::LinearAllocator()
     : size_(32)
     , offset_(0)
     , buffer_(nullptr) {
-    initialize(size_);
 }
 
 LinearAllocator::~LinearAllocator() {

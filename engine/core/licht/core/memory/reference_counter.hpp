@@ -6,6 +6,7 @@
 #include "licht/core/core_exports.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/memory/deleter.hpp"
+#include "memory.hpp"
 
 namespace licht {
 
@@ -28,7 +29,6 @@ public:
     }
 
     void add_shared_reference() {
-
         if (std::addressof(shared_reference_count_) == nullptr) {
             return;
         }
@@ -37,7 +37,6 @@ public:
     }
 
     void release_shared_reference() {
-
         if (std::addressof(shared_reference_count_) == nullptr) {
             return;
         }
@@ -98,15 +97,13 @@ private:
 
 template <typename ResourceType, typename DeleterType>
 inline ReferenceCounter* new_reference_counter_with_deleter(ResourceType* resource, DeleterType&& deleter) noexcept {
-    return static_cast<ReferenceCounter*>(
-        new (std::nothrow) ReferenceCounterWithDeleter<ResourceType, DeleterType>(
-            resource, std::move(deleter)));
+    using RefCounterwithDel = ReferenceCounterWithDeleter<ResourceType, DeleterType>;
+    return new (MemoryCategory::General) RefCounterwithDel(resource, std::move(deleter));
 }
 
 template <typename ResourceType>
 inline ReferenceCounter* new_default_reference_counter(ResourceType* resource) noexcept {
-    return new_reference_counter_with_deleter<ResourceType, DefaultDeleter<ResourceType>>(
-        resource, DefaultDeleter<ResourceType>());
+    return new_reference_counter_with_deleter<ResourceType, DefaultDeleter<ResourceType>>(resource, DefaultDeleter<ResourceType>());
 }
 
 }  // namespace licht

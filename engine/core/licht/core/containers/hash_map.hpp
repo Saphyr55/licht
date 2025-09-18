@@ -62,7 +62,7 @@ public:
 
     class Iterator {
     public:
-        Iterator(HashMap* map = nullptr, usize bucket_index = 0, ElementType* elem = nullptr)
+        Iterator(HashMap* map = nullptr, size_t bucket_index = 0, ElementType* elem = nullptr)
             : map_(map), bucket_index_(bucket_index), elem_(elem) {}
 
         EntryType& operator*() const { return elem_->entry; }
@@ -111,13 +111,13 @@ public:
 
     private:
         HashMap* map_;
-        usize bucket_index_;
+        size_t bucket_index_;
         ElementType* elem_;
     };
 
     class ConstIterator {
     public:
-        ConstIterator(const HashMap* map = nullptr, usize bucket_index = 0, const ElementType* elem = nullptr)
+        ConstIterator(const HashMap* map = nullptr, size_t bucket_index = 0, const ElementType* elem = nullptr)
             : map_(map), bucket_index_(bucket_index), elem_(elem) {}
 
         const EntryType& operator*() const { return elem_->entry; }
@@ -163,12 +163,12 @@ public:
 
     private:
         const HashMap* map_;
-        usize bucket_index_;
+        size_t bucket_index_;
         const ElementType* elem_;
     };
 
 public:
-    HashMap(usize capacity = 8)
+    HashMap(size_t capacity = 8)
         : size_(0)
         , capacity_(capacity)
         , buckets_(nullptr)
@@ -194,7 +194,7 @@ public:
         , allocator_() {
         initialize_buckets();
 
-        for (usize i = 0; i < other.capacity_; ++i) {
+        for (size_t i = 0; i < other.capacity_; ++i) {
             ElementType* cur = other.buckets_[i];
             ElementType** tail = &buckets_[i];
             while (cur) {
@@ -258,7 +258,7 @@ public:
             return;
         }
         size_t h = hash(key);
-        usize idx = static_cast<usize>(h % capacity_);
+        size_t idx = static_cast<size_t>(h % capacity_);
 
         ElementType* cur = buckets_[idx];
         ElementType* prev = nullptr;
@@ -288,7 +288,7 @@ public:
         }
 
         size_t h = hash(key);
-        usize idx = static_cast<usize>(h % capacity_);
+        size_t idx = static_cast<size_t>(h % capacity_);
 
         ElementType* cur = buckets_[idx];
         while (cur) {
@@ -336,7 +336,7 @@ public:
         if (!buckets_) {
             return;
         }
-        for (usize i = 0; i < size_; ++i) {
+        for (size_t i = 0; i < size_; ++i) {
             ElementType* cur = buckets_[i];
             while (cur) {
                 ElementType* next = cur->next;
@@ -348,11 +348,11 @@ public:
         size_ = 0;
     }
 
-    usize size() const {
+    size_t size() const {
         return size_;
     }
 
-    usize capacity() const {
+    size_t capacity() const {
         return capacity_;
     }
 
@@ -373,7 +373,7 @@ public:
         if (!buckets_) {
             return end();
         }
-        for (usize i = 0; i < capacity_; ++i) {
+        for (size_t i = 0; i < capacity_; ++i) {
             if (buckets_[i]) {
                 return Iterator(this, i, buckets_[i]);
             }
@@ -389,7 +389,7 @@ public:
         if (!buckets_) {
             return end();
         }
-        for (usize i = 0; i < capacity_; ++i) {
+        for (size_t i = 0; i < capacity_; ++i) {
             if (buckets_[i]) {
                 return ConstIterator(this, i, buckets_[i]);
             }
@@ -415,7 +415,7 @@ private:
             return nullptr;
         }
         size_t h = hash(key);
-        usize idx = static_cast<usize>(h % capacity_);
+        size_t idx = static_cast<size_t>(h % capacity_);
         ElementType* cur = buckets_[idx];
         while (cur) {
             if (cur->entry.key == key) {
@@ -426,7 +426,7 @@ private:
         return nullptr;
     }
 
-    void resize_rehash(usize new_capacity) {
+    void resize_rehash(size_t new_capacity) {
         if (new_capacity == 0) {
             return;
         }
@@ -434,11 +434,11 @@ private:
         ElementType** new_buckets = new ElementType*[new_capacity];
         Memory::write(new_buckets, 0, sizeof(ElementType*) * new_capacity);
 
-        for (usize i = 0; i < capacity_; ++i) {
+        for (size_t i = 0; i < capacity_; ++i) {
             ElementType* cur = buckets_[i];
             while (cur) {
                 ElementType* next = cur->next;
-                usize idx = static_cast<usize>(cur->hash % new_capacity);
+                size_t idx = static_cast<size_t>(cur->hash % new_capacity);
                 cur->next = new_buckets[idx];
                 new_buckets[idx] = cur;
                 cur = next;
@@ -479,8 +479,8 @@ private:
 private:
     ElementType** buckets_;
     AllocatorType allocator_;
-    usize size_;
-    usize capacity_;
+    size_t size_;
+    size_t capacity_;
     static constexpr float64 load_factor_ = 0.75;
 };
 

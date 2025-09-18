@@ -5,12 +5,13 @@
 #include "licht/core/memory/default_allocator.hpp"
 
 #include <algorithm>
+#include <cstddef>
 
 namespace licht {
 
 template <typename ElementType,
           CAllocator<ElementType> AllocatorType = TypedDefaultAllocator<ElementType>,
-          typename SizeType = usize>
+          typename SizeType = size_t>
 class Array {
 public:
     using IteratorType = ElementType*;
@@ -242,7 +243,7 @@ public:
         data_ = allocator_allocate(capacity_);
     }
 
-    constexpr Array(usize capacity,
+    constexpr Array(size_t capacity,
                     const AllocatorType& allocator = AllocatorType()) noexcept
         : data_(nullptr)
         , size_(0)
@@ -408,7 +409,7 @@ inline constexpr bool operator==(const Array<ElementType, AllocatorType>& lhs,
         return false;
     }
 
-    for (usize i = 0; i < lhs.size(); i++) {
+    for (size_t i = 0; i < lhs.size(); i++) {
         if (!(lhs[i] == rhs[i])) {
             return false;
         }

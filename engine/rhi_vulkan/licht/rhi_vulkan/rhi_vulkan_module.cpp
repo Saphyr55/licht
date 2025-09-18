@@ -11,8 +11,8 @@
 namespace licht {
 
 RHIVulkanModule::RHIVulkanModule() 
- : window_handle_(Display::INVALID_WINDOW_HANDLE)
- , context_() {
+    : window_handle_(Display::InvalidWindowHandle)
+    , context_() {
 }
 
 void RHIVulkanModule::on_load() { 

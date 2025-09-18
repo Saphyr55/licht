@@ -1,5 +1,7 @@
 #include "ludo_module.hpp"
+#include "buffered_allocator.hpp"
 #include "ludo_message_handler.hpp"
+#include "render_frame_script.hpp"
 
 #include <licht/core/defines.hpp>
 #include <licht/core/memory/shared_ref.hpp>
@@ -10,6 +12,22 @@
 #include <licht/core/platform/window_handle.hpp>
 #include <licht/core/trace/trace.hpp>
 #include <licht/rhi/rhi_module.hpp>
+
+void LudoModule::on_load() {
+    LLOG_INFO("[LudoModule]", "Ludo module loaded.");
+}
+
+void LudoModule::on_startup() {
+    LLOG_INFO("[LudoModule]", "Starting Ludo application.");
+}
+
+void LudoModule::on_shutdown() {
+    LLOG_INFO("[LudoModule]", "Shutting down Ludo application.");
+}
+
+void LudoModule::on_unload() {
+    LLOG_INFO("[LudoModule]", "Ludo module unloaded.");
+}
 
 int32 ludo_application_launch(int32 argc, const char** argv) {
     // Create a window. WindowHandle behave like a reference.
@@ -32,10 +50,14 @@ int32 ludo_application_launch(int32 argc, const char** argv) {
     // TODO: Startup and shutdown must be launched automatically after refactoring the engine loop.
     rhi_module->on_startup();
 
+    // Create and start the render frame script.
+    RenderFrameScript render_frame_script;
+    render_frame_script.on_startup();
+
     // By creating a DisplayMessageHandler, you can intercept the platform and window events.
     SharedRef<DemoMessageHandler> demo_message_handler = new_ref<DemoMessageHandler>();
     display.set_message_handler(demo_message_handler);
-    demo_message_handler->set_rhi_module(rhi_module);
+    demo_message_handler->set_render_frame_script(&render_frame_script);
 
     // Show the window.
     display.show(window_handle);
@@ -43,12 +65,29 @@ int32 ludo_application_launch(int32 argc, const char** argv) {
     // We use global variable for the loop.
     // TODO: Must externalize the loop.
     g_is_running = true;
+
+    BufferedAllocator buffered_allocator;
+    buffered_allocator.initialize(1024 * 1024 * 10);  // 1 MB for each buffer
+    
+    // Main loop
     while (g_is_running) {
-        display.handle_events();
-        rhi_module->on_tick();
+        // Swap the active and inactive buffers of the double-buffered allocator.
+        buffered_allocator.swap_buffers();
+
+        // Reset the active buffer.
+        buffered_allocator.reset();
+
+        // Handle window and platform events
+        display.handle_events(); 
+
+        // Tick the render frame script with a fixed delta time (0.0f for now)
+        render_frame_script.on_tick(0.0f);
+        
     }
 
-    // But do not forget to stop it.
+    // Do not forget to stop it.
+    // TODO: Need to be done by a manager
+    render_frame_script.on_shutdown();
     rhi_module->on_shutdown();
 
     return EXIT_SUCCESS;

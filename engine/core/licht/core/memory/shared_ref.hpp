@@ -227,7 +227,7 @@ constexpr inline SharedRef<ResourceType> new_ref(Args&&... args) noexcept {
 
 template <typename ResourceType>
 struct std::hash<licht::SharedRef<ResourceType>> {
-    usize operator()(const licht::SharedRef<ResourceType>& ref) const {
+    size_t operator()(const licht::SharedRef<ResourceType>& ref) const {
         return std::hash<ResourceType*>()(ref.get_resource());
     }
 };

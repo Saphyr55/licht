@@ -1,5 +1,7 @@
 #pragma once
 
+#include "command_parser.hpp"
+#include "licht/core/containers/hash_map.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/io/platform_file_system.hpp"
 #include "licht/core/modules/module_manifest.hpp"
@@ -7,16 +9,19 @@
 #include "licht/core/platform/platform.hpp"
 #include "licht/core/string/string_ref.hpp"
 #include "licht/core/trace/trace.hpp"
+#include "licht/engine/engine.hpp"
+#include "licht/engine/project_settings.hpp"
 #include "licht/launcher/launcher_exports.hpp"
 
 namespace licht {
 
-inline ModuleManifest g_manifest;
-inline Array<const ModuleManifestInformation*> g_manifest_informations_order;
-
-inline bool main_load_manifest(const StringRef projectdir, 
-                               const StringRef engine_manifest_directory,
-                               const Array<StringRef> external_deps) {
+inline bool main_load_manifest() {
+    
+    Engine& engine = Engine::get_instance();
+    ModuleManifest& engine_manifest = engine.get_manifest();
+    
+    StringRef engine_manifest_directory = engine.get_engine_directory();
+    StringRef projectdir = engine.get_project_directory(); 
 
     ModuleManifest app_manifest;
     String app_manifest_filepath = vformat("%s/manifest.lua", projectdir.data());
@@ -27,21 +32,23 @@ inline bool main_load_manifest(const StringRef projectdir,
         return false;
     }
 
-    if (!g_manifest.load_lua(engine_manifest_filepath)) {
+    if (!engine.get_manifest().load_lua(engine_manifest_filepath)) {
         LLOG_ERROR("[ModuleManifest]", vformat("Cannot load the manifest '%s'", engine_manifest_filepath.data()))
         return false;
     }
 
-    g_manifest.merge(app_manifest);
+    engine_manifest.merge(app_manifest);
 
-    module_manifest_log(g_manifest);
+    module_manifest_log(engine_manifest);
+    
+    Array<const ModuleManifestInformation*>& order = engine.get_ordered_module_informations();
 
-    if (!module_manifest_resolve_dependencies(g_manifest, g_manifest_informations_order)) {
+    if (!module_manifest_resolve_dependencies(engine_manifest, order)) {
         LLOG_ERROR("[ModuleManifest]", "Cannot resolve manifest dependencies.");
         return false;
     }
 
-    for (const ModuleManifestInformation* info : g_manifest_informations_order) {
+    for (const ModuleManifestInformation* info : engine.get_ordered_module_informations()) {
         if (!ModuleRegistry::get_instance().load_module(info->name)) {
             LLOG_ERROR("[Module]", vformat("Cannot load module: %s", info->name.data()));
             return false;
@@ -52,46 +59,30 @@ inline bool main_load_manifest(const StringRef projectdir,
 }
 
 inline void main_unload_manifest() {
-    for (int32 i = g_manifest_informations_order.size() - 1; i >= 0; i--) {
-        const ModuleManifestInformation* info = g_manifest_informations_order[i];
+    Engine& engine = Engine::get_instance();
+    for (int32 i = engine.get_ordered_module_informations().size() - 1; i >= 0; i--) {
+        const ModuleManifestInformation* info = engine.get_ordered_module_informations()[i];
         ModuleRegistry::get_instance().unload_module(info->name);
         LLOG_INFO("[Module]", vformat("Unloaded module: %s", info->name.data()));
     }
 }
 
 inline bool main_preinit(int32 argc, const char** argv) {
-    LLOG_INFO("[main]", "Launch application.");
-    
-    StringRef projectdir = PlatformFileSystem::get_current_directory();
-    StringRef enginedir = PlatformFileSystem::get_current_directory();
-    Array<StringRef> deps;
+    LLOG_INFO("[main]", "Pre init engine.");
 
-    for (uint8 i = 1; i < argc; i++) {
-        StringRef arg = argv[i];
-        
-        if (arg == "--projectdir") {
-            if (i + 1 >= argc) {
-                LLOG_ERROR("[main]", "--projectdir requires an argument.");
-                return false;
-            }
-            projectdir = argv[++i];
-            LLOG_INFO("[main]", vformat("Set project directory to: '%s'", projectdir.data()));
-            continue;
-        }
+    Engine& engine = Engine::get_instance();
 
-        if (arg == "--enginedir") {
-            if (i + 1 >= argc) {
-                LLOG_ERROR("[main]", "--enginedir requires an argument.");
-                return false;
-            }
-            enginedir = argv[++i];
-            LLOG_INFO("[main]", vformat("Set engine directory to: '%s'", enginedir.data()));
-            continue;
-        }
+    HashMap<StringRef, StringRef> commands = command_line_parse(argc, argv);
+    StringRef projectdir = commands["projectdir"];
+    StringRef enginedir = commands["enginedir"];
 
-    }
+    engine.startup();
 
-    if (!main_load_manifest(projectdir, enginedir, deps)) {
+    ProjectSettings& settings = ProjectSettings::get_instance();
+    settings.insert("projectdir", projectdir);
+    settings.insert("enginedir", enginedir);
+
+    if (!main_load_manifest()) {
         return false;
     }
 
@@ -99,10 +90,13 @@ inline bool main_preinit(int32 argc, const char** argv) {
 }
 
 inline void main_postlaunch() {
+    Engine& engine = Engine::get_instance();
+
     main_unload_manifest();
+    engine.shutdown();
 }
 
-}
+}  //namespace licht
 
 #ifdef LICHT_MAIN
 

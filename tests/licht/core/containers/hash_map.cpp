@@ -166,7 +166,7 @@ TEST_CASE("Iterator traversal and const iteration.", "[HashMap::Iterator]") {
     REQUIRE(values.size() == map.size());
 
     const HashMap<uint32, uint32>& cmap = map;
-    usize count = 0;
+    size_t count = 0;
     for (auto it = cmap.begin(); it != cmap.end(); ++it) {
         REQUIRE(cmap.contains(it->key));
         ++count;

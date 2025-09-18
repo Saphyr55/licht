@@ -29,7 +29,7 @@ public:
 
     constexpr StringRefBase& operator=(const StringRefBase& other) = default;
 
-    constexpr const CharType& operator[](usize index) const {
+    constexpr const CharType& operator[](size_t index) const {
         LCHECK(index < size())
         return data_[index];
     }
@@ -38,7 +38,7 @@ public:
 
     constexpr const CharType* data() const { return data_; }
 
-    constexpr usize size() const { return string_length(data_); }
+    constexpr size_t size() const { return string_length(data_); }
 
     constexpr bool empty() const { return size() == 0; }
 
@@ -67,19 +67,19 @@ std::ostream& operator<<(std::ostream& os, const licht::StringRefBase<CharType>&
 
 template <>
 struct LICHT_CORE_API std::hash<::licht::StringRef> {
-    usize operator()(const licht::StringRef& s) const noexcept {
+    size_t operator()(const licht::StringRef& s) const noexcept {
         const char* data = s.data();
-        usize len = s.size();
+        size_t len = s.size();
 
         // FNV-1a 64-bit
         uint64 hash = 14695981039346656037ULL;
         constexpr uint64_t prime = 1099511628211ULL;
 
-        for (usize i = 0; i < len; ++i) {
+        for (size_t i = 0; i < len; ++i) {
             hash ^= static_cast<uint8>(data[i]);
             hash *= prime;
         }
 
-        return static_cast<usize>(hash);
+        return static_cast<size_t>(hash);
     }
 };

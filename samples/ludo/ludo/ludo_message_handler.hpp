@@ -3,6 +3,7 @@
 #include "licht/core/platform/display_message_handler.hpp"
 #include "licht/core/platform/window_handle.hpp"
 #include "licht/rhi/rhi_module.hpp"
+#include "render_frame_script.hpp"
 
 using namespace licht;
 
@@ -20,12 +21,12 @@ public:
 
     virtual void on_key_down(Key key) override;
 
-    inline void set_rhi_module(RHIModule* rhi_module) {
-        rhi_module_ = rhi_module;
+    inline void set_render_frame_script(RenderFrameScript* frame_script) {
+        frame_script_ = frame_script;
     }
 
 private:
-    RHIModule* rhi_module_ = nullptr;
+    RenderFrameScript* frame_script_ = nullptr;
 };
 
 inline bool g_is_running = false;

@@ -18,8 +18,8 @@ struct Vector4 {
     constexpr Vector4(R x, R y, R z, R w);
 
     auto dot(const Vector4& vec) const;
-    R& operator[](usize i);
-    const R& operator[](usize i) const;
+    R& operator[](size_t i);
+    const R& operator[](size_t i) const;
 
     Vector4 operator*(const Real auto&) const;
     Vector4 operator+(const Real auto&) const;
@@ -77,7 +77,7 @@ Vector4f Vector4<R>::normalize(Vector4 vec) {
 }
 
 template <Real R>
-R& Vector4<R>::operator[](const usize i) {
+R& Vector4<R>::operator[](const size_t i) {
     LCHECK(i < 4)
     switch (i) {
         case 0:
@@ -95,7 +95,7 @@ R& Vector4<R>::operator[](const usize i) {
 }
 
 template <Real R>
-const R& Vector4<R>::operator[](usize i) const {
+const R& Vector4<R>::operator[](size_t i) const {
     LCHECK(i < 4)
     switch (i) {
         case 0:

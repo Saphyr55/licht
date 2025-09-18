@@ -5,6 +5,8 @@ local _modules = {
         dependencies = {
             "licht.core",
             "licht.rhi",
+            "licht.engine",
+            "licht.launcher"
         }
     }
 }

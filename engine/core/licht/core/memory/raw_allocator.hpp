@@ -13,49 +13,49 @@ class RawAllocator {
         AllocatorType*>;
 
 public:
-    void* allocate(usize nbytes)
+    void* allocate(size_t nbytes)
         requires(ownership == MemoryOwnership::Owner)
     {
         return allocator_.allocate(nbytes);
     }
 
-    void* allocate(usize nbytes)
+    void* allocate(size_t nbytes)
         requires(ownership == MemoryOwnership::NonOwner)
     {
         return allocator_->allocate(nbytes);
     }
 
-    void deallocate(void* element, usize nbytes)
+    void deallocate(void* element, size_t nbytes)
         requires(ownership == MemoryOwnership::Owner)
     {
         allocator_.deallocate(element, nbytes);
     }
 
-    void deallocate(void* element, usize nbytes)
+    void deallocate(void* element, size_t nbytes)
         requires(ownership == MemoryOwnership::NonOwner)
     {
         allocator_->deallocate(element, nbytes);
     }
 
-    void* allocate(usize nbytes, usize alignment)
+    void* allocate(size_t nbytes, size_t alignment)
         requires(ownership == MemoryOwnership::Owner)
     {
         return allocator_.allocate(nbytes, alignment);
     }
 
-    void* allocate(usize nbytes, usize alignment)
+    void* allocate(size_t nbytes, size_t alignment)
         requires(ownership == MemoryOwnership::NonOwner)
     {
         return allocator_.allocate(nbytes, alignment);
     }
 
-    void deallocate(void* element, usize nbytes, usize alignment)
+    void deallocate(void* element, size_t nbytes, size_t alignment)
         requires(ownership == MemoryOwnership::Owner)
     {
         allocator_.deallocate(element, nbytes, alignment);
     }
 
-    void deallocate(void* element, usize nbytes, usize alignment)
+    void deallocate(void* element, size_t nbytes, size_t alignment)
         requires(ownership == MemoryOwnership::NonOwner)
     {
         allocator_->deallocate(element, nbytes, alignment);
@@ -112,7 +112,7 @@ public:
         requires(ownership == MemoryOwnership::NonOwner)
         : allocator_(&memory) {}
 
-    RawAllocator(usize nbytes)
+    RawAllocator(size_t nbytes)
         requires(ownership == MemoryOwnership::Owner)
         : allocator_(nbytes) {}
 

@@ -10,14 +10,14 @@ namespace licht {
 
 class WString;
 
-LICHT_CORE_API usize string_length(const char* str);
-LICHT_CORE_API usize string_length(const wchar_t* str);
+LICHT_CORE_API size_t string_length(const char* str);
+LICHT_CORE_API size_t string_length(const wchar_t* str);
 
-LICHT_CORE_API errno_t string_copy(char* dst, usize bytes_size, const char* src);
-LICHT_CORE_API errno_t string_copy(wchar_t* dst, usize bytes_size, const wchar_t* src);
+LICHT_CORE_API errno_t string_copy(char* dst, size_t bytes_size, const char* src);
+LICHT_CORE_API errno_t string_copy(wchar_t* dst, size_t bytes_size, const wchar_t* src);
 
-LICHT_CORE_API errno_t string_cat(char* dst, usize p_bytes_size, const char* src);
-LICHT_CORE_API errno_t string_cat(wchar_t* dst, usize p_bytes_size, const wchar_t* src);
+LICHT_CORE_API errno_t string_cat(char* dst, size_t p_bytes_size, const char* src);
+LICHT_CORE_API errno_t string_cat(wchar_t* dst, size_t p_bytes_size, const wchar_t* src);
 
 LICHT_CORE_API int32 string_compare(const char* str1, const char* str2);
 LICHT_CORE_API int32 string_compare(const wchar_t* str1, const wchar_t* str2);
@@ -34,20 +34,20 @@ LICHT_CORE_API WString unicode_of_str(const char* p_str);
 template <typename CharType>
 class StringBase {
 public:
-    usize size() const {
+    size_t size() const {
         return buffer_.size() > 0 ? buffer_.size() - 1 : 0;
     }
 
-    usize capacity() const {
+    size_t capacity() const {
         return buffer_.capacity();
     }
 
     StringBase& append(const CharType* str) {
-        usize len = string_length(str);
+        size_t len = string_length(str);
         if (buffer_.size() > 0) {
             buffer_.pop();  // Remove null terminator.
         }
-        for (usize i = 0; i < len; i++) {
+        for (size_t i = 0; i < len; i++) {
             buffer_.append(str[i]);
         }
         buffer_.append(CharType('\0'));
@@ -81,12 +81,12 @@ public:
         buffer_.append(CharType('\0'));
     }
 
-    void resize(usize size) {
+    void resize(size_t size) {
         buffer_.resize(size + 1);
         buffer_[size] = CharType('\0');
     }
 
-    void reserve(usize capacity) {
+    void reserve(size_t capacity) {
         buffer_.reserve(capacity + 1);
     }
 
@@ -100,7 +100,7 @@ public:
         buffer_.append(CharType('\0'));
     }
 
-    explicit StringBase(usize capacity)
+    explicit StringBase(size_t capacity)
         : buffer_() {
         reserve(capacity);
         buffer_.append(CharType('\0'));
@@ -145,7 +145,7 @@ public:
     virtual ~StringBase() {}
 
 protected:
-    void ensure_capacity(usize required_capacity) {
+    void ensure_capacity(size_t required_capacity) {
         if (required_capacity + 1 > buffer_.capacity()) {
             reserve(required_capacity);
         }
@@ -160,7 +160,7 @@ public:
     WString()
         : StringBase<wchar_t>() {}
 
-    explicit WString(usize capacity)
+    explicit WString(size_t capacity)
         : StringBase<wchar_t>(capacity) {
     }
 
@@ -186,7 +186,7 @@ public:
         : StringBase<char>() {
     }
 
-    explicit String(usize capacity)
+    explicit String(size_t capacity)
         : StringBase<char>(capacity) {
     }
 
@@ -216,19 +216,19 @@ std::ostream& operator<<(std::ostream& os, const licht::StringBase<CharType>& st
 
 template <>
 struct std::hash<licht::String> {
-    usize operator()(const licht::String& s) const noexcept {
+    size_t operator()(const licht::String& s) const noexcept {
         const char* data = s.data();
-        usize len = s.size();
+        size_t len = s.size();
 
         // FNV-1a 64-bit
         uint64 hash = 14695981039346656037ULL;
         constexpr uint64_t prime = 1099511628211ULL;
 
-        for (usize i = 0; i < len; ++i) {
+        for (size_t i = 0; i < len; ++i) {
             hash ^= static_cast<uint8>(data[i]);
             hash *= prime;
         }
 
-        return static_cast<usize>(hash);
+        return static_cast<size_t>(hash);
     }
 };

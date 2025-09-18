@@ -12,15 +12,15 @@ public:
 
     virtual bool seek(int64 position) override;
 
-    virtual bool read(uint8* destination, usize nbytes) override;
+    virtual bool read(uint8* destination, size_t nbytes) override;
 
     virtual Array<uint8> read_all_bytes() override;
 
-    virtual bool write(const uint8* source, usize nbytes) override;
+    virtual bool write(const uint8* source, size_t nbytes) override;
 
     virtual bool flush() override;
 
-    virtual usize size() override;
+    virtual size_t size() override;
 
     explicit PlatformFileHandle(FILE* stream);
 

@@ -5,30 +5,30 @@
 
 using namespace licht;
 
-TEST_CASE("LinearMemoryAllocator basic allocation", "[LinearMemoryAllocator]") {
-    LinearAllocator alloc;
+TEST_CASE("LinearAllocator basic allocation", "[LinearAllocator]") {
 
-    alloc.initialize(1024);
+    LinearAllocator allocator;
+    allocator.initialize(1024);
 
     SECTION("Allocate returns non-null and respects alignment.") {
-        void* ptr1 = alloc.allocate(16, alignof(int32));
+        void* ptr1 = allocator.allocate(16, alignof(int32));
         REQUIRE(ptr1 != nullptr);
         REQUIRE(reinterpret_cast<std::uintptr_t>(ptr1) % alignof(int32) == 0);
 
-        void* ptr2 = alloc.allocate(32, alignof(float64));
+        void* ptr2 = allocator.allocate(32, alignof(float64));
         REQUIRE(ptr2 != nullptr);
         REQUIRE(reinterpret_cast<std::uintptr_t>(ptr2) % alignof(float64) == 0);
     }
 
     SECTION("Reset allows reuse of memory.") {
         
-        float64* ptr1 = static_cast<float64*>(alloc.allocate(sizeof(float64), alignof(float64)));
+        float64* ptr1 = static_cast<float64*>(allocator.allocate(sizeof(float64), alignof(float64)));
         REQUIRE(ptr1 != nullptr);
         *ptr1 = 42.0;
 
-        alloc.reset();
+        allocator.reset();
 
-        float64* ptr2 = static_cast<float64*>(alloc.allocate(sizeof(float64), alignof(float64)));
+        float64* ptr2 = static_cast<float64*>(allocator.allocate(sizeof(float64), alignof(float64)));
         REQUIRE(ptr2 != nullptr);
         *ptr2 = 99.0;
 
@@ -36,17 +36,17 @@ TEST_CASE("LinearMemoryAllocator basic allocation", "[LinearMemoryAllocator]") {
     }
 
     SECTION("Allocation beyond pool size fails with nullptr.") {
-        void* big = alloc.allocate(2000, alignof(int32));
+        void* big = allocator.allocate(2000, alignof(int32));
         REQUIRE(big == nullptr);
 
-        void* small = alloc.allocate(64, alignof(int32));
+        void* small = allocator.allocate(64, alignof(int32));
         REQUIRE(small != nullptr);
     }
 
-    alloc.destroy();
+    allocator.destroy();
 }
 
-TEST_CASE("LinearAllocator usage.", "[LinearAllocator]") {
+TEST_CASE("TypedLinearAllocator usage.", "[TypedLinearAllocator]") {
 
     TypedLinearAllocator<int32> allocator(512);
 

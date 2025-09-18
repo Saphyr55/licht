@@ -11,14 +11,14 @@ public:
 
     static void global_add_allocate_bytes(uint64 size);
 
-    static usize global_get_memory_usage();
+    static size_t global_get_memory_usage();
 
 private:
     static MemoryTrace& get_default();
 
     void add_freed_bytes(uint64 size);
     void add_allocate_bytes(uint64 size);
-    usize get_memory_usage() const;
+    size_t get_memory_usage() const;
 
 private:
     uint64 memory_usage_;

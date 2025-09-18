@@ -15,47 +15,47 @@ Module* ModuleRegistry::load_module(const StringRef name) {
     if (is_module_loaded(name)) {
         return get_module(name);
     }
-    
+
     String filepath_lib(name.data());
     filepath_lib += DynamicLibraryLoader::extension();
-    
+
     SharedRef<DynamicLibrary> library = nullptr;
     if (PlatformFileSystem::get_platform().file_exists(filepath_lib)) {
         library = DynamicLibraryLoader::load(filepath_lib.data());
     } else {
         return nullptr;
     }
-        
+
     if (!pending_modules_.contains(name)) {
+        LLOG_ERROR("[ModuleRegistry]", vformat("Module '%s' is not registered and cannot be loaded.", name.data()))
         return nullptr;
     }
 
     const ModuleInitializerFunc& module_initializer = pending_modules_.get(name);
     Module* module = module_initializer();
-    
+
     if (!module) {
         return nullptr;
     }
-    
+
     module->on_load();
 
     pending_modules_.remove(name);
     loaded_modules_.put(name, LoadedModule(name, module, library));
-    
+
     return module;
 }
 
 void ModuleRegistry::unload_module(const StringRef name) {
-
     LoadedModule* loaded_module = loaded_modules_.get_ptr(name);
     if (!loaded_module) {
-        return; 
+        return;
     }
-    
+
     if (!loaded_module->module) {
         return;
     }
-    
+
     loaded_module->module->on_unload();
 
     if (loaded_module->library) {

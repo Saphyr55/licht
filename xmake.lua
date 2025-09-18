@@ -35,6 +35,23 @@ target("licht.core", function()
     add_defines("LICHT_CORE_EXPORTS")
 end)
 
+target("licht.engine", function()
+    set_kind("shared")
+    set_group("engine")
+
+    add_deps("licht.core")
+
+    add_includedirs(unpack({
+        "engine/core",
+        "engine/engine"
+    }))
+
+    add_headerfiles("engine/engine/**.hpp")
+    add_files("engine/engine/**.cpp")
+
+    add_defines("LICHT_ENGINE_EXPORTS")
+end)
+
 target("licht.rhi", function()
     set_kind("shared")
     set_group("engine")
@@ -80,10 +97,11 @@ target("licht.launcher", function()
     set_kind("shared")
     set_group("engine")
 
-    add_deps("licht.core")
+    add_deps("licht.core", "licht.engine")
 
     add_includedirs(unpack({
         "engine/core",
+        "engine/engine",
         "engine/launcher"
     }))
 
@@ -96,6 +114,7 @@ target("licht.launcher", function()
         add_syslinks("User32")
     end
 end)
+
 
 ----------------------------------------------------
 -- Tests -------------------------------------------
@@ -120,12 +139,13 @@ target("ludo", function()
     set_kind("shared")
     set_group("ludo")
 
-    add_deps("licht.core", "licht.rhi", "licht.rhi.vulkan")
+    add_deps("licht.core", "licht.engine", "licht.rhi", "licht.rhi.vulkan")
 
     add_includedirs(unpack({
         "engine/core",
         "engine/rhi",
         "engine/launcher",
+        "engine/engine",
         "samples/ludo/ludo"
     }))
 
@@ -144,12 +164,13 @@ target("ludo.app", function()
 
     set_runargs("--projectdir", ludo_projectdir, "--enginedir", enginedir)
 
-    add_deps("ludo", "licht.core")
+    add_deps("ludo", "licht.core", "licht.launcher", "licht.engine")
 
     add_includedirs(unpack({
         "engine/core",
         "engine/rhi",
         "engine/launcher",
+        "engine/engine",
         "samples/ludo/ludo",
         "samples/ludo/app"
     }))

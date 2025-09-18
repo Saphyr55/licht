@@ -29,22 +29,7 @@ public:
 
     virtual void on_unload() override;
 
-    void on_tick();
-
 public:
-    inline void update_resized(const uint32 width, const uint32 height) {
-        window_resized_ = true;
-        frame_context_.frame_width = width;
-        frame_context_.frame_height = height;
-    }
-
-    inline void pause() {
-        pause_ = true;
-    }
-
-    inline void unpause() {
-        pause_ = false;
-    }
 
     inline void set_window_handle(WindowHandle window_handle) {
         window_handle_ = window_handle;
@@ -56,6 +41,10 @@ public:
 
     inline void set_device(RHIDeviceHandle device) {
         device_ = device;
+    }
+
+    inline RHIDeviceHandle get_device() {
+        return device_;
     }
 
     inline GraphicsAPI get_graphics_api() {
@@ -73,26 +62,9 @@ public:
     RHIModule();
 
 private:
-    using RHIFramebufferAllocator = TypedLinearAllocator<RHIFramebufferHandle, MemoryOwnership::NonOwner>;
-    using RHIFramebufferRegistry = Array<RHIFramebufferHandle, RHIFramebufferAllocator>;
-
     WindowHandle window_handle_;
-
     GraphicsAPI graphics_api_;
-    RHIRenderSurfaceHandle surface_;
     RHIDeviceHandle device_;
-    RHISwapchainHandle swapchain_;
-    RHIRenderPassHandle render_pass_;
-    RHIPipelineHandle pipeline_;
-
-    LinearAllocator framebuffer_memory_allocator_;
-    RHIFramebufferRegistry framebuffers_;
-
-    RHICommandAllocatorRef command_allocator_;
-    RHIFrameContext frame_context_;
-
-    bool pause_ = false;
-    bool window_resized_ = false;
 };
 
 LICHT_REGISTER_MODULE(RHIModule, RHIModule::ModuleName)

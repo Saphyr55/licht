@@ -31,8 +31,8 @@ static ModuleManifestInformation module_manifest_information_lua_parse(lua_State
 
     lua_getfield(L, -1, ModuleManifestKeyNames::Dependencies);
     if (lua_istable(L, -1)) {
-        usize len = lua_rawlen(L, -1);
-        for (usize i = 1; i <= len; i++) {
+        size_t len = lua_rawlen(L, -1);
+        for (size_t i = 1; i <= len; i++) {
             lua_rawgeti(L, -1, i);
             if (lua_isstring(L, -1)) {
                 description.dependencies.push_back(lua_tostring(L, -1));
@@ -110,7 +110,7 @@ void module_manifest_log(const ModuleManifest& manifest) {
     const Array<ModuleManifestInformation>& module_informations = manifest.get_manifest_informations();
     LLOG_INFO("[ModuleManifest]", vformat("Module Manifest Informations (%d modules):", module_informations.size()));
 
-    for (usize i = 0; i < manifest.get_manifest_informations().size(); i++) {
+    for (size_t i = 0; i < manifest.get_manifest_informations().size(); i++) {
         const ModuleManifestInformation& module_information = module_informations[i];
         LLOG_INFO("[ModuleManifest]", vformat("Module:"));
         LLOG_INFO("[ModuleManifest]", vformat("  %s: %s", ModuleManifestKeyNames::Name, module_information.name.data()));
@@ -121,9 +121,9 @@ void module_manifest_log(const ModuleManifest& manifest) {
             continue;
         }
 
-        const usize dependency_count = module_information.dependencies.size();
+        const size_t dependency_count = module_information.dependencies.size();
         String dependency_names(256);
-        for (usize j = 0; j < dependency_count; j++) {
+        for (size_t j = 0; j < dependency_count; j++) {
             dependency_names.append(module_information.dependencies[j]);
             if (j < dependency_count - 1) {
                 dependency_names.append(", ");
@@ -144,11 +144,11 @@ const Array<ModuleManifestInformation>& ModuleManifest::get_manifest_information
 
 bool module_manifest_resolve_dependencies(const ModuleManifest& manifest, Array<const ModuleManifestInformation*>& out_order) {
 
-    const usize size = manifest.get_manifest_informations().size();
+    const size_t size = manifest.get_manifest_informations().size();
     out_order.reserve(size);
 
     HashMap<StringRef, const ModuleManifestInformation*> module_map(size);
-    HashMap<StringRef, usize> indegree(size);
+    HashMap<StringRef, size_t> indegree(size);
     HashMap<StringRef, Array<StringRef>> graph(size);
 
     for (const ModuleManifestInformation& info : manifest.get_manifest_informations()) {

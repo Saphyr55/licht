@@ -87,7 +87,7 @@ TEST_CASE("Array with LinearAllocator basic behavior.", "[Array][LinearAllocator
         arr.resize(8, 42);
         REQUIRE(arr.size() == 8);
 
-        for (usize i = 0; i < arr.size(); ++i) {
+        for (size_t i = 0; i < arr.size(); ++i) {
             REQUIRE(arr[i] == 42);
         }
 

@@ -45,7 +45,7 @@ WindowHandle SDLDisplay::create_window_handle(const WindowStatues& window_statue
 
     if (!sdl_window) {
         LLOG_ERROR("[SDLDisplay::create_window_handle]", vformat("Failed to create window: %s", SDL_GetError()));
-        return Display::INVALID_WINDOW_HANDLE;
+        return Display::InvalidWindowHandle;
     }
 
     main_window_map_[handle] = sdl_window;
@@ -125,7 +125,7 @@ void SDLDisplay::close(WindowHandle window) {
 }
 
 bool SDLDisplay::is_valid(WindowHandle window) {
-    if (window == Display::INVALID_WINDOW_HANDLE) {
+    if (window == Display::InvalidWindowHandle) {
         return false;
     }
 
