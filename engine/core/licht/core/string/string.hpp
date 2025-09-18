@@ -138,28 +138,10 @@ public:
         return *this;
     }
 
-    StringBase operator+(const CharType* cstr) const {
-        StringBase result(*this);
-        result += cstr;
-        return result;
-    }
-
-    StringBase operator+(const StringBase& str) const {
-        StringBase result(*this);
-        result += str;
-        return result;
-    }
-
-    StringBase operator+(CharType c) const {
-        StringBase result(*this);
-        result += c;
-        return result;
-    }
-    
     bool operator==(const StringBase& str) const {
         return string_compare(buffer_.data(), str.data()) == 0;
     }
-    
+
     virtual ~StringBase() {}
 
 protected:
@@ -173,7 +155,7 @@ protected:
     Array<CharType> buffer_;
 };
 
-class WString : public StringBase<wchar_t> {
+class LICHT_CORE_API WString : public StringBase<wchar_t> {
 public:
     WString()
         : StringBase<wchar_t>() {}
@@ -198,7 +180,7 @@ public:
     }
 };
 
-class String : public StringBase<char> {
+class LICHT_CORE_API String : public StringBase<char> {
 public:
     String()
         : StringBase<char>() {
@@ -222,6 +204,7 @@ public:
         return *this;
     }
 };
+
 
 }  //namespace licht
 

@@ -83,5 +83,13 @@ using usize = size_t;
     LCHECK_MSG(false, msg); \
     abort();
 
-#define CONCAT_INNER(a, b) a##b
-#define CONCAT(a, b) CONCAT_INNER(a, b)
+#define LICHT_CONCAT_INNER(a, b) a##b
+#define LCONCAT(a, b) LICHT_CONCAT_INNER(a, b)
+
+#define LICHT_REBIND_TEMPLATE(ClassType, OtherResourceType) \
+public:                                                     \
+    template <typename OtherResourceType>                   \
+    struct rebind {                                         \
+        using other = ClassType<OtherResourceType>;         \
+    };                                                      
+

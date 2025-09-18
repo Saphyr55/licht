@@ -23,12 +23,12 @@ inline bool main_load_manifest(const StringRef projectdir,
     String engine_manifest_filepath = vformat("%s/manifest.lua", engine_manifest_directory.data());
 
     if (!app_manifest.load_lua(app_manifest_filepath)) {
-        LLOG_ERROR("[ModuleManifest]", vformat("Cannot load the manifest '%s'", app_manifest_filepath));
+        LLOG_ERROR("[ModuleManifest]", vformat("Cannot load the manifest '%s'", app_manifest_filepath.data()));
         return false;
     }
 
     if (!g_manifest.load_lua(engine_manifest_filepath)) {
-        LLOG_ERROR("[ModuleManifest]", vformat("Cannot load the manifest '%s'", engine_manifest_filepath))
+        LLOG_ERROR("[ModuleManifest]", vformat("Cannot load the manifest '%s'", engine_manifest_filepath.data()))
         return false;
     }
 
@@ -60,7 +60,6 @@ inline void main_unload_manifest() {
 }
 
 inline bool main_preinit(int32 argc, const char** argv) {
-
     LLOG_INFO("[main]", "Launch application.");
     
     StringRef projectdir = PlatformFileSystem::get_current_directory();

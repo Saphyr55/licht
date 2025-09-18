@@ -7,13 +7,13 @@
 
 namespace licht {
 
-template<typename... Args>
+template <typename... Args>
 inline String vformat(StringRef fmt, Args&&... args) {
     va_list ap;
     int32 size = ::snprintf(nullptr, 0, fmt, std::forward<Args>(args)...);
 
     if (size < 0) {
-        return String();
+        return String("");
     }
 
     String buffer;
@@ -22,4 +22,5 @@ inline String vformat(StringRef fmt, Args&&... args) {
 
     return buffer;
 }
+
 }

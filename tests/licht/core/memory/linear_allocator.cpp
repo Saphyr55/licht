@@ -1,34 +1,34 @@
 #include <catch2/catch_all.hpp>
-#include "catch2/catch_approx.hpp"
+#include <catch2/catch_approx.hpp>
 
 #include "licht/core/memory/linear_allocator.hpp"
 
 using namespace licht;
 
-TEST_CASE("LinearMemoryPool basic allocation", "[LinearMemoryPool]") {
-    LinearMemoryPool pool;
+TEST_CASE("LinearMemoryAllocator basic allocation", "[LinearMemoryAllocator]") {
+    LinearMemoryAllocator alloc;
 
-    pool.initialize(1024);
+    alloc.initialize(1024);
 
     SECTION("Allocate returns non-null and respects alignment.") {
-        void* ptr1 = pool.allocate(16, alignof(int32));
+        void* ptr1 = alloc.allocate(16, alignof(int32));
         REQUIRE(ptr1 != nullptr);
         REQUIRE(reinterpret_cast<std::uintptr_t>(ptr1) % alignof(int32) == 0);
 
-        void* ptr2 = pool.allocate(32, alignof(float64));
+        void* ptr2 = alloc.allocate(32, alignof(float64));
         REQUIRE(ptr2 != nullptr);
         REQUIRE(reinterpret_cast<std::uintptr_t>(ptr2) % alignof(float64) == 0);
     }
 
     SECTION("Reset allows reuse of memory.") {
         
-        float64* ptr1 = static_cast<float64*>(pool.allocate(sizeof(float64), alignof(float64)));
+        float64* ptr1 = static_cast<float64*>(alloc.allocate(sizeof(float64), alignof(float64)));
         REQUIRE(ptr1 != nullptr);
         *ptr1 = 42.0;
 
-        pool.reset();
+        alloc.reset();
 
-        float64* ptr2 = static_cast<float64*>(pool.allocate(sizeof(float64), alignof(float64)));
+        float64* ptr2 = static_cast<float64*>(alloc.allocate(sizeof(float64), alignof(float64)));
         REQUIRE(ptr2 != nullptr);
         *ptr2 = 99.0;
 
@@ -36,21 +36,19 @@ TEST_CASE("LinearMemoryPool basic allocation", "[LinearMemoryPool]") {
     }
 
     SECTION("Allocation beyond pool size fails with nullptr.") {
-        void* big = pool.allocate(2000, alignof(int32));
+        void* big = alloc.allocate(2000, alignof(int32));
         REQUIRE(big == nullptr);
 
-        void* small = pool.allocate(64, alignof(int32));
+        void* small = alloc.allocate(64, alignof(int32));
         REQUIRE(small != nullptr);
     }
 
-    pool.destroy();
+    alloc.destroy();
 }
 
 TEST_CASE("LinearAllocator usage.", "[LinearAllocator]") {
-    LinearMemoryPool pool;
-    pool.initialize(512);
 
-    LinearAllocator<int32> allocator(&pool);
+    LinearAllocator<int32> allocator(512);
 
     SECTION("Allocate array of ints.") {
         int32* arr = allocator.allocate(10);
@@ -65,7 +63,7 @@ TEST_CASE("LinearAllocator usage.", "[LinearAllocator]") {
     }
 
     SECTION("Allocate multiple different types with same pool.") {
-        LinearAllocator<float64> float64Alloc(&pool);
+        LinearAllocator<float64> float64Alloc(512);
 
         int32* ints = allocator.allocate(4);
         REQUIRE(ints != nullptr);
@@ -85,5 +83,4 @@ TEST_CASE("LinearAllocator usage.", "[LinearAllocator]") {
         REQUIRE(arr == nullptr);
     }
 
-    pool.destroy();
 }

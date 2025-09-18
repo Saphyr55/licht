@@ -13,10 +13,11 @@ template <typename CharType>
 class StringRefBase {
 public:
     constexpr StringRefBase()
-        : data_(nullptr) {}
+        : data_("") {}
 
     constexpr StringRefBase(const CharType* str)
-        : data_(str) {}
+        : data_(str) {
+    }
 
     constexpr StringRefBase(const String& str) 
         requires std::same_as<CharType, char>
@@ -29,7 +30,7 @@ public:
     constexpr StringRefBase& operator=(const StringRefBase& other) = default;
 
     constexpr const CharType& operator[](usize index) const {
-        LCHECK(index >= size())
+        LCHECK(index < size())
         return data_[index];
     }
 

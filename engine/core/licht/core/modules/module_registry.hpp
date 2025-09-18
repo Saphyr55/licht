@@ -70,9 +70,9 @@ public:
 
 // Use __COUNTER__ for uniqueness (supported by GCC, Clang, MSVC)
 #define LICHT_REGISTER_MODULE(ModuleType, ModuleName) \
-    LICHT_REGISTER_MODULE_WITH_CUSTOM_VARIABLE(ModuleType, ModuleName, CONCAT(g_module_registrant_, __COUNTER__))
+    LICHT_REGISTER_MODULE_WITH_CUSTOM_VARIABLE(ModuleType, ModuleName, LCONCAT(g_module_registrant_, __COUNTER__))
 
 #if !defined(__COUNTER__)
 #define LICHT_REGISTER_MODULE(ModuleType, ModuleName) \
-    LICHT_REGISTER_MODULE_WITH_CUSTOM_VARIABLE(ModuleType, ModuleName, CONCAT(g_module_registrant_, __LINE__))
+    LICHT_REGISTER_MODULE_WITH_CUSTOM_VARIABLE(ModuleType, ModuleName, LCONCAT(g_module_registrant_, __LINE__))
 #endif

@@ -19,8 +19,8 @@ StringRef graphics_api_module_name(const GraphicsAPI graphics_api) {
 RHIModule::RHIModule()
     : window_handle_(Display::INVALID_WINDOW_HANDLE)
     , graphics_api_(GraphicsAPI::Vulkan)
-    , framebuffer_memory_pool_(1024 /* 1 kB */)
-    , framebuffers_(4, RHIFramebufferAllocator(&framebuffer_memory_pool_))
+    , framebuffer_memory_allocator_(1024 /* 1 kB */)
+    , framebuffers_(4, RHIFramebufferAllocator(framebuffer_memory_allocator_))
     , frame_context_() {}
 
 void RHIModule::on_load() {
@@ -291,7 +291,7 @@ void RHIModule::reset() {
         device_->destroy_framebuffer(framebuffer);
     }
     framebuffers_.clear();
-    framebuffer_memory_pool_.reset();
+    framebuffer_memory_allocator_.reset();
 
     device_->recreate_swapchain(swapchain_, frame_context_.frame_width, frame_context_.frame_height);
 

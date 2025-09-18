@@ -11,12 +11,11 @@ TEST_CASE("Array with LinearAllocator basic behavior.", "[Array][LinearAllocator
         int32 second;
     };
 
-    LinearMemoryPool pool(1024);  // 1 KB
-    LinearAllocator<int32> int32Alloc(&pool);
-    LinearAllocator<double> float64Alloc(&pool);
+    LinearAllocator<int32> int32_alloc(1024);// 1 KB
+    LinearAllocator<double> float64_alloc(1024);// 1 KB
 
     SECTION("Construct array with linear allocator and append elements.") {
-        Array<int32, LinearAllocator<int32>> arr(int32Alloc);
+        Array<int32, LinearAllocator<int32>> arr(int32_alloc);
 
         REQUIRE(arr.size() == 0);
         REQUIRE(arr.capacity() >= 1);
@@ -32,7 +31,7 @@ TEST_CASE("Array with LinearAllocator basic behavior.", "[Array][LinearAllocator
     }
 
     SECTION("Emplace and pop behave correctly.") {
-        LinearAllocator<IntPair> alloc(&pool);
+        LinearAllocator<IntPair> alloc(1024);// 1 KB
         Array<IntPair, LinearAllocator<IntPair>> pairArr(alloc);
 
         pairArr.emplace(1, 2);
@@ -48,7 +47,7 @@ TEST_CASE("Array with LinearAllocator basic behavior.", "[Array][LinearAllocator
     }
 
     SECTION("Map produces a new array using same allocator type (but can use other allocator).") {
-        Array<int32, LinearAllocator<int32>> ints(int32Alloc);
+        Array<int32, LinearAllocator<int32>> ints(int32_alloc);
         ints.append(1);
         ints.append(2);
         ints.append(3);
@@ -57,7 +56,7 @@ TEST_CASE("Array with LinearAllocator basic behavior.", "[Array][LinearAllocator
         Array<float64, LinearAllocator<float64>> doubles = ints.map<float64, LinearAllocator<float64>>([](int32 v) -> float64 {
             return static_cast<float64>(v) + 0.5;
         },
-                                                                                                       float64Alloc);
+                                                                                                       float64_alloc);
         REQUIRE(doubles.size() == ints.size());
         REQUIRE(doubles[0] == Catch::Approx(1.5));
         REQUIRE(doubles[1] == Catch::Approx(2.5));
@@ -65,7 +64,7 @@ TEST_CASE("Array with LinearAllocator basic behavior.", "[Array][LinearAllocator
     }
 
     SECTION("Copy and move semantics.") {
-        Array<int32, LinearAllocator<int32>> a(int32Alloc);
+        Array<int32, LinearAllocator<int32>> a(int32_alloc);
         a.append(5);
         a.append(6);
 
@@ -80,7 +79,7 @@ TEST_CASE("Array with LinearAllocator basic behavior.", "[Array][LinearAllocator
     }
 
     SECTION("Reserve, resize, shrink and clear.") {
-        Array<int32, LinearAllocator<int32>> arr(int32Alloc);
+        Array<int32, LinearAllocator<int32>> arr(int32_alloc);
 
         arr.reserve(16);
         REQUIRE(arr.capacity() >= 16);
@@ -100,7 +99,7 @@ TEST_CASE("Array with LinearAllocator basic behavior.", "[Array][LinearAllocator
     }
 
     SECTION("Check contains() and get_if() methods.") {
-        Array<int32, LinearAllocator<int32>> arr(int32Alloc);
+        Array<int32, LinearAllocator<int32>> arr(int32_alloc);
         arr.append(11);
         arr.append(22);
         arr.append(33);
@@ -113,6 +112,6 @@ TEST_CASE("Array with LinearAllocator basic behavior.", "[Array][LinearAllocator
         REQUIRE(*found == 33);
     }
 
-    pool.reset();
-    pool.destroy(); // Optional, raii
+    int32_alloc.reset();
+    float64_alloc.reset();
 } 

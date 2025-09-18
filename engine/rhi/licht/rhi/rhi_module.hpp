@@ -73,8 +73,9 @@ public:
     RHIModule();
 
 private:
-    using RHIFramebufferAllocator = LinearAllocator<RHIFramebufferHandle>;
+    using RHIFramebufferAllocator = LinearAllocator<RHIFramebufferHandle, MemoryOwnership::NonOwner>;
     using RHIFramebufferRegistry = Array<RHIFramebufferHandle, RHIFramebufferAllocator>;
+
     WindowHandle window_handle_;
 
     GraphicsAPI graphics_api_;
@@ -84,7 +85,7 @@ private:
     RHIRenderPassHandle render_pass_;
     RHIPipelineHandle pipeline_;
 
-    LinearMemoryPool framebuffer_memory_pool_;
+    LinearMemoryAllocator framebuffer_memory_allocator_;
     RHIFramebufferRegistry framebuffers_;
 
     RHICommandAllocatorRef command_allocator_;
