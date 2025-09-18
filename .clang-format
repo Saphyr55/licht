@@ -19,3 +19,4 @@ BreakInheritanceList: AfterComma
 AlignAfterOpenBracket: Align
 AllowShortFunctionsOnASingleLine: Inline
 AlignEscapedNewlinesLeft: true
+
