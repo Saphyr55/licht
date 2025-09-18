@@ -6,18 +6,32 @@
 #include "licht/core/core_exports.hpp"
 #include "licht/core/defines.hpp"
 
-enum class LichtMemoryTag {
+namespace licht {
+
+enum class MemoryAcess : uint8 {
+    Read = 1 << 0,
+    Write = 1 << 1,
+};
+
+enum class MemoryOwnership {
+    Owner,
+    NonOwner
+};
+
+enum class MemoryCategory {
     General
 };
 
-LICHT_CORE_API void* operator new(usize size, LichtMemoryTag tag) noexcept;
-LICHT_CORE_API void* operator new[](usize size, LichtMemoryTag tag) noexcept;
+}  //namespace licht
 
-LICHT_CORE_API void operator delete(void* resource, LichtMemoryTag tag) noexcept;
-LICHT_CORE_API void operator delete[](void* resource, LichtMemoryTag tag) noexcept;
+LICHT_CORE_API void* operator new(usize size, licht::MemoryCategory category) noexcept;
+LICHT_CORE_API void* operator new[](usize size, licht::MemoryCategory category) noexcept;
 
-LICHT_CORE_API void operator delete(void* resource, usize size, LichtMemoryTag tag) noexcept;
-LICHT_CORE_API void operator delete[](void* resource, usize size, LichtMemoryTag tag) noexcept;
+LICHT_CORE_API void operator delete(void* resource, licht::MemoryCategory category) noexcept;
+LICHT_CORE_API void operator delete[](void* resource, licht::MemoryCategory category) noexcept;
+
+LICHT_CORE_API void operator delete(void* resource, usize size, licht::MemoryCategory category) noexcept;
+LICHT_CORE_API void operator delete[](void* resource, usize size, licht::MemoryCategory category) noexcept;
 
 namespace licht {
 
@@ -25,7 +39,7 @@ class Memory {
 public:
     template <typename ResourceType>
     static ResourceType* new_resource(auto... args) noexcept {
-        return new (LichtMemoryTag::General) ResourceType(std::forward<decltype(args)>(args)...);
+        return new (licht::MemoryCategory::General) ResourceType(std::forward<decltype(args)>(args)...);
     }
 
     template <typename ResourceType>

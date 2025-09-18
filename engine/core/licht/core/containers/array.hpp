@@ -1,14 +1,15 @@
 #pragma once
 
 #include "licht/core/defines.hpp"
-#include "licht/core/memory/allocator.hpp"
+#include "licht/core/memory/concepts.hpp"
+#include "licht/core/memory/default_allocator.hpp"
 
 #include <algorithm>
 
 namespace licht {
 
 template <typename ElementType,
-          CAllocator<ElementType> AllocatorType = DefaultAllocator<ElementType>,
+          CAllocator<ElementType> AllocatorType = TypedDefaultAllocator<ElementType>,
           typename SizeType = usize>
 class Array {
 public:
@@ -27,7 +28,7 @@ public:
 public:
 
     template <typename OtherElementType = ElementType,
-              CAllocator<OtherElementType> OtherAllocatorType = ReboundAllocator<OtherElementType>,
+              typename OtherAllocatorType = ReboundAllocator<OtherElementType>,
               typename OtherSizeType = SizeType>
     Array<OtherElementType, OtherAllocatorType, OtherSizeType> map(auto&& mapper,
                                                                    const OtherAllocatorType& other_allocator = OtherAllocatorType()) const {

@@ -73,7 +73,7 @@ public:
     RHIModule();
 
 private:
-    using RHIFramebufferAllocator = LinearAllocator<RHIFramebufferHandle, MemoryOwnership::NonOwner>;
+    using RHIFramebufferAllocator = TypedLinearAllocator<RHIFramebufferHandle, MemoryOwnership::NonOwner>;
     using RHIFramebufferRegistry = Array<RHIFramebufferHandle, RHIFramebufferAllocator>;
 
     WindowHandle window_handle_;
@@ -85,7 +85,7 @@ private:
     RHIRenderPassHandle render_pass_;
     RHIPipelineHandle pipeline_;
 
-    LinearMemoryAllocator framebuffer_memory_allocator_;
+    LinearAllocator framebuffer_memory_allocator_;
     RHIFramebufferRegistry framebuffers_;
 
     RHICommandAllocatorRef command_allocator_;

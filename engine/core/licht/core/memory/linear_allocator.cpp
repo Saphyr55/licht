@@ -1,12 +1,10 @@
-#include "linear_allocator.hpp"
+#include "licht/core/memory/linear_allocator.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/memory/memory.hpp"
 
-#include <memory>
-
 namespace licht {
 
-void* LinearMemoryAllocator::allocate(const usize size, usize alignment) {
+void* LinearAllocator::allocate(const usize size, usize alignment) {
     usize space = size_ - offset_;
 
     void* block = buffer_ + offset_;
@@ -21,10 +19,12 @@ void* LinearMemoryAllocator::allocate(const usize size, usize alignment) {
     return aligned;
 }
 
-void LinearMemoryAllocator::deallocate(void* block) {
+void LinearAllocator::deallocate(void* /* block */, usize /* size */, usize /* alignment */) {
+    // Linear allocator does not support deallocation of individual blocks.
+    // Deallocation is done by resetting the entire allocator.
 }
 
-void LinearMemoryAllocator::initialize(usize size) {
+void LinearAllocator::initialize(usize size) {
     size_ = size;
     if (buffer_) {
         destroy();
@@ -35,7 +35,7 @@ void LinearMemoryAllocator::initialize(usize size) {
     }
 }
 
-void LinearMemoryAllocator::destroy() {
+void LinearAllocator::destroy() {
     if (buffer_) {
         return;
     }
@@ -46,25 +46,25 @@ void LinearMemoryAllocator::destroy() {
     offset_ = 0;
 }
 
-void LinearMemoryAllocator::reset() {
+void LinearAllocator::reset() {
     offset_ = 0;
 }
 
-LinearMemoryAllocator::LinearMemoryAllocator(usize size)
+LinearAllocator::LinearAllocator(usize size)
     : size_(32)
     , offset_(0)
     , buffer_(nullptr) {
     initialize(size);
 }
 
-LinearMemoryAllocator::LinearMemoryAllocator()
+LinearAllocator::LinearAllocator()
     : size_(32)
     , offset_(0)
     , buffer_(nullptr) {
     initialize(size_);
 }
 
-LinearMemoryAllocator::~LinearMemoryAllocator() {
+LinearAllocator::~LinearAllocator() {
     if (buffer_) {
         destroy();
     }

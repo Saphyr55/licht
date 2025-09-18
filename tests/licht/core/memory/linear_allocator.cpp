@@ -6,7 +6,7 @@
 using namespace licht;
 
 TEST_CASE("LinearMemoryAllocator basic allocation", "[LinearMemoryAllocator]") {
-    LinearMemoryAllocator alloc;
+    LinearAllocator alloc;
 
     alloc.initialize(1024);
 
@@ -48,7 +48,7 @@ TEST_CASE("LinearMemoryAllocator basic allocation", "[LinearMemoryAllocator]") {
 
 TEST_CASE("LinearAllocator usage.", "[LinearAllocator]") {
 
-    LinearAllocator<int32> allocator(512);
+    TypedLinearAllocator<int32> allocator(512);
 
     SECTION("Allocate array of ints.") {
         int32* arr = allocator.allocate(10);
@@ -63,7 +63,7 @@ TEST_CASE("LinearAllocator usage.", "[LinearAllocator]") {
     }
 
     SECTION("Allocate multiple different types with same pool.") {
-        LinearAllocator<float64> float64Alloc(512);
+        TypedLinearAllocator<float64> float64Alloc(512);
 
         int32* ints = allocator.allocate(4);
         REQUIRE(ints != nullptr);

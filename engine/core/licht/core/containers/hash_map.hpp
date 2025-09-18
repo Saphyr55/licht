@@ -2,7 +2,7 @@
 
 #include "licht/core/defines.hpp"
 #include "licht/core/hash/hasher.hpp"
-#include "licht/core/memory/allocator.hpp"
+#include "licht/core/memory/default_allocator.hpp"
 #include "licht/core/memory/memory.hpp"
 #include "licht/core/string/format.hpp"
 
@@ -53,7 +53,7 @@ struct HashMapElement {
 
 template <typename KeyType,
           typename ValueType,
-          typename AllocatorType = DefaultAllocator<HashMapElement<KeyType, ValueType>>,
+          CAllocator<HashMapElement<KeyType, ValueType>> AllocatorType = TypedDefaultAllocator<HashMapElement<KeyType, ValueType>>,
           typename HasherType = Hasher>
 class HashMap {
 public:

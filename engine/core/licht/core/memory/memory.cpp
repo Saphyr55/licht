@@ -36,7 +36,7 @@ bool Memory::is_aligned(const uintptr_t address, usize alignment) {
 }
 
 void* Memory::allocate(usize size) noexcept {
-    return static_cast<void*>(new (LichtMemoryTag::General) uint8[size]);
+    return static_cast<void*>(new (licht::MemoryCategory::General) uint8[size]);
 }
 
 void* Memory::allocate(usize size, usize alignment) noexcept {
@@ -45,7 +45,7 @@ void* Memory::allocate(usize size, usize alignment) noexcept {
 
     // To ensure we can align the memory, we allocate extra bytes.
     usize total_size = size + alignment;
-    uint8* raw_memory = new (LichtMemoryTag::General) uint8[total_size];
+    uint8* raw_memory = new (licht::MemoryCategory::General) uint8[total_size];
     uint8* aligned_memory = align(raw_memory, alignment);
     
     if (aligned_memory == raw_memory) {
@@ -101,32 +101,32 @@ int Memory::compare(const void* buffer1, const void* buffer2, usize size) {
 
 } // namespace licht
 
-void* operator new(usize size, LichtMemoryTag tag) noexcept {
+void* operator new(usize size, licht::MemoryCategory category) noexcept {
     licht::MemoryTrace::global_add_allocate_bytes(size);
     return ::malloc(size);
 }
 
-void* operator new[](usize size, LichtMemoryTag tag) noexcept {
+void* operator new[](usize size, licht::MemoryCategory category) noexcept {
     licht::MemoryTrace::global_add_allocate_bytes(size);
     return ::malloc(size);
 }
 
-void operator delete(void* resource, LichtMemoryTag tag) noexcept {
-    LCHECK_MSG(false, "Use sized delete operator to free memory allocated with tagged new.");
+void operator delete(void* resource, licht::MemoryCategory category) noexcept {
+    LCHECK_MSG(false, "Use sized delete operator to free memory allocated with category new.");
 }
 
-void operator delete[](void* resource, LichtMemoryTag tag) noexcept {
-    LCHECK_MSG(false, "Use sized delete operator to free memory allocated with tagged new.");
+void operator delete[](void* resource, licht::MemoryCategory category) noexcept {
+    LCHECK_MSG(false, "Use sized delete operator to free memory allocated with category new.");
 }
 
-void operator delete(void* resource, usize size, LichtMemoryTag tag) noexcept {
+void operator delete(void* resource, usize size, licht::MemoryCategory category) noexcept {
     LCHECK_MSG(resource, "Deleting a null pointer is not allowed.");
 
     licht::MemoryTrace::global_add_freed_bytes(size);
     return ::free(resource);
 }
 
-void operator delete[](void* resource, usize size, LichtMemoryTag tag) noexcept {
+void operator delete[](void* resource, usize size, licht::MemoryCategory category) noexcept {
     LCHECK_MSG(resource, "Deleting a null pointer is not allowed.");
 
     licht::MemoryTrace::global_add_freed_bytes(size);

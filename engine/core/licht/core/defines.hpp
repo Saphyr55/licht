@@ -4,7 +4,6 @@
 #include <cstdlib>
 #include <iostream>
 
-
 using uint8 = uint8_t;
 using uint16 = uint16_t;
 using uint32 = uint32_t;
@@ -85,11 +84,3 @@ using usize = size_t;
 
 #define LICHT_CONCAT_INNER(a, b) a##b
 #define LCONCAT(a, b) LICHT_CONCAT_INNER(a, b)
-
-#define LICHT_REBIND_TEMPLATE(ClassType, OtherResourceType) \
-public:                                                     \
-    template <typename OtherResourceType>                   \
-    struct rebind {                                         \
-        using other = ClassType<OtherResourceType>;         \
-    };                                                      
-
