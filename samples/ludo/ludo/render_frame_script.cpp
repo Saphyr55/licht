@@ -320,6 +320,9 @@ void RenderFrameScript::on_startup() {
             // Standing buffers no longer needed after data upload
             device_->destroy_buffer(staging_position_buffer);
             device_->destroy_buffer(staging_color_buffer);
+            device_->destroy_buffer(staging_index_buffer);
+
+            device_->destroy_command_allocator(transfer_command_allocator_);
         }
     }
 
@@ -446,14 +449,17 @@ void RenderFrameScript::on_tick(float32 delta_time) {
 void RenderFrameScript::reset() {
     device_->wait_idle();
 
+    // Destroy all existing framebuffers
     for (RHIFramebufferHandle framebuffer : framebuffers_) {
         device_->destroy_framebuffer(framebuffer);
     }
     framebuffers_.clear();
     framebuffer_memory_allocator_.reset();
 
+    // Recreate swapchain
     device_->recreate_swapchain(swapchain_, frame_context_.frame_width, frame_context_.frame_height);
 
+    // Create new framebuffers
     framebuffers_.reserve(swapchain_->get_texture_views().size());
     for (RHITextureViewHandle texture : swapchain_->get_texture_views()) {
         RHIFramebufferDescription description = {};
@@ -488,6 +494,7 @@ void RenderFrameScript::on_shutdown() {
     {
         device_->destroy_buffer(position_buffer_);
         device_->destroy_buffer(color_buffer_);
+        device_->destroy_buffer(index_buffer_);
     }
 
     // -- Allocators
@@ -501,6 +508,7 @@ void RenderFrameScript::on_shutdown() {
             device_->destroy_framebuffer(framebuffer);
         }
         framebuffers_.clear();
+        framebuffer_memory_allocator_.reset();
     }
 
     device_->destroy_graphics_pipeline(pipeline_);

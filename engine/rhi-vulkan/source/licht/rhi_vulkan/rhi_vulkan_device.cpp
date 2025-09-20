@@ -179,26 +179,8 @@ RHIFramebufferHandle RHIVulkanDevice::create_framebuffer(RHIRenderPassHandle ren
                                                          const RHIFramebufferDescription& description) {
     LCHECK(render_pass);
 
-    SharedRef<RHIVulkanFramebuffer> framebuffer = new_ref<RHIVulkanFramebuffer>();
-    vulkan_framebuffer_init(context_, framebuffer, description);
-
-    RHIVulkanRenderPassRef vulkan_render_pass = static_ref_cast<RHIVulkanRenderPass>(render_pass);
-
-    Array<VkImageView> attachments = description.attachments.map<VkImageView>([](const RHITextureViewHandle& texture_view) {
-        SharedRef<RHIVulkanTextureView> vulkan_texture_view = static_ref_cast<RHIVulkanTextureView>(texture_view);
-        return vulkan_texture_view->get_handle();
-    });
-
-    VkFramebufferCreateInfo framebuffer_create_info = {};
-    framebuffer_create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebuffer_create_info.renderPass = vulkan_render_pass->get_handle();
-    framebuffer_create_info.attachmentCount = description.attachments.size();
-    framebuffer_create_info.pAttachments = attachments.data();
-    framebuffer_create_info.width = description.width;
-    framebuffer_create_info.height = description.height;
-    framebuffer_create_info.layers = description.layers;
-
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateFramebuffer(context_.device, &framebuffer_create_info, context_.allocator, &framebuffer->get_handle()));
+    SharedRef<RHIVulkanFramebuffer> framebuffer = new_ref<RHIVulkanFramebuffer>(context_, description);
+    framebuffer->initialize();
 
     return framebuffer;
 }
@@ -206,7 +188,7 @@ RHIFramebufferHandle RHIVulkanDevice::create_framebuffer(RHIRenderPassHandle ren
 void RHIVulkanDevice::destroy_framebuffer(RHIFramebufferHandle framebuffer) {
     LCHECK(framebuffer);
     SharedRef<RHIVulkanFramebuffer> vulkan_framebuffer = static_ref_cast<RHIVulkanFramebuffer>(framebuffer);
-    vulkan_framebuffer_destroy(context_, vulkan_framebuffer);
+    vulkan_framebuffer->destroy();
 }
 
 RHISemaphoreHandle RHIVulkanDevice::create_semaphore() {
