@@ -20,6 +20,49 @@ struct Rect2D {
     float32 height = 0.0f;
 };
 
+enum class RHICommandBufferUsage {
+    None = 0,
+    OneTimeSubmit = 1 << 0,
+    RenderPassContinue = 1 << 1,
+    SimultaneousUse = 1 << 2,
+};
+
+inline RHICommandBufferUsage operator|(RHICommandBufferUsage lhs, RHICommandBufferUsage rhs) {
+    return static_cast<RHICommandBufferUsage>(
+        static_cast<std::underlying_type<RHICommandBufferUsage>::type>(lhs) |
+        static_cast<std::underlying_type<RHICommandBufferUsage>::type>(rhs));
+}
+
+inline RHICommandBufferUsage operator&(RHICommandBufferUsage lhs, RHICommandBufferUsage rhs) {
+    return static_cast<RHICommandBufferUsage>(
+        static_cast<std::underlying_type<RHICommandBufferUsage>::type>(lhs) &
+        static_cast<std::underlying_type<RHICommandBufferUsage>::type>(rhs));
+}
+
+inline RHICommandBufferUsage& operator|=(RHICommandBufferUsage& lhs, RHICommandBufferUsage rhs) {
+    lhs = lhs | rhs;
+    return lhs;
+}
+
+inline RHICommandBufferUsage& operator&=(RHICommandBufferUsage& lhs, RHICommandBufferUsage rhs) {
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+inline bool rhi_command_buffer_usage_has_flag(RHICommandBufferUsage value, RHICommandBufferUsage flag) {
+    return (value & flag) != RHICommandBufferUsage::None;
+}
+
+/**
+ * @brief Types of hardware queues available in the RHI.
+ */
+enum class RHIQueueType {
+    Unknown,   ///< Unknown or uninitialized queue type.
+    Graphics,  ///< Graphics queue, capable of rendering and presentation.
+    Compute,   ///< Compute queue.
+    Transfer,  ///< Transfer queue.
+};
+
 enum class RHIVertexInputRate {
     Vertex,
     Instance,
@@ -33,6 +76,33 @@ enum class RHIBufferUsage : uint8 {
     Storage = 1 << 3,
     TransferSrc = 1 << 4,
     TransferDst = 1 << 5
+};
+
+inline RHIBufferUsage operator|(RHIBufferUsage a, RHIBufferUsage b) {
+    return static_cast<RHIBufferUsage>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
+}
+
+inline RHIBufferUsage operator&(RHIBufferUsage a, RHIBufferUsage b) {
+    return static_cast<RHIBufferUsage>(static_cast<uint8_t>(a) & static_cast<uint8_t>(b));
+}
+
+inline RHIBufferUsage& operator|=(RHIBufferUsage& a, RHIBufferUsage b) {
+    a = a | b;
+    return a;
+}
+
+inline RHIBufferUsage& operator&=(RHIBufferUsage& a, RHIBufferUsage b) {
+    a = a & b;
+    return a;
+}
+
+inline bool rhi_buffer_usage_any(RHIBufferUsage usage) {
+    return static_cast<uint8_t>(usage) != 0;
+}
+
+enum class RHIBufferMemoryUsage {
+    Device,
+    Host,
 };
 
 enum class RHIAccessMode {

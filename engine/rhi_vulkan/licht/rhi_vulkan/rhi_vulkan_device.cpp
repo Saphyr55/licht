@@ -67,8 +67,8 @@ void RHIVulkanDevice::wait_idle() {
     LICHT_VULKAN_CHECK(VulkanAPI::lvkDeviceWaitIdle(context_.device));
 }
 
-RHICommandAllocatorRef RHIVulkanDevice::create_command_allocator(uint32 count) {
-    SharedRef<RHIVulkanCommandAllocator> vulkan_command_allocator = new_ref<RHIVulkanCommandAllocator>(context_, count);
+RHICommandAllocatorRef RHIVulkanDevice::create_command_allocator(const RHICommandAllocatorDescription& description) {
+    SharedRef<RHIVulkanCommandAllocator> vulkan_command_allocator = new_ref<RHIVulkanCommandAllocator>(context_, description);
     vulkan_command_allocator->initialize_command_pool();
     vulkan_command_allocator->allocate_command_buffers();
     return vulkan_command_allocator;

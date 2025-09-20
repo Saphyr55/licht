@@ -22,7 +22,7 @@ RenderFrameScript::RenderFrameScript()
     , pipeline_(nullptr)
     , framebuffer_memory_allocator_(1024 /* 1 kB */)
     , framebuffers_(4, RHIFramebufferAllocator(framebuffer_memory_allocator_))
-    , command_allocator_(nullptr)
+    , graphics_command_allocator_(nullptr)
     , frame_context_()
     , pause_(false)
     , window_resized_(false) {
@@ -79,10 +79,11 @@ void RenderFrameScript::on_startup() {
         frame_context_.frame_width = static_cast<uint32>(window_statues.width);
         swapchain_ = device_->create_swapchain(frame_context_.frame_width, frame_context_.frame_height);
     }
-        
-    // Queues
+
+    // -- Queues --
     {
         const Array<RHICommandQueueRef>& command_queues = device_->get_command_queues();
+
         RHICommandQueueRef* graphics_command_queue_ptr = command_queues.get_if([](RHICommandQueueRef command_queue) {
             return command_queue->get_type() == RHIQueueType::Graphics; 
         });
@@ -209,26 +210,104 @@ void RenderFrameScript::on_startup() {
 
     // -- Buffers --
     {   
-        RHIBufferDescription position_buffer_description = {};
-        position_buffer_description.access_mode = RHIAccessMode::Private;
-        position_buffer_description.usage = RHIBufferUsage::Vertex;
-        position_buffer_description.size = sizeof(Vector3f) * positions_.size();
+        RHIBufferHandle staging_position_buffer;
+        RHIBufferHandle staging_color_buffer;
 
-        position_buffer_ = device_->create_buffer(position_buffer_description);
-        position_buffer_->update(positions_.data(), sizeof(Vector3f) * positions_.size());
+        // Positions
+        {
+            RHIBufferDescription staging_position_buffer_description = {};
+            staging_position_buffer_description.access_mode = RHIAccessMode::Shared;
+            staging_position_buffer_description.usage = RHIBufferUsage::TransferSrc;
+            staging_position_buffer_description.memory_usage = RHIBufferMemoryUsage::Host;
+            staging_position_buffer_description.size = sizeof(Vector3f) * positions_.size();
 
-        RHIBufferDescription color_buffer_description = {};
-        color_buffer_description.access_mode = RHIAccessMode::Private;
-        color_buffer_description.usage = RHIBufferUsage::Vertex;
-        color_buffer_description.size = sizeof(Vector3f) * colors_.size();
+            staging_position_buffer = device_->create_buffer(staging_position_buffer_description);
+            staging_position_buffer->update(positions_.data(), sizeof(Vector3f) * positions_.size());
 
-        color_buffer_ = device_->create_buffer(color_buffer_description);
-        color_buffer_->update(colors_.data(), sizeof(Vector3f) * colors_.size());
+            RHIBufferDescription position_buffer_description = {};
+            position_buffer_description.access_mode = RHIAccessMode::Shared;
+            position_buffer_description.usage = RHIBufferUsage::Vertex | RHIBufferUsage::TransferDst;
+            position_buffer_description.memory_usage = RHIBufferMemoryUsage::Device;
+            position_buffer_description.size = sizeof(Vector3f) * positions_.size();
+
+            position_buffer_ = device_->create_buffer(position_buffer_description);
+        }
+            
+        // Colors
+        {
+            RHIBufferDescription staging_color_buffer_description = {};
+            staging_color_buffer_description.access_mode = RHIAccessMode::Shared;
+            staging_color_buffer_description.usage = RHIBufferUsage::TransferSrc;
+            staging_color_buffer_description.memory_usage = RHIBufferMemoryUsage::Host;
+            staging_color_buffer_description.size = sizeof(Vector3f) * colors_.size();
+
+            staging_color_buffer = device_->create_buffer(staging_color_buffer_description);
+            staging_color_buffer->update(colors_.data(), sizeof(Vector3f) * colors_.size());
+
+            RHIBufferDescription color_buffer_description = {};
+            color_buffer_description.access_mode = RHIAccessMode::Shared;
+            color_buffer_description.usage = RHIBufferUsage::Vertex | RHIBufferUsage::TransferDst;
+            color_buffer_description.memory_usage = RHIBufferMemoryUsage::Device;
+            color_buffer_description.size = sizeof(Vector3f) * colors_.size();
+
+            color_buffer_ = device_->create_buffer(color_buffer_description);
+        }
+
+        // -- Upload Data from Standing Buffers to Device Buffers --
+        {
+            // Fetch transfer queue.
+            const Array<RHICommandQueueRef>& command_queues = device_->get_command_queues();
+            RHICommandQueueRef* transfer_queue_ptr = command_queues.get_if([](RHICommandQueueRef queue) {
+                return queue->get_type() == RHIQueueType::Transfer;
+            });
+            LCHECK_MSG(transfer_queue_ptr, "Found no transfer command queue.");
+            RHICommandQueueRef transfer_queue = *transfer_queue_ptr;
+
+            RHICommandAllocatorDescription transfer_command_allocator_desc = {};
+            transfer_command_allocator_desc.count = 1;  // One command buffer allocated.
+            transfer_command_allocator_desc.command_queue = transfer_queue;
+
+            RHICommandAllocatorRef transfer_command_allocator_ = device_->create_command_allocator(transfer_command_allocator_desc);
+
+            // Open a transfer command buffer
+            RHICommandBufferHandle transfer_cmd = transfer_command_allocator_->open();
+            transfer_command_allocator_->reset_command_buffer(transfer_cmd);
+
+            transfer_cmd->begin();
+            {
+                // Copy positions
+                RHIBufferCopyCommand position_copy = {};
+                position_copy.size = sizeof(Vector3f) * positions_.size();
+                transfer_cmd->copy_buffer(staging_position_buffer, position_buffer_, {position_copy});
+
+                // Copy colors
+                RHIBufferCopyCommand color_copy = {};
+                color_copy.size = sizeof(Vector3f) * colors_.size();
+                transfer_cmd->copy_buffer(staging_color_buffer, color_buffer_, {color_copy});
+            }
+            transfer_cmd->end();
+
+            // Submit and wait for transfer to complete
+            RHIFenceHandle upload_fence = device_->create_fence();
+            device_->reset_fence(upload_fence);
+            transfer_queue->submit({transfer_cmd}, {}, {}, upload_fence);
+
+            device_->wait_fence(upload_fence);
+            device_->destroy_fence(upload_fence);
+
+            // Standing buffers no longer needed after data upload
+            device_->destroy_buffer(staging_position_buffer);
+            device_->destroy_buffer(staging_color_buffer);
+        }
     }
 
-    // -- Command Allocator
+    // -- Command Allocators
     {
-        command_allocator_ = device_->create_command_allocator(frame_context_.frame_count);
+        RHICommandAllocatorDescription graphics_command_allocator_desc = {};
+        graphics_command_allocator_desc.count = frame_context_.frame_count;
+        graphics_command_allocator_desc.command_queue = graphics_command_queue_; 
+
+        graphics_command_allocator_ = device_->create_command_allocator(graphics_command_allocator_desc);
     }
 
     // -- Frame Context Sync --
@@ -263,13 +342,13 @@ void RenderFrameScript::on_tick(float32 delta_time) {
     }
     LCHECK(frame_context_.success);
 
-    RHICommandBufferHandle command_buffer = command_allocator_->open(frame_context_.current_frame);
-    command_allocator_->reset_command_buffer(command_buffer);
+    RHICommandBufferHandle graphics_command_buffer = graphics_command_allocator_->open(frame_context_.current_frame);
+    graphics_command_allocator_->reset_command_buffer(graphics_command_buffer);
 
     float32 width = static_cast<float32>(swapchain_->get_width());
     float32 height = static_cast<float32>(swapchain_->get_height());
 
-    command_buffer->begin();
+    graphics_command_buffer->begin();
     {
         Rect2D render_pass_area = {};
         render_pass_area.x = 0.0f;
@@ -281,9 +360,9 @@ void RenderFrameScript::on_tick(float32 delta_time) {
         render_pass_begin_info.render_pass = render_pass_;
         render_pass_begin_info.framebuffer = framebuffers_[frame_context_.frame_index];
         render_pass_begin_info.area = render_pass_area;
-        command_buffer->begin_render_pass(render_pass_begin_info);
+        graphics_command_buffer->begin_render_pass(render_pass_begin_info);
         {
-            command_buffer->bind_pipeline(pipeline_);
+            graphics_command_buffer->bind_pipeline(pipeline_);
 
             Viewport viewport = {};
             viewport.x = 0.0f;
@@ -293,7 +372,7 @@ void RenderFrameScript::on_tick(float32 delta_time) {
             viewport.min_depth = 0.0f;
             viewport.max_depth = 1.0f;
 
-            command_buffer->set_viewports(&viewport, 1);
+            graphics_command_buffer->set_viewports(&viewport, 1);
 
             Rect2D scissor = {};
             scissor.x = 0.0f;
@@ -301,9 +380,9 @@ void RenderFrameScript::on_tick(float32 delta_time) {
             scissor.width = width;
             scissor.height = height;
 
-            command_buffer->set_scissors(&scissor, 1);
+            graphics_command_buffer->set_scissors(&scissor, 1);
 
-            command_buffer->bind_vertex_buffers({position_buffer_, color_buffer_});
+            graphics_command_buffer->bind_vertex_buffers({position_buffer_, color_buffer_});
 
             RHIDrawCommand draw_command = {};
             draw_command.vertex_count = positions_.size();
@@ -311,11 +390,11 @@ void RenderFrameScript::on_tick(float32 delta_time) {
             draw_command.first_instance = 0;
             draw_command.first_vertex = 0;
 
-            command_buffer->draw(draw_command);
+            graphics_command_buffer->draw(draw_command);
         }
-        command_buffer->end_render_pass();
+        graphics_command_buffer->end_render_pass();
     }
-    command_buffer->end();
+    graphics_command_buffer->end();
 
     if (RHIFenceHandle* fence = frame_context_.frame_in_flight_fences[frame_context_.frame_index]) {
         device_->wait_fence(*fence);
@@ -325,7 +404,11 @@ void RenderFrameScript::on_tick(float32 delta_time) {
 
     device_->reset_fence(frame_context_.in_flight_fences[frame_context_.current_frame]);
         
-    graphics_command_queue_->submit({command_buffer}, frame_context_);
+    graphics_command_queue_->submit({graphics_command_buffer}, 
+        {frame_context_.current_frame_available_semaphore()}, 
+        {frame_context_.current_render_finished_semaphore()}, 
+        frame_context_.current_in_flight_fence());
+
     graphics_present_command_queue_->present(swapchain_, frame_context_);
 
     if (window_resized_ || frame_context_.suboptimal || frame_context_.out_of_date) {
@@ -367,7 +450,7 @@ void RenderFrameScript::reset() {
 void RenderFrameScript::on_shutdown() {
     device_->wait_idle();
 
-    // -- Frame Context Sync --
+    // -- Frame Context --
     {
         for (uint32 i = 0; i < frame_context_.frame_count; i++) {
             device_->destroy_semaphore(frame_context_.frame_available_semaphores[i]);
@@ -386,9 +469,9 @@ void RenderFrameScript::on_shutdown() {
         device_->destroy_buffer(color_buffer_);
     }
 
-    // -- Allocator
+    // -- Allocators
     {
-        device_->destroy_command_allocator(command_allocator_);
+        device_->destroy_command_allocator(graphics_command_allocator_);
     }
     
     // -- Framebuffers --

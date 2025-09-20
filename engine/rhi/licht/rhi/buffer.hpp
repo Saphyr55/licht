@@ -5,7 +5,6 @@
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/rhi/resource.hpp"
 #include "licht/rhi/rhi_types.hpp"
-#include "rhi_types.hpp"
 
 namespace licht {
 
@@ -75,6 +74,11 @@ struct RHIBufferDescription {
      * @brief Specifies the usage type of the buffer (e.g., Vertex, Index, etc.).
      */
     RHIBufferUsage usage = RHIBufferUsage::Vertex;
+
+    /**
+     * @brief 
+     */
+    RHIBufferMemoryUsage memory_usage = RHIBufferMemoryUsage::Host;
 
     /**
      * @brief Defines the access mode for the buffer (e.g., Private, Read, Write).

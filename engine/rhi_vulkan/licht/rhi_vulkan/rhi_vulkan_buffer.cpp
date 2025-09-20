@@ -33,9 +33,20 @@ RHIVulkanBuffer::RHIVulkanBuffer(VulkanContext& context, RHIBufferDescription de
 }
 
 void RHIVulkanBuffer::initialize() {
+
+    Array<uint32> indices;
+    if (description_.access_mode == RHIAccessMode::Shared) {
+        if ((description_.usage & RHIBufferUsage::TransferDst) == RHIBufferUsage::TransferDst ||
+            (description_.usage & RHIBufferUsage::TransferSrc) == RHIBufferUsage::TransferSrc) {
+            indices = vulkan_query_queue_family_indices(context_);
+        }
+    }
+
     VkBufferCreateInfo buffer_create_info = {};
     buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     buffer_create_info.pNext = VK_NULL_HANDLE;
+    buffer_create_info.queueFamilyIndexCount = indices.size();
+    buffer_create_info.pQueueFamilyIndices = indices.data();
     buffer_create_info.size = description_.size;
     buffer_create_info.usage = vulkan_buffer_usage_get(description_.usage);
     buffer_create_info.sharingMode = vulkan_sharing_mode_get(description_.access_mode);
@@ -44,7 +55,13 @@ void RHIVulkanBuffer::initialize() {
     VkMemoryRequirements memory_requirements;
     VulkanAPI::lvkGetBufferMemoryRequirements(context_.device, buffer_, &memory_requirements);
 
-    VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;  // TODO: Memory configuration must be customizable
+    VkMemoryPropertyFlags properties = 0;
+    if (description_.memory_usage == RHIBufferMemoryUsage::Device) {
+        properties |= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    } else if (description_.memory_usage == RHIBufferMemoryUsage::Host) {
+        properties |= (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    }
+
     VkMemoryAllocateInfo memory_allocate_info = {};
     memory_allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     memory_allocate_info.pNext = VK_NULL_HANDLE;

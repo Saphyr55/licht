@@ -5,18 +5,9 @@
 #include "licht/rhi/fence.hpp"
 #include "licht/rhi/semaphore.hpp"
 #include "licht/rhi/swapchain.hpp"
+#include "licht/rhi/rhi_types.hpp"
 
 namespace licht {
-
-/**
- * @brief Types of hardware queues available in the RHI.
- */
-enum class RHIQueueType {
-    Unknown,   ///< Unknown or uninitialized queue type.
-    Graphics,  ///< Graphics queue, capable of rendering and presentation.
-    Compute,   ///< Compute queue.
-    Transfer,  ///< Transfer queue.
-};
 
 /**
  * @brief Abstract interface for a GPU command queue.
@@ -26,12 +17,10 @@ enum class RHIQueueType {
  */
 class RHICommandQueue {
 public:
-    /**
-     * @brief Submit command buffers to this queue.
-     * @param command_buffers Array of command buffer handles to submit.
-     * @param context Frame context used for synchronization and per-frame resources.
-     */
-    virtual void submit(const Array<RHICommandBufferHandle>& command_buffers, RHIFrameContext& context) = 0;
+    virtual void submit(const Array<RHICommandBufferHandle>& command_buffers,
+                        const Array<RHISemaphoreHandle>& wait_semaphores,
+                        const Array<RHISemaphoreHandle>& signal_semaphores,
+                        const RHIFenceHandle fence) = 0;
 
     /**
      * @brief Present the current image to a swapchain.

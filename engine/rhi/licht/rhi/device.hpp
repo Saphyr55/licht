@@ -22,7 +22,7 @@ public:
     virtual void wait_fence(RHIFenceHandle fence) = 0;
     virtual void reset_fence(RHIFenceHandle fence) = 0;
     
-    virtual RHICommandAllocatorRef create_command_allocator(uint32 count) = 0;
+    virtual RHICommandAllocatorRef create_command_allocator(const RHICommandAllocatorDescription& description) = 0;
     virtual void destroy_command_allocator(RHICommandAllocatorRef command_allocator) = 0;
 
     virtual RHITextureHandle create_texture(const RHITextureDescription& description) = 0;

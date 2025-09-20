@@ -10,6 +10,8 @@
 
 namespace licht {
 
+class RHICommandQueue;
+
 /**
  * @brief Base type for all RHI commands.
  */
@@ -23,6 +25,12 @@ struct RHIDrawCommand : RHICommand {
     uint32 instance_count;  ///< Number of instances to draw.
     uint32 first_vertex;    ///< Index of the first vertex.
     uint32 first_instance;  ///< Index of the first instance.
+};
+
+struct RHIBufferCopyCommand : RHICommand {
+    size_t source_offset = 0;
+    size_t destination_offset = 0;
+    size_t size = 0;
 };
 
 /**
@@ -42,7 +50,7 @@ public:
     /**
      * @brief Begin recording commands into this command buffer.
      */
-    virtual void begin() = 0;
+    virtual void begin(RHICommandBufferUsage usage = RHICommandBufferUsage::None) = 0;
 
     /**
      * @brief End recording commands into this command buffer.
@@ -86,6 +94,9 @@ public:
      */
     virtual void set_viewports(const Viewport* viewports, uint32 count) = 0;
 
+
+    virtual void copy_buffer(RHIBufferHandle source, RHIBufferHandle destination, const RHIBufferCopyCommand& command) = 0;
+
     /**
      * @brief Register a draw command.
      * @param command Draw command parameters.
@@ -103,6 +114,12 @@ public:
  */
 using RHICommandBufferHandle = SharedRef<RHICommandBuffer>;
 
+
+struct RHICommandAllocatorDescription {
+    SharedRef<RHICommandQueue> command_queue;
+    uint32 count = 0;
+};
+
 /**
  * @brief Abstract interface for allocating and managing command buffers.
  */
@@ -113,7 +130,7 @@ public:
      * @param index Index identifying which buffer to open.
      * @return Handle to the opened command buffer.
      */
-    virtual RHICommandBufferHandle open(uint32 index) = 0;
+    virtual RHICommandBufferHandle open(uint32 index = 0) = 0;
 
     /**
      * @brief Reset a previously recorded command buffer for reuse.

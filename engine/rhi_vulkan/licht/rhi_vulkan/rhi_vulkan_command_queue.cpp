@@ -11,26 +11,29 @@
 
 namespace licht {
 
-bool RHIVulkanCommandQueue::is_present_mode() {
-    return is_present_mode_supported_;
+RHIVulkanCommandQueue::RHIVulkanCommandQueue(VulkanContext& context, VkQueue queue, RHIQueueType type, uint32 queue_family_index, bool is_present_mode_supported)
+    : context_(context), queue_(queue), type_(type), queue_family_index_(queue_family_index), is_present_mode_supported_(is_present_mode_supported) {
 }
 
-RHIVulkanCommandQueue::RHIVulkanCommandQueue(VulkanContext& context, VkQueue queue, RHIQueueType type, bool is_present_mode_supported)
-    : context_(context), queue_(queue), type_(type), is_present_mode_supported_(is_present_mode_supported) {
+bool RHIVulkanCommandQueue::is_present_mode() {
+    return is_present_mode_supported_;
 }
 
 void RHIVulkanCommandQueue::wait_idle() {
     LICHT_VULKAN_CHECK(VulkanAPI::lvkQueueWaitIdle(queue_));
 }
 
-void RHIVulkanCommandQueue::submit(const Array<RHICommandBufferHandle>& command_buffers, RHIFrameContext& frame_context) {
+void RHIVulkanCommandQueue::submit(const Array<RHICommandBufferHandle>& command_buffers, 
+                                   const Array<RHISemaphoreHandle>& wait_semaphores,
+                                   const Array<RHISemaphoreHandle>& signal_semaphores,
+                                   const RHIFenceHandle fence) {
     VkSubmitInfo submit_info = {};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
     // Command buffers
     Array<VkCommandBuffer> vk_command_buffers(command_buffers.size());
     for (RHICommandBufferHandle& cmd : command_buffers) {
-        RHIVulkanCommandBuffer* vk_cmd_ref = static_cast<RHIVulkanCommandBuffer*>(cmd.get_resource());
+        RHIVulkanCommandBufferRef vk_cmd_ref = static_ref_cast<RHIVulkanCommandBuffer>(cmd);
         vk_command_buffers.append(vk_cmd_ref->get_handle());
     }
 
@@ -38,26 +41,40 @@ void RHIVulkanCommandQueue::submit(const Array<RHICommandBufferHandle>& command_
     submit_info.pCommandBuffers = vk_command_buffers.data();
 
     // Wait semaphores
-    SharedRef<RHIVulkanSemaphore> rhi_vk_semaphore_frame_available = static_ref_cast<RHIVulkanSemaphore>(frame_context.current_frame_available_semaphore());
-    VkSemaphore& vk_semaphore_frame_available = rhi_vk_semaphore_frame_available->get_handle();
+    Array<VkSemaphore> wait_vksemaphores(wait_semaphores.size());
+    for (RHISemaphoreHandle sem : wait_semaphores) {
+        wait_vksemaphores.append(static_ref_cast<RHIVulkanSemaphore>(sem)->get_handle());
+    }
 
-    submit_info.waitSemaphoreCount = 1;
-    submit_info.pWaitSemaphores = &vk_semaphore_frame_available;
-
-    SharedRef<RHIVulkanSemaphore> rhi_vk_semaphore_render_finished = static_ref_cast<RHIVulkanSemaphore>(frame_context.current_render_finished_semaphore());
-    VkSemaphore& vk_semaphore_render_finished = rhi_vk_semaphore_render_finished->get_handle();
+    submit_info.waitSemaphoreCount = wait_vksemaphores.size();
+    submit_info.pWaitSemaphores = wait_vksemaphores.data();
 
     // Signal semaphores
-    submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = &vk_semaphore_render_finished;
+
+    Array<VkSemaphore> signal_vksemaphores(signal_semaphores.size());
+    for (RHISemaphoreHandle sem : signal_semaphores) {
+        signal_vksemaphores.append(static_ref_cast<RHIVulkanSemaphore>(sem)->get_handle());
+    }
+
+    submit_info.signalSemaphoreCount = signal_vksemaphores.size();
+    submit_info.pSignalSemaphores = signal_vksemaphores.data();
 
     // Waiting pipeline stage policy
-    VkPipelineStageFlags wait_stages[1] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    submit_info.pWaitDstStageMask = wait_stages;
+    Array<VkPipelineStageFlags> wait_stages(wait_semaphores.size());
+    for (size_t i = 0; i < wait_semaphores.size(); i++) {
+        wait_stages.append(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+    }
 
-    SharedRef<RHIVulkanFence> fence = static_ref_cast<RHIVulkanFence>(frame_context.current_in_flight_fence());
+    submit_info.pWaitDstStageMask = wait_stages.data();
+    // Fence
+    SharedRef<RHIVulkanFence> rhi_vkfence = static_ref_cast<RHIVulkanFence>(fence);
+    VkFence vkfence = VK_NULL_HANDLE;
+    if (rhi_vkfence) {
+        vkfence = rhi_vkfence->get_handle();
+    }
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkQueueSubmit(queue_, 1, &submit_info, fence->get_handle()));
+    // Submit
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkQueueSubmit(queue_, 1, &submit_info, vkfence));
 }
 
 void RHIVulkanCommandQueue::present(RHISwapchainHandle swapchain, RHIFrameContext& frame_context) {

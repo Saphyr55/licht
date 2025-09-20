@@ -20,7 +20,7 @@ public:
     virtual void wait_fence(RHIFenceHandle fence) override;
     virtual void reset_fence(RHIFenceHandle fence) override;
     
-    virtual RHICommandAllocatorRef create_command_allocator(uint32 count) override;
+    virtual RHICommandAllocatorRef create_command_allocator(const RHICommandAllocatorDescription& description) override;
     virtual void destroy_command_allocator(RHICommandAllocatorRef command_allocator) override;
 
     virtual RHITextureHandle create_texture(const RHITextureDescription& description) override;

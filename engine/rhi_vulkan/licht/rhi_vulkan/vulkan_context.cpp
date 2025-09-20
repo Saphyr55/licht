@@ -126,7 +126,7 @@ void vulkan_context_initialize(VulkanContext& context, void* native_window) {
             VkQueue queue = vulkan_query_queue(context, i, 0);
             RHIQueueType type = vulkan_queue_type(context, i);
             bool is_present_mode = vulkan_queue_present_support(context, i);
-            context.command_queues[i] = new_ref<RHIVulkanCommandQueue>(context, queue, type, is_present_mode);
+            context.command_queues[i] = new_ref<RHIVulkanCommandQueue>(context, queue, type, i, is_present_mode);
         }
     }
 }
@@ -184,9 +184,9 @@ Array<uint32> vulkan_query_queue_family_indices(VulkanContext& context, Function
     return indices;
 }
 
-VkQueue vulkan_query_queue(VulkanContext& context, uint32 family_queue_index, uint32 queue_index) {
+VkQueue vulkan_query_queue(VulkanContext& context, uint32 queue_family_index, uint32 queue_index) {
     VkQueue queue;
-    VulkanAPI::lvkGetDeviceQueue(context.device, family_queue_index, queue_index, &queue);
+    VulkanAPI::lvkGetDeviceQueue(context.device, queue_family_index, queue_index, &queue);
     return queue;
 }
 

@@ -58,7 +58,7 @@ private:
     LinearAllocator framebuffer_memory_allocator_;
     RHIFramebufferRegistry framebuffers_;
 
-    RHICommandAllocatorRef command_allocator_;
+    RHICommandAllocatorRef graphics_command_allocator_;
     RHIFrameContext frame_context_;
 
     bool pause_ = false;

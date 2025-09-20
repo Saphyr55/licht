@@ -70,28 +70,6 @@ bool vulkan_queue_present_support(VulkanContext& context, uint32 queue_family_in
 RHIAccessMode rhi_access_mode_get(VkSharingMode mode);
 VkSharingMode vulkan_sharing_mode_get(RHIAccessMode mode);
 
-inline RHIBufferUsage operator|(RHIBufferUsage a, RHIBufferUsage b) {
-    return static_cast<RHIBufferUsage>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
-}
-
-inline RHIBufferUsage operator&(RHIBufferUsage a, RHIBufferUsage b) {
-    return static_cast<RHIBufferUsage>(static_cast<uint8_t>(a) & static_cast<uint8_t>(b));
-}
-
-inline RHIBufferUsage& operator|=(RHIBufferUsage& a, RHIBufferUsage b) {
-    a = a | b;
-    return a;
-}
-
-inline RHIBufferUsage& operator&=(RHIBufferUsage& a, RHIBufferUsage b) {
-    a = a & b;
-    return a;
-}
-
-inline bool rhi_buffer_usage_any(RHIBufferUsage usage) {
-    return static_cast<uint8_t>(usage) != 0;
-}
-
 inline VkVertexInputRate vulkan_vertex_input_rate_get(RHIVertexInputRate rate) {
     switch (rate) {
         case RHIVertexInputRate::Vertex:
