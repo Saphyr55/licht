@@ -454,4 +454,26 @@ VkFormat vulkan_format_get(RHIFormat format) {
     }
 }
 
+RHIAccessMode rhi_access_mode_get(VkSharingMode mode) {
+    switch (mode) {
+        case VK_SHARING_MODE_EXCLUSIVE:
+            return RHIAccessMode::Private;
+        case VK_SHARING_MODE_CONCURRENT:
+            return RHIAccessMode::Shared;
+        default:
+            return RHIAccessMode::Private;
+    }
+}
+
+VkSharingMode vulkan_sharing_mode_get(RHIAccessMode mode) {
+    switch (mode) {
+        case RHIAccessMode::Private:
+            return VK_SHARING_MODE_EXCLUSIVE;
+        case RHIAccessMode::Shared:
+            return VK_SHARING_MODE_CONCURRENT;
+        default:
+            return VK_SHARING_MODE_EXCLUSIVE;
+    }
+}
+
 }  //namespace licht

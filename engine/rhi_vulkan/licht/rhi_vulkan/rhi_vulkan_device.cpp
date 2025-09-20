@@ -24,6 +24,7 @@
 #include "licht/rhi_vulkan/rhi_vulkan_texture.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
+#include "rhi_vulkan_buffer.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -67,15 +68,15 @@ void RHIVulkanDevice::wait_idle() {
 }
 
 RHICommandAllocatorRef RHIVulkanDevice::create_command_allocator(uint32 count) {
-    SharedRef<RHIVulkanCommandAllocator> allocator = new_ref<RHIVulkanCommandAllocator>(context_, count);
-    allocator->initialize_command_pool();
-    allocator->allocate_command_buffers();
-    return allocator;
+    SharedRef<RHIVulkanCommandAllocator> vulkan_command_allocator = new_ref<RHIVulkanCommandAllocator>(context_, count);
+    vulkan_command_allocator->initialize_command_pool();
+    vulkan_command_allocator->allocate_command_buffers();
+    return vulkan_command_allocator;
 }
 
 void RHIVulkanDevice::destroy_command_allocator(RHICommandAllocatorRef command_allocator) {
-    SharedRef<RHIVulkanCommandAllocator> allocator = static_ref_cast<RHIVulkanCommandAllocator>(command_allocator);
-    allocator->destroy();
+    SharedRef<RHIVulkanCommandAllocator> vulkan_command_allocator = static_ref_cast<RHIVulkanCommandAllocator>(command_allocator);
+    vulkan_command_allocator->destroy();
 }
 
 RHITextureHandle RHIVulkanDevice::create_texture(const RHITextureDescription& description) {
@@ -92,11 +93,15 @@ void RHIVulkanDevice::destroy_texture(RHITextureHandle texture) {
     VulkanAPI::lvkDestroyImage(context_.device, vktexture->get_handle(), context_.allocator);
 }
 
-RHIBufferHandle RHIVulkanDevice::create_buffer() {
-    return SharedRef<RHIBuffer>(nullptr);
+RHIBufferHandle RHIVulkanDevice::create_buffer(RHIBufferDescription description) {
+    RHIVulkanBufferRef buffer = new_ref<RHIVulkanBuffer>(context_, description);
+    buffer->initialize();
+    return buffer;
 }
 
 void RHIVulkanDevice::destroy_buffer(RHIBufferHandle buffer) {
+    RHIVulkanBufferRef vkbuffer = static_ref_cast<RHIVulkanBuffer>(buffer);
+    vkbuffer->destroy();
 }
 
 RHITextureViewHandle RHIVulkanDevice::create_texture_view(const RHITextureViewDescription& description) {
@@ -259,7 +264,7 @@ RHICommandQueueRef RHIVulkanDevice::query_queue(RHIQueueType type) {
         case RHIQueueType::Graphics: {
             return graphics_queue_;
         }
-        case RHIQueueType::Compute:  // TODO: Handle Compute queue
+        case RHIQueueType::Compute: // TODO: Handle Compute queue
         default: {
             return SharedRef<RHIVulkanCommandQueue>(nullptr);
         }

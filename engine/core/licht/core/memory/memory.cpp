@@ -83,7 +83,7 @@ void* Memory::copy(void* destination,
     return memcpy(destination, source, size);
 }
 
-void* Memory::copy_move(void* destination,
+void* Memory::move(void* destination,
                         const void* source,
                         size_t size) {
     LCHECK_MSG(destination, "The destination must be not a null pointer.");

@@ -89,7 +89,7 @@ TEST_CASE("Memory utility functions.", "[Memory][Utility]") {
     SECTION("copy_move() function works correctly.") {
         char buffer[] = "Hello, World!";
         
-        void* result = Memory::copy_move(buffer + 6, buffer, 7);
+        void* result = Memory::move(buffer + 6, buffer, 7);
         REQUIRE(result == buffer + 6);
         REQUIRE(std::strcmp(buffer + 6, "Hello, ") == 0);
     }

@@ -1,13 +1,16 @@
 #include "rhi_vulkan_command_buffer.hpp"
+#include "licht/core/containers/array.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/memory/shared_ref_cast.hpp"
+#include "licht/rhi/buffer.hpp"
 #include "licht/rhi/rhi_types.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_framebuffer.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_pipeline.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_render_pass.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
+#include "rhi_vulkan_buffer.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -28,6 +31,17 @@ void RHIVulkanCommandBuffer::end() {
 void RHIVulkanCommandBuffer::bind_pipeline(RHIPipelineHandle pipeline) {
     RHIVulkanPipelineRef vulkan_graphics_pipeline = static_ref_cast<RHIVulkanPipeline>(pipeline);
     VulkanAPI::lvkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, vulkan_graphics_pipeline->pipeline());
+}
+
+void RHIVulkanCommandBuffer::bind_vertex_buffers(const Array<RHIBufferHandle>& buffers) {
+    Array<VkDeviceSize> offsets;
+    offsets.resize(buffers.size(), 0);
+
+    Array<VkBuffer> vk_buffers = buffers.map<VkBuffer>([](RHIBufferHandle buffer_handle) -> VkBuffer {
+        return static_ref_cast<RHIVulkanBuffer>(buffer_handle)->get_handle(); 
+    });
+    
+    VulkanAPI::lvkCmdBindVertexBuffers(command_buffer_, 0, buffers.size(), vk_buffers.data(), offsets.data());
 }
 
 void RHIVulkanCommandBuffer::set_scissors(const Rect2D* scissors, uint32 count) {
@@ -68,7 +82,7 @@ void RHIVulkanCommandBuffer::begin_render_pass(const RHIRenderPassBeginInfo& beg
     render_pass_begin_info.renderArea.offset = {static_cast<int32>(begin_info.area.x), static_cast<int32>(begin_info.area.y)};
     render_pass_begin_info.renderArea.extent = { static_cast<uint32>(begin_info.area.width), static_cast<uint32>(begin_info.area.height) };
 
-    VkClearValue clear_color = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+    VkClearValue clear_color = {{{0.01f, 0.02f, 0.1f, 1.0f}}};
     render_pass_begin_info.clearValueCount = 1;
     render_pass_begin_info.pClearValues = &clear_color;
 

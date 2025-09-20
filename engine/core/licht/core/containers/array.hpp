@@ -1,5 +1,6 @@
 #pragma once
 
+#include "licht/core/algorithm/comparator.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/memory/concepts.hpp"
 #include "licht/core/memory/default_allocator.hpp"
@@ -9,18 +10,16 @@
 
 namespace licht {
 
-template <typename ElementType,
-          CAllocator<ElementType> AllocatorType = TypedDefaultAllocator<ElementType>,
-          typename SizeType = size_t>
+template <typename ElementType, CAllocator<ElementType> AllocatorType = TypedDefaultAllocator<ElementType>>
 class Array {
 public:
     using IteratorType = ElementType*;
 
     template <typename NewElement>
     using ReboundAllocator = typename AllocatorType::template rebind<NewElement>::other;
-    
+
     using value_type = ElementType;
-    using size_type = SizeType;
+    using size_type = size_t;
     using reference = ElementType&;
     using const_reference = const ElementType&;
     using iterator = ElementType*;
@@ -29,13 +28,12 @@ public:
 public:
 
     template <typename OtherElementType = ElementType,
-              typename OtherAllocatorType = ReboundAllocator<OtherElementType>,
-              typename OtherSizeType = SizeType>
-    Array<OtherElementType, OtherAllocatorType, OtherSizeType> map(auto&& mapper,
-                                                                   const OtherAllocatorType& other_allocator = OtherAllocatorType()) const {
-        Array<OtherElementType, OtherAllocatorType, OtherSizeType> other(size_, other_allocator);
+              typename OtherAllocatorType = ReboundAllocator<OtherElementType>>
+    Array<OtherElementType, OtherAllocatorType> map(auto&& mapper,
+                                                    const OtherAllocatorType& other_allocator = OtherAllocatorType()) const {
+        Array<OtherElementType, OtherAllocatorType> other(size_, other_allocator);
 
-        for (SizeType i = 0; i < size_; i++) {
+        for (size_type i = 0; i < size_; i++) {
             other.append(mapper(data_[i]));
         }
 
@@ -70,7 +68,7 @@ public:
         if (size_ >= capacity_) {
             reserve(capacity_ == 0 ? 1 : capacity_ * 2);
         }
-        
+
         new (data_ + size_) ElementType(element);
 
         ++size_;
@@ -99,21 +97,21 @@ public:
         }
     }
 
-    inline constexpr ElementType& operator[](SizeType index) {
+    inline constexpr ElementType& operator[](size_type index) {
         LCHECK_MSG(index < size_, "Index out of bounds.");
         return data_[index];
     }
 
-    inline constexpr const ElementType& operator[](SizeType index) const {
+    inline constexpr const ElementType& operator[](size_type index) const {
         LCHECK_MSG(index < size_, "Index out of bounds.");
         return data_[index];
     }
 
-    inline constexpr SizeType size() const {
+    inline constexpr size_type size() const {
         return size_;
     }
 
-    inline constexpr SizeType capacity() const {
+    inline constexpr size_type capacity() const {
         return capacity_;
     }
 
@@ -122,7 +120,7 @@ public:
     }
 
     void clear() {
-        for (SizeType i = 0; i < size_; i++) {
+        for (size_type i = 0; i < size_; i++) {
             data_[i].~ElementType();
         }
 
@@ -141,10 +139,10 @@ public:
         });
     }
 
-    void remove(const ElementType& value, auto&& comparator) {
-        SizeType new_size = 0;
-        for (SizeType i = 0; i < size_; ++i) {
-            if (comparator(data_[i], value) != 0) {
+    void remove(const ElementType& value, auto&& predicate) {
+        size_type new_size = 0;
+        for (size_type i = 0; i < size_; ++i) {
+            if (predicate(data_[i], value)) {
                 if (new_size != i) {
                     new (data_ + new_size) ElementType(data_[i]);
                 }
@@ -156,18 +154,17 @@ public:
         size_ = new_size;
     }
 
-    void resize(SizeType size, const ElementType& default_element = ElementType()) {
-
+    void resize(size_type size, const ElementType& default_element = ElementType()) {
         if (size > capacity_) {
             reserve(size);
         }
 
         if (size > size_) {
-            for (SizeType i = size_; i < size; ++i) {
+            for (size_type i = size_; i < size; ++i) {
                 new (data_ + i) ElementType(default_element);
             }
         } else {
-            for (SizeType i = size; i < size_; ++i) {
+            for (size_type i = size; i < size_; ++i) {
                 data_[i].~ElementType();
             }
         }
@@ -175,7 +172,7 @@ public:
         size_ = size;
     }
 
-    void reserve(SizeType capacity) {
+    void reserve(size_type capacity) {
         if (capacity > capacity_) {
             reallocate(capacity);
         }
@@ -208,7 +205,7 @@ public:
 
     template <typename Predicate>
     ElementType* get_if(Predicate&& p_predicate) const {
-        for (SizeType i = 0; i < size_; ++i) {
+        for (size_type i = 0; i < size_; ++i) {
             if (p_predicate(data_[i])) {
                 return &data_[i];
             }
@@ -217,7 +214,7 @@ public:
     }
 
     bool contains(const ElementType& element) const {
-        for (SizeType i = 0; i < size_; ++i) {
+        for (size_type i = 0; i < size_; ++i) {
             if (data_[i] == element) {
                 return true;
             }
@@ -225,9 +222,9 @@ public:
         return false;
     }
 
-    bool contains(const ElementType& element, auto&& comparator) const {
-        for (SizeType i = 0; i < size_; ++i) {
-            if (comparator(data_[i], element) == 0) {
+    bool contains(const ElementType& element, auto&& predicate) const {
+        for (size_type i = 0; i < size_; ++i) {
+            if (predicate(data_[i], element)) {
                 return true;
             }
         }
@@ -262,7 +259,7 @@ public:
             capacity_ = 2;
         }
         data_ = allocator_allocate(capacity_);
-        SizeType i = 0;
+        size_type i = 0;
         for (const ElementType& item : init) {
             new (data_ + i++) ElementType(item);
         }
@@ -352,22 +349,21 @@ private:
         }
 
         data_ = allocator_allocate(capacity_);
-        for (SizeType i = 0; i < size_; i++) {
+        for (size_type i = 0; i < size_; i++) {
             new (data_ + i) ElementType(source[i]);
         }
     }
 
-    void reallocate(SizeType new_capacity) {
-
+    void reallocate(size_type new_capacity) {
         ElementType* new_data = allocator_allocate(new_capacity);
 
-        SizeType elements_to_move = (size_ < new_capacity) ? size_ : new_capacity;
+        size_type elements_to_move = (size_ < new_capacity) ? size_ : new_capacity;
 
-        for (SizeType i = 0; i < elements_to_move; i++) {
+        for (size_type i = 0; i < elements_to_move; i++) {
             new (new_data + i) ElementType(std::move(data_[i]));
         }
 
-        for (SizeType i = 0; i < size_; i++) {
+        for (size_type i = 0; i < size_; i++) {
             data_[i].~ElementType();
         }
 
@@ -383,13 +379,13 @@ private:
         }
     }
 
-    inline ElementType* allocator_allocate(SizeType n) {
+    inline ElementType* allocator_allocate(size_type n) {
         ElementType* elements = allocator_.allocate(n);
         LCHECK(elements);
         return elements;
     }
 
-    void allocator_deallocate(ElementType* p, SizeType n) {
+    void allocator_deallocate(ElementType* p, size_type n) {
         if (p) {
             allocator_.deallocate(p, n);
         }
@@ -397,8 +393,8 @@ private:
 
 private:
     ElementType* data_;
-    SizeType size_;
-    SizeType capacity_;
+    size_type size_;
+    size_type capacity_;
     AllocatorType allocator_;
 };
 
@@ -410,7 +406,7 @@ inline constexpr bool operator==(const Array<ElementType, AllocatorType>& lhs,
     }
 
     for (size_t i = 0; i < lhs.size(); i++) {
-        if (!(lhs[i] == rhs[i])) {
+        if (lhs[i] != rhs[i]) {
             return false;
         }
     }

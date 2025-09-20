@@ -1,7 +1,9 @@
 #pragma once
 
+#include "licht/core/math/vector3.hpp"
 #include "licht/core/memory/linear_allocator.hpp"
 #include "licht/core/platform/window_handle.hpp"
+#include "licht/rhi/buffer.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/device.hpp"
 #include "licht/rhi/framebuffer.hpp"
@@ -36,9 +38,15 @@ private:
     using RHIFramebufferAllocator = TypedLinearAllocator<RHIFramebufferHandle, MemoryOwnership::NonOwner>;
     using RHIFramebufferRegistry = Array<RHIFramebufferHandle, RHIFramebufferAllocator>;
 
+    RHIBufferHandle position_buffer_;
+    Array<Vector3f> positions_;
+
+    RHIBufferHandle color_buffer_;
+    Array<Vector3f> colors_; 
+
     WindowHandle window_handle_;
     RHIDeviceHandle device_;
-
+    
     RHISwapchainHandle swapchain_;
     RHIRenderPassHandle render_pass_;
     RHIPipelineHandle pipeline_;

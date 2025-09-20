@@ -4,13 +4,10 @@
 #include "licht/core/hash/hasher.hpp"
 #include "licht/core/memory/default_allocator.hpp"
 #include "licht/core/memory/memory.hpp"
-#include "licht/core/string/format.hpp"
 
 #include <cstring>
 #include <functional>
 #include <initializer_list>
-#include <stdexcept>
-#include <type_traits>
 #include <utility>
 
 

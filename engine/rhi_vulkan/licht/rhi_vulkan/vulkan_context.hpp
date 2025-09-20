@@ -8,7 +8,6 @@
 #include "licht/rhi_vulkan/rhi_vulkan_render_surface.hpp"
 #include "licht/rhi_vulkan/vulkan_physical_device.hpp"
 
-
 #include <vulkan/vulkan_core.h>
 
 #define LICHT_VULKAN_CHECK(Expr)                                                                                                                                     \
@@ -56,12 +55,113 @@ void vulkan_device_destroy(VulkanContext& context);
 uint32 vulkan_query_queue_family_index(VulkanContext& context, RHIQueueType p_type);
 VkQueue vulkan_query_queue(VulkanContext& context, RHIQueueType p_type);
 
-// String convertion
+// String conversion
 const char* vulkan_string_of_present_mode(VkPresentModeKHR present_mode);
 const char* vulkan_string_of_result(VkResult result);
 
-//
+// Converts RHIFormat to VkFormat and vice versa.
 VkFormat vulkan_format_get(RHIFormat format);
 RHIFormat rhi_format_get(VkFormat format);
 
+// Converts RHIAccessMode to VkSharingMode and vice versa.
+RHIAccessMode rhi_access_mode_get(VkSharingMode mode);
+VkSharingMode vulkan_sharing_mode_get(RHIAccessMode mode);
+
+inline RHIBufferUsage operator|(RHIBufferUsage a, RHIBufferUsage b) {
+    return static_cast<RHIBufferUsage>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
+}
+
+inline RHIBufferUsage operator&(RHIBufferUsage a, RHIBufferUsage b) {
+    return static_cast<RHIBufferUsage>(static_cast<uint8_t>(a) & static_cast<uint8_t>(b));
+}
+
+inline RHIBufferUsage& operator|=(RHIBufferUsage& a, RHIBufferUsage b) {
+    a = a | b;
+    return a;
+}
+
+inline RHIBufferUsage& operator&=(RHIBufferUsage& a, RHIBufferUsage b) {
+    a = a & b;
+    return a;
+}
+
+inline bool rhi_buffer_usage_any(RHIBufferUsage usage) {
+    return static_cast<uint8_t>(usage) != 0;
+}
+
+inline VkVertexInputRate vulkan_vertex_input_rate_get(RHIVertexInputRate rate) {
+    switch (rate) {
+        case RHIVertexInputRate::Vertex:
+            return VK_VERTEX_INPUT_RATE_VERTEX;
+        case RHIVertexInputRate::Instance:
+            return VK_VERTEX_INPUT_RATE_INSTANCE;
+        default:
+            return VK_VERTEX_INPUT_RATE_VERTEX;
+    }
+}
+
+inline RHIVertexInputRate rhi_vertex_input_rate_get(VkVertexInputRate rate) {
+    switch (rate) {
+        case VK_VERTEX_INPUT_RATE_VERTEX:
+            return RHIVertexInputRate::Vertex;
+        case VK_VERTEX_INPUT_RATE_INSTANCE:
+            return RHIVertexInputRate::Instance;
+        default:
+            return RHIVertexInputRate::Vertex;
+    }
+}
+
+inline bool rhi_buffer_usage_has(RHIBufferUsage value, RHIBufferUsage flag) {
+    return (static_cast<uint8_t>(value) & static_cast<uint8_t>(flag)) != 0;
+}
+
+inline VkBufferUsageFlags vulkan_buffer_usage_get(RHIBufferUsage usage) {
+    VkBufferUsageFlags flags = 0;
+
+    if (rhi_buffer_usage_has(usage, RHIBufferUsage::Vertex)) {
+        flags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    }
+    if (rhi_buffer_usage_has(usage, RHIBufferUsage::Index)) {
+        flags |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    }
+    if (rhi_buffer_usage_has(usage, RHIBufferUsage::Uniform)) {
+        flags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    }
+    if (rhi_buffer_usage_has(usage, RHIBufferUsage::Storage)) {
+        flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    }
+    if (rhi_buffer_usage_has(usage, RHIBufferUsage::TransferSrc)) {
+        flags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    }
+    if (rhi_buffer_usage_has(usage, RHIBufferUsage::TransferDst)) {
+        flags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    }
+
+    return flags;
+}
+
+inline RHIBufferUsage rhi_buffer_usage_get(VkBufferUsageFlags usage) {
+    RHIBufferUsage flags = RHIBufferUsage::None;
+
+    if (usage & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) {
+        flags |= RHIBufferUsage::Vertex;
+    }
+    if (usage & VK_BUFFER_USAGE_INDEX_BUFFER_BIT) {
+        flags |= RHIBufferUsage::Index;
+    }
+    if (usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) {
+        flags |= RHIBufferUsage::Uniform;
+    }
+    if (usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) {
+        flags |= RHIBufferUsage::Storage;
+    }
+    if (usage & VK_BUFFER_USAGE_TRANSFER_SRC_BIT) {
+        flags |= RHIBufferUsage::TransferSrc;
+    }
+    if (usage & VK_BUFFER_USAGE_TRANSFER_DST_BIT) {
+        flags |= RHIBufferUsage::TransferDst;
+    }
+
+    return flags;
+}
 }  //namespace licht

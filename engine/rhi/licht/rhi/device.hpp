@@ -37,7 +37,7 @@ public:
     virtual RHIPipelineHandle create_graphics_pipeline(const RHIPipelineDescription& description) = 0;
     virtual void destroy_graphics_pipeline(RHIPipelineHandle pipeline) = 0;
 
-    virtual RHIBufferHandle create_buffer() = 0;
+    virtual RHIBufferHandle create_buffer(RHIBufferDescription description) = 0;
     virtual void destroy_buffer(RHIBufferHandle buffer) = 0; 
 
     virtual RHISwapchainHandle create_swapchain(uint32 width, uint32 height) = 0;

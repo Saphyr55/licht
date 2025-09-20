@@ -4,6 +4,7 @@
 #include "licht/core/containers/array.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/memory/shared_ref.hpp"
+#include "licht/rhi/buffer.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/rhi_types.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
@@ -21,6 +22,8 @@ public:
     virtual void end_render_pass() override;
 
     virtual void bind_pipeline(RHIPipelineHandle pipeline) override;
+
+    virtual void bind_vertex_buffers(const Array<RHIBufferHandle>& buffers) override;
 
     virtual void set_scissors(const Rect2D* scissors, uint32 count) override;
 
