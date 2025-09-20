@@ -27,7 +27,7 @@ void BufferedAllocator::reset() {
 
 LinearAllocator& BufferedAllocator::get_allocator(int32 index) {
     LCHECK_MSG(index < BufferedCount, "Index out of range");
-    return allocators_[index % BufferedCount];
+    return allocators_[index];
 }
 
 }  //namespace licht
