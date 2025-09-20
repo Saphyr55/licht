@@ -19,6 +19,7 @@ end)
 target("ludo.app", function()
     set_kind("binary")
     set_group("ludo")
+    add_rules("glsl")
 
     local ludo_projectdir = path.join(os.projectdir(), "samples/ludo")
     local enginedir = path.join(os.projectdir(), "engine")
@@ -28,22 +29,8 @@ target("ludo.app", function()
     add_deps("ludo", "licht.core", "licht.launcher", "licht.engine")
 
     add_includedirs("app")
-
-    add_files("app/**.cpp")
     add_headerfiles("app/**.hpp")
 
-    before_run(function(target)
-        import("core.base.task")
-        import("core.project.project")
-
-        task.run("compile-shaders", {
-            output = path.join(target:targetdir(), "shaders"),
-            files = {
-                "shaders/main.frag",
-                "shaders/main.vert"
-            }
-        })
-
-    end)
-
+    add_files("app/**.cpp")
+    add_files("$(projectdir)/shaders/**.frag", "$(projectdir)/shaders/**.vert")
 end)
