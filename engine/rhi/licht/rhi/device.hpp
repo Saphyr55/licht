@@ -54,7 +54,7 @@ public:
     virtual RHIFenceHandle create_fence() = 0;
     virtual void destroy_fence(RHIFenceHandle fence) = 0;
 
-    virtual RHICommandQueueRef query_queue(RHIQueueType type) = 0;
+    virtual Array<RHICommandQueueRef> get_command_queues() = 0;
 };
 
 using RHIDeviceHandle = SharedRef<RHIDevice>;

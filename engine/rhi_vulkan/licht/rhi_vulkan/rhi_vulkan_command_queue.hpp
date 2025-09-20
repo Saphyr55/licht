@@ -1,5 +1,6 @@
 #pragma once
 
+#include "licht/core/function/function_ref.hpp"
 #include "licht/rhi/command_queue.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 
@@ -23,13 +24,17 @@ public:
         return queue_;
     }
 
+    virtual bool is_present_mode() override;
+
 public:
-    RHIVulkanCommandQueue(VulkanContext& context, VkQueue queue, RHIQueueType type);
+    RHIVulkanCommandQueue(VulkanContext& context, VkQueue queue, RHIQueueType type, bool is_present_mode_supported);
 
 private:
     VulkanContext& context_;
     VkQueue queue_;
     RHIQueueType type_;
+    bool is_present_mode_supported_;
 };
+
 
 }  //namespace licht

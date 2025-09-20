@@ -48,6 +48,10 @@ private:
     RHIDeviceHandle device_;
     
     RHISwapchainHandle swapchain_;
+
+    RHICommandQueueRef graphics_command_queue_;
+    RHICommandQueueRef graphics_present_command_queue_;
+
     RHIRenderPassHandle render_pass_;
     RHIPipelineHandle pipeline_;
 

@@ -51,24 +51,24 @@ void RenderFrameScript::on_startup() {
     {
         positions_ = {
             // Triangle 1
-            {-0.5f, -0.5f, 0.0f},  // bottom left
-            {0.5f, -0.5f, 0.0f},   // bottom right
-            {0.5f, 0.5f, 0.0f},    // top right
+            Vector3f(-0.5f, -0.5f, 0.0f),  // bottom left 
+            Vector3f(0.5f, -0.5f, 0.0f),   // bottom right 
+            Vector3f(0.5f, 0.5f, 0.0f),    // top right
 
             // Triangle 2
-            {-0.5f, -0.5f, 0.0f},  // bottom left
-            {0.5f, 0.5f, 0.0f},    // bottom right
-            {-0.5f, 0.5f, 0.0f}    // top left
+            Vector3f(-0.5f, -0.5f, 0.0f),  // bottom left
+            Vector3f(0.5f, 0.5f, 0.0f),    // bottom right
+            Vector3f(-0.5f, 0.5f, 0.0f)    // top left
         };
 
         colors_ = {
-            {1.0f, 0.0f, 0.0f},  // Red
-            {0.0f, 1.0f, 0.0f},  // Green
-            {0.0f, 0.0f, 1.0f},  // Blue
+            Vector3f(1.0f, 0.0f, 0.0f),  // Red
+            Vector3f(0.0f, 1.0f, 0.0f),  // Green
+            Vector3f(0.0f, 0.0f, 1.0f),  // Blue
 
-            {1.0f, 0.0f, 0.0f},  // Red
-            {0.0f, 0.0f, 1.0f},  // Blue
-            {1.0f, 1.0f, 0.0f}   // Yellow
+            Vector3f(1.0f, 0.0f, 0.0f),  // Red
+            Vector3f(0.0f, 0.0f, 1.0f),  // Blue
+            Vector3f(1.0f, 1.0f, 0.0f)   // Yellow
         };
     }
 
@@ -78,6 +78,22 @@ void RenderFrameScript::on_startup() {
         frame_context_.frame_height = static_cast<uint32>(window_statues.height);
         frame_context_.frame_width = static_cast<uint32>(window_statues.width);
         swapchain_ = device_->create_swapchain(frame_context_.frame_width, frame_context_.frame_height);
+    }
+        
+    // Queues
+    {
+        const Array<RHICommandQueueRef>& command_queues = device_->get_command_queues();
+        RHICommandQueueRef* graphics_command_queue_ptr = command_queues.get_if([](RHICommandQueueRef command_queue) {
+            return command_queue->get_type() == RHIQueueType::Graphics; 
+        });
+        LCHECK_MSG(graphics_command_queue_ptr, "Found no graphics command queue.");
+        graphics_command_queue_ = *graphics_command_queue_ptr;
+
+        RHICommandQueueRef* graphics_present_command_queue_ptr = command_queues.get_if([](RHICommandQueueRef command_queue) { 
+            return command_queue->get_type() == RHIQueueType::Graphics && command_queue->is_present_mode(); 
+        });
+        LCHECK_MSG(graphics_present_command_queue_ptr, "Found no graphics command queue that support the present mode.");
+        graphics_present_command_queue_ = *graphics_present_command_queue_ptr;
     }
 
     // -- Render Pass --
@@ -309,12 +325,8 @@ void RenderFrameScript::on_tick(float32 delta_time) {
 
     device_->reset_fence(frame_context_.in_flight_fences[frame_context_.current_frame]);
         
-    RHICommandQueueRef graphics_queue = device_->query_queue(RHIQueueType::Graphics);
-    // For presenting, the queue can be a graphics type or a transfer type.
-    RHICommandQueueRef present_queue = device_->query_queue(RHIQueueType::Transfer);
-
-    graphics_queue->submit({command_buffer}, frame_context_);
-    present_queue->present(swapchain_, frame_context_);
+    graphics_command_queue_->submit({command_buffer}, frame_context_);
+    graphics_present_command_queue_->present(swapchain_, frame_context_);
 
     if (window_resized_ || frame_context_.suboptimal || frame_context_.out_of_date) {
         reset();

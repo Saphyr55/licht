@@ -50,6 +50,12 @@ public:
      * @brief Block until all submitted work on this queue has completed.
      */
     virtual void wait_idle() = 0;
+        
+    /**
+     * @brief Check if the queue supports the present mode.
+     * @return Return true if supported, false otherwise.
+     */
+    virtual bool is_present_mode() = 0;
 
     /**
      * @brief Destructor.

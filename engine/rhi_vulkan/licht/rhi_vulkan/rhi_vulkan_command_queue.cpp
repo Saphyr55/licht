@@ -11,6 +11,14 @@
 
 namespace licht {
 
+bool RHIVulkanCommandQueue::is_present_mode() {
+    return is_present_mode_supported_;
+}
+
+RHIVulkanCommandQueue::RHIVulkanCommandQueue(VulkanContext& context, VkQueue queue, RHIQueueType type, bool is_present_mode_supported)
+    : context_(context), queue_(queue), type_(type), is_present_mode_supported_(is_present_mode_supported) {
+}
+
 void RHIVulkanCommandQueue::wait_idle() {
     LICHT_VULKAN_CHECK(VulkanAPI::lvkQueueWaitIdle(queue_));
 }
@@ -89,8 +97,6 @@ void RHIVulkanCommandQueue::present(RHISwapchainHandle swapchain, RHIFrameContex
     }
 }
 
-RHIVulkanCommandQueue::RHIVulkanCommandQueue(VulkanContext& context, VkQueue queue, RHIQueueType type)
-    : context_(context), queue_(queue), type_(type) {
-}
+
 
 }  //namespace licht

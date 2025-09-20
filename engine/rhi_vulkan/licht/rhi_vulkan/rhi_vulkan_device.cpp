@@ -246,37 +246,12 @@ void RHIVulkanDevice::destroy_fence(RHIFenceHandle fence) {
     VulkanAPI::lvkDestroyFence(context_.device, vk_fence->get_handle(), context_.allocator);
 }
 
-RHICommandQueueRef RHIVulkanDevice::query_queue(RHIQueueType type) {
-    if (!graphics_queue_.is_valid()) {
-        VkQueue queue = vulkan_query_queue(context_, type);
-        graphics_queue_ = new_ref<RHIVulkanCommandQueue>(context_, queue, type);
-    }
-
-    if (!present_queue_.is_valid()) {
-        VkQueue queue = vulkan_query_queue(context_, type);
-        present_queue_ = new_ref<RHIVulkanCommandQueue>(context_, queue, type);
-    }
-
-    switch (type) {
-        case RHIQueueType::Transfer: {
-            return present_queue_;
-        }
-        case RHIQueueType::Graphics: {
-            return graphics_queue_;
-        }
-        case RHIQueueType::Compute: // TODO: Handle Compute queue
-        default: {
-            return SharedRef<RHIVulkanCommandQueue>(nullptr);
-        }
-    }
-
-    return SharedRef<RHIVulkanCommandQueue>(nullptr);
+Array<RHICommandQueueRef> RHIVulkanDevice::get_command_queues() {
+    return context_.command_queues;
 }
 
 RHIVulkanDevice::RHIVulkanDevice(VulkanContext& context)
-    : context_(context)
-    , graphics_queue_(nullptr)
-    , present_queue_(nullptr) {
+    : context_(context) {
 }
 
 }  //namespace licht

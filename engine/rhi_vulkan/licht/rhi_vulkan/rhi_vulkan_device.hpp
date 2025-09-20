@@ -52,14 +52,12 @@ public:
     virtual RHIFenceHandle create_fence() override;
     virtual void destroy_fence(RHIFenceHandle fence) override;
 
-    virtual RHICommandQueueRef query_queue(RHIQueueType type) override;
+    virtual Array<RHICommandQueueRef> get_command_queues() override;
 
 public:
     RHIVulkanDevice(VulkanContext& context);
 
 private:
-    RHICommandQueueRef present_queue_;
-    RHICommandQueueRef graphics_queue_;
     VulkanContext& context_; 
 };
 

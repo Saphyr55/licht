@@ -1,6 +1,7 @@
 #pragma once
 
 #include "licht/core/memory/shared_ref.hpp"
+#include "licht/core/function/function_ref.hpp"
 #include "licht/core/platform/dynamic_library.hpp"
 #include "licht/core/trace/trace.hpp"
 #include "licht/rhi/command_queue.hpp"
@@ -28,7 +29,7 @@ public:
     VkDevice device = VK_NULL_HANDLE;
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     VulkanPhysicalDeviceInformation physical_device_info;
-
+    Array<RHICommandQueueRef> command_queues;
     SharedRef<RHIVulkanRenderSurface> surface;
 
     VkDebugUtilsMessengerEXT debug_utils_messenger = VK_NULL_HANDLE;
@@ -51,10 +52,6 @@ void vulkan_instance_destroy(VulkanContext& context);
 void vulkan_device_initialize(VulkanContext& context, VulkanPhysicalDeviceSelector& physical_device_selector);
 void vulkan_device_destroy(VulkanContext& context);
 
-// Queue
-uint32 vulkan_query_queue_family_index(VulkanContext& context, RHIQueueType p_type);
-VkQueue vulkan_query_queue(VulkanContext& context, RHIQueueType p_type);
-
 // String conversion
 const char* vulkan_string_of_present_mode(VkPresentModeKHR present_mode);
 const char* vulkan_string_of_result(VkResult result);
@@ -62,6 +59,12 @@ const char* vulkan_string_of_result(VkResult result);
 // Converts RHIFormat to VkFormat and vice versa.
 VkFormat vulkan_format_get(RHIFormat format);
 RHIFormat rhi_format_get(VkFormat format);
+
+// Queues functions.
+RHIQueueType vulkan_queue_type(VulkanContext& context, uint32 queue_family_index);
+Array<uint32> vulkan_query_queue_family_indices(VulkanContext& context, FunctionRef<bool(const VkQueueFamilyProperties&, uint32)> predicate = [](auto&, uint32) { return true; });
+VkQueue vulkan_query_queue(VulkanContext& context, uint32 family_queue_index, uint32 queue_index);
+bool vulkan_queue_present_support(VulkanContext& context, uint32 queue_family_index);
 
 // Converts RHIAccessMode to VkSharingMode and vice versa.
 RHIAccessMode rhi_access_mode_get(VkSharingMode mode);
