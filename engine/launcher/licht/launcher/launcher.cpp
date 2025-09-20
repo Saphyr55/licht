@@ -1,3 +1,0 @@
-namespace licht {
-
-}  //namespace licht
