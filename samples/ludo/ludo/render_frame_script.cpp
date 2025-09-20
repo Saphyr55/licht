@@ -47,28 +47,24 @@ void RenderFrameScript::on_startup() {
                         "Failed to retrieve a valid window handle. Ensure a window is created before initializing the RHI Module.");
     }
 
-    // Geometries 
+    // -- Vertices data --
     {
         positions_ = {
-            // Triangle 1
-            Vector3f(-0.5f, -0.5f, 0.0f),  // bottom left 
-            Vector3f(0.5f, -0.5f, 0.0f),   // bottom right 
-            Vector3f(0.5f, 0.5f, 0.0f),    // top right
-
-            // Triangle 2
-            Vector3f(-0.5f, -0.5f, 0.0f),  // bottom left
-            Vector3f(0.5f, 0.5f, 0.0f),    // bottom right
-            Vector3f(-0.5f, 0.5f, 0.0f)    // top left
+            Vector3f(-0.5f, -0.5f, 0.0f),// Top Left
+            Vector3f(0.5f, -0.5f, 0.0f), // Top Right
+            Vector3f(0.5f, 0.5f, 0.0f),  // Bottom Right
+            Vector3f(-0.5f, 0.5f, 0.0f), // Bottom Left
         };
 
         colors_ = {
             Vector3f(1.0f, 0.0f, 0.0f),  // Red
             Vector3f(0.0f, 1.0f, 0.0f),  // Green
             Vector3f(0.0f, 0.0f, 1.0f),  // Blue
+            Vector3f(1.0f, 1.0f, 1.0f),  // White
+        };
 
-            Vector3f(1.0f, 0.0f, 0.0f),  // Red
-            Vector3f(0.0f, 0.0f, 1.0f),  // Blue
-            Vector3f(1.0f, 1.0f, 0.0f)   // Yellow
+        indices_ = {
+            0, 1, 2, 2, 3, 0
         };
     }
 
@@ -212,6 +208,7 @@ void RenderFrameScript::on_startup() {
     {   
         RHIBufferHandle staging_position_buffer;
         RHIBufferHandle staging_color_buffer;
+        RHIBufferHandle staging_index_buffer;
 
         // Positions
         {
@@ -252,6 +249,26 @@ void RenderFrameScript::on_startup() {
 
             color_buffer_ = device_->create_buffer(color_buffer_description);
         }
+            
+        // Indices
+        {
+            RHIBufferDescription staging_index_buffer_description = {};
+            staging_index_buffer_description.access_mode = RHIAccessMode::Shared;
+            staging_index_buffer_description.usage = RHIBufferUsage::TransferSrc;
+            staging_index_buffer_description.memory_usage = RHIBufferMemoryUsage::Host;
+            staging_index_buffer_description.size = sizeof(uint32) * indices_.size();
+
+            staging_index_buffer = device_->create_buffer(staging_index_buffer_description);
+            staging_index_buffer->update(indices_.data(), sizeof(uint32) * indices_.size());
+
+            RHIBufferDescription index_buffer_description = {};
+            index_buffer_description.access_mode = RHIAccessMode::Shared;
+            index_buffer_description.usage = RHIBufferUsage::Index | RHIBufferUsage::TransferDst;
+            index_buffer_description.memory_usage = RHIBufferMemoryUsage::Device;
+            index_buffer_description.size = sizeof(uint32) * indices_.size();
+
+            index_buffer_ = device_->create_buffer(index_buffer_description);
+        }
 
         // -- Upload Data from Standing Buffers to Device Buffers --
         {
@@ -278,12 +295,17 @@ void RenderFrameScript::on_startup() {
                 // Copy positions
                 RHIBufferCopyCommand position_copy = {};
                 position_copy.size = sizeof(Vector3f) * positions_.size();
-                transfer_cmd->copy_buffer(staging_position_buffer, position_buffer_, {position_copy});
+                transfer_cmd->copy_buffer(staging_position_buffer, position_buffer_, position_copy);
 
                 // Copy colors
                 RHIBufferCopyCommand color_copy = {};
                 color_copy.size = sizeof(Vector3f) * colors_.size();
-                transfer_cmd->copy_buffer(staging_color_buffer, color_buffer_, {color_copy});
+                transfer_cmd->copy_buffer(staging_color_buffer, color_buffer_, color_copy);
+
+                // Copy indices
+                RHIBufferCopyCommand indices_copy = {};
+                indices_copy.size = sizeof(uint32) * indices_.size();
+                transfer_cmd->copy_buffer(staging_index_buffer, index_buffer_, indices_copy);
             }
             transfer_cmd->end();
 
@@ -383,14 +405,13 @@ void RenderFrameScript::on_tick(float32 delta_time) {
             graphics_command_buffer->set_scissors(&scissor, 1);
 
             graphics_command_buffer->bind_vertex_buffers({position_buffer_, color_buffer_});
+            graphics_command_buffer->bind_index_buffer(index_buffer_);    
 
-            RHIDrawCommand draw_command = {};
-            draw_command.vertex_count = positions_.size();
-            draw_command.instance_count = 1;
-            draw_command.first_instance = 0;
-            draw_command.first_vertex = 0;
+            RHIDrawIndexedCommand draw_indexed_command = {};
+            draw_indexed_command.index_count = indices_.size();
+            draw_indexed_command.instance_count = 1;
 
-            graphics_command_buffer->draw(draw_command);
+            graphics_command_buffer->draw(draw_indexed_command);
         }
         graphics_command_buffer->end_render_pass();
     }

@@ -24,6 +24,7 @@ public:
     virtual void bind_pipeline(RHIPipelineHandle pipeline) override;
 
     virtual void bind_vertex_buffers(const Array<RHIBufferHandle>& buffers) override;
+    virtual void bind_index_buffer(RHIBufferHandle buffer) override;
 
     virtual void set_scissors(const Rect2D* scissors, uint32 count) override;
 
@@ -32,6 +33,7 @@ public:
     virtual void copy_buffer(RHIBufferHandle source, RHIBufferHandle destination, const RHIBufferCopyCommand& command) override;
 
     virtual void draw(const RHIDrawCommand& command) override;
+    virtual void draw(const RHIDrawIndexedCommand& command) override;
 
     inline VkCommandBuffer& get_handle() {
         return command_buffer_;

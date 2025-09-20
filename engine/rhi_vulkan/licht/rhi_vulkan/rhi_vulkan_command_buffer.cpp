@@ -60,6 +60,12 @@ void RHIVulkanCommandBuffer::bind_vertex_buffers(const Array<RHIBufferHandle>& b
     VulkanAPI::lvkCmdBindVertexBuffers(command_buffer_, 0, buffers.size(), vk_buffers.data(), offsets.data());
 }
 
+void RHIVulkanCommandBuffer::bind_index_buffer(RHIBufferHandle buffer) {
+    VkBuffer vkbuffer = static_ref_cast<RHIVulkanBuffer>(buffer)->get_handle();
+    // TODO: Make the type configurable
+    VulkanAPI::lvkCmdBindIndexBuffer(command_buffer_, vkbuffer, 0, VK_INDEX_TYPE_UINT32);
+}
+
 void RHIVulkanCommandBuffer::set_scissors(const Rect2D* scissors, uint32 count) {
     Array<VkRect2D> vk_scissors;
     vk_scissors.resize(count);
@@ -124,6 +130,10 @@ void RHIVulkanCommandBuffer::end_render_pass() {
 
 void RHIVulkanCommandBuffer::draw(const RHIDrawCommand& command) {
     VulkanAPI::lvkCmdDraw(command_buffer_, command.vertex_count, command.instance_count, command.first_vertex, command.first_instance);
+}
+
+void RHIVulkanCommandBuffer::draw(const RHIDrawIndexedCommand& command) {
+    VulkanAPI::lvkCmdDrawIndexed(command_buffer_, command.index_count, command.instance_count, command.first_index, command.vertex_offset, command.first_instance);
 }
 
 RHICommandBufferHandle RHIVulkanCommandAllocator::open(uint32 index) {

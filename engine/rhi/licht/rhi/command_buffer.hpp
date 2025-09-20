@@ -27,6 +27,14 @@ struct RHIDrawCommand : RHICommand {
     uint32 first_instance;  ///< Index of the first instance.
 };
 
+struct RHIDrawIndexedCommand : RHICommand {
+    uint32 index_count = 0;
+    uint32 instance_count = 1;
+    uint32 first_index = 0;
+    int32 vertex_offset = 0;
+    uint32 first_instance = 0;
+};
+
 struct RHIBufferCopyCommand : RHICommand {
     size_t source_offset = 0;
     size_t destination_offset = 0;
@@ -80,6 +88,8 @@ public:
      */
     virtual void bind_vertex_buffers(const Array<RHIBufferHandle>& buffers) = 0;
 
+    virtual void bind_index_buffer(RHIBufferHandle buffer) = 0;
+
     /**
      * @brief Set scissors for rendering.
      * @param scissors Pointer to an array of scissor rectangles.
@@ -94,7 +104,6 @@ public:
      */
     virtual void set_viewports(const Viewport* viewports, uint32 count) = 0;
 
-
     virtual void copy_buffer(RHIBufferHandle source, RHIBufferHandle destination, const RHIBufferCopyCommand& command) = 0;
 
     /**
@@ -102,6 +111,8 @@ public:
      * @param command Draw command parameters.
      */
     virtual void draw(const RHIDrawCommand& command) = 0;
+
+    virtual void draw(const RHIDrawIndexedCommand& command) = 0;
 
     /**
      * @brief Destructor.

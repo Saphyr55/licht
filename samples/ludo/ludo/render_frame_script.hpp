@@ -43,6 +43,9 @@ private:
 
     RHIBufferHandle color_buffer_;
     Array<Vector3f> colors_; 
+        
+    RHIBufferHandle index_buffer_;
+    Array<uint32> indices_;
 
     WindowHandle window_handle_;
     RHIDeviceHandle device_;
