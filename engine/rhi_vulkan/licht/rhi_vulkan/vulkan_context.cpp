@@ -2,6 +2,7 @@
 
 #include "licht/core/containers/hash_map.hpp"
 #include "licht/core/memory/shared_ref.hpp"
+#include "licht/core/function/function_ref.hpp"
 #include "licht/core/trace/trace.hpp"
 #include "licht/core/platform/dynamic_library.hpp"
 #include "licht/rhi/rhi_types.hpp"
@@ -9,6 +10,7 @@
 #include "licht/rhi_vulkan/vulkan_physical_device.hpp"
 #include "licht/rhi_vulkan/vulkan_shader_module.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
+#include "licht/rhi_vulkan/rhi_vulkan_command_queue.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -21,23 +23,42 @@ void vulkan_device_initialize(VulkanContext& context, VulkanPhysicalDeviceSelect
 
     LCHECK_MSG(context.physical_device_info.is_suitable, "Physical device is not suitable for Vulkan operations.")
 
-    float32 queue_priority = 1.0f;  // [0.0, 1.0]
+    float32 queue_priority = 1.0f; // [0.0, 1.0]
 
-    uint32 graphics_queue_index = context.physical_device_info.graphics_queue_index;
-    uint32 present_queue_index = context.physical_device_info.present_queue_index;
+    Array<uint32> queue_famillies = vulkan_query_queue_family_indices(context);
 
-    // TODO: Use a hash set.
-    HashMap<uint32, uint32> queue_famillies = {{graphics_queue_index, 0}, {present_queue_index, 0}};
-
+    LLOG_INFO("[Vulkan]", "Creating Vulkan logical device with the following queue families:");
     Array<VkDeviceQueueCreateInfo> device_queue_create_infos;
-    for (auto& [queue_index, _] : queue_famillies) {
+    for (uint32 queue_family_index : queue_famillies) {
         VkDeviceQueueCreateInfo device_queue_create_info = {};
         device_queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         device_queue_create_info.pNext = VK_NULL_HANDLE;
-        device_queue_create_info.queueFamilyIndex = queue_index;
+        device_queue_create_info.queueFamilyIndex = queue_family_index;
         device_queue_create_info.queueCount = 1;
         device_queue_create_info.pQueuePriorities = &queue_priority;
         device_queue_create_infos.append(device_queue_create_info);
+
+        const VkQueueFamilyProperties& props = context.physical_device_info.queue_families[queue_family_index];
+        String type_str;
+        if (props.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            type_str += "Graphics ";
+        }
+        if (props.queueFlags & VK_QUEUE_COMPUTE_BIT) {
+            type_str += "Compute ";
+        }
+        if (props.queueFlags & VK_QUEUE_TRANSFER_BIT) {
+            type_str += "Transfer ";
+        }
+        if (props.queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) {
+            type_str += "Sparse ";
+        }
+
+        bool present_support = vulkan_queue_present_support(context, queue_family_index);
+        LLOG_INFO("[Vulkan]", vformat("Queue Family Index: %d | Queues: %d | Types: %s| Present: %s",
+                                      queue_family_index,
+                                      props.queueCount,
+                                      type_str.data(),
+                                      present_support ? "Yes" : "No"));
     }
 
     VkPhysicalDeviceFeatures physical_device_features = {};
@@ -58,11 +79,6 @@ void vulkan_device_initialize(VulkanContext& context, VulkanPhysicalDeviceSelect
     device_create_info.ppEnabledExtensionNames = physical_device_extensions.data();
     device_create_info.enabledExtensionCount = static_cast<uint32>(physical_device_extensions.size());
 
-    LLOG_INFO("[Vulkan]", "Creating Vulkan logical device with the following queue families:");
-    for (auto& [queue_index, _] : queue_famillies) {
-        LLOG_INFO("[Vulkan]", vformat("Queue Family Index: %s", queue_index));
-    }
-
     LLOG_INFO("[Vulkan]", "Enabled Physical Device Extensions:");
     for (int32 i = 0; i < physical_device_extensions.size(); i++) {
         LLOG_INFO("[Vulkan]", vformat("Extension: %s", physical_device_extensions[i]));
@@ -80,29 +96,6 @@ void vulkan_device_destroy(VulkanContext& context) {
     context.device = VK_NULL_HANDLE;
 
     LLOG_INFO("[Vulkan]", "Vulkan logical device destroyed.");
-}
-
-uint32 vulkan_query_queue_family_index(VulkanContext& context, RHIQueueType type) {
-    switch (type) {
-        case RHIQueueType::Graphics: {
-            return context.physical_device_info.graphics_queue_index;
-        }
-        case RHIQueueType::Transfer: {
-            return context.physical_device_info.present_queue_index;
-        }
-        case RHIQueueType::Compute:  // TODO: Handle compute case.
-        case RHIQueueType::Unknown: {
-            return 0;
-        }
-    }
-    return 0;
-}
-
-VkQueue vulkan_query_queue(VulkanContext& context, RHIQueueType type) {
-    VkQueue queue;
-    uint32 queue_family_index = vulkan_query_queue_family_index(context, type);
-    VulkanAPI::lvkGetDeviceQueue(context.device, queue_family_index, 0, &queue);
-    return queue;
 }
 
 void vulkan_context_initialize(VulkanContext& context, void* native_window) {
@@ -126,8 +119,15 @@ void vulkan_context_initialize(VulkanContext& context, void* native_window) {
         VulkanPhysicalDeviceSelector selector(context, g_physical_device_extensions);
         vulkan_device_initialize(context, selector);
 
-        vulkan_query_queue(context, RHIQueueType::Graphics);
-        vulkan_query_queue(context, RHIQueueType::Transfer);
+        size_t family_queue_size = context.physical_device_info.queue_families.size();
+        context.command_queues.resize(family_queue_size);
+
+        for (size_t i = 0; i < family_queue_size; i++) {
+            VkQueue queue = vulkan_query_queue(context, i, 0);
+            RHIQueueType type = vulkan_queue_type(context, i);
+            bool is_present_mode = vulkan_queue_present_support(context, i);
+            context.command_queues[i] = new_ref<RHIVulkanCommandQueue>(context, queue, type, i, is_present_mode);
+        }
     }
 }
 
@@ -145,6 +145,49 @@ void vulkan_context_destroy(VulkanContext& context) {
         DynamicLibraryLoader::unload(context.library);
         LLOG_INFO("[Vulkan]", "Vulkan RHI context destroyed.");
     }
+}
+
+bool vulkan_queue_present_support(VulkanContext& context, uint32 queue_family_index) {
+    VkBool32 is_present_support = false;
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkGetPhysicalDeviceSurfaceSupportKHR(context.physical_device, queue_family_index, context.surface->get_handle(), &is_present_support));
+    return is_present_support;
+}
+
+RHIQueueType vulkan_queue_type(VulkanContext& context, uint32 queue_family_index) {
+    const VkQueueFamilyProperties& queue_family_properties = context.physical_device_info.queue_families[queue_family_index];
+
+    if (queue_family_properties.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+        return RHIQueueType::Graphics;
+    }
+
+    if (queue_family_properties.queueFlags & VK_QUEUE_COMPUTE_BIT) {
+        return RHIQueueType::Compute;
+    }
+
+    if (queue_family_properties.queueFlags & VK_QUEUE_TRANSFER_BIT) {
+        return RHIQueueType::Transfer;
+    }
+
+    return RHIQueueType::Unknown;
+}
+
+Array<uint32> vulkan_query_queue_family_indices(VulkanContext& context, FunctionRef<bool(const VkQueueFamilyProperties&, uint32)> predicate) {
+    VulkanPhysicalDeviceInformation& info = context.physical_device_info;
+    Array<uint32> indices(info.queue_families.size());
+
+    for (uint32 queue_family_index = 0; queue_family_index < info.queue_families.size(); queue_family_index++) {
+        if (predicate(info.queue_families[queue_family_index], queue_family_index)) {
+            indices.append(queue_family_index);
+        }
+    }
+
+    return indices;
+}
+
+VkQueue vulkan_query_queue(VulkanContext& context, uint32 queue_family_index, uint32 queue_index) {
+    VkQueue queue;
+    VulkanAPI::lvkGetDeviceQueue(context.device, queue_family_index, queue_index, &queue);
+    return queue;
 }
 
 const char* vulkan_string_of_present_mode(VkPresentModeKHR present_mode) {
@@ -451,6 +494,28 @@ VkFormat vulkan_format_get(RHIFormat format) {
         case RHIFormat::Undefined:
         default:
             return VK_FORMAT_UNDEFINED;
+    }
+}
+
+RHIAccessMode rhi_access_mode_get(VkSharingMode mode) {
+    switch (mode) {
+        case VK_SHARING_MODE_EXCLUSIVE:
+            return RHIAccessMode::Private;
+        case VK_SHARING_MODE_CONCURRENT:
+            return RHIAccessMode::Shared;
+        default:
+            return RHIAccessMode::Private;
+    }
+}
+
+VkSharingMode vulkan_sharing_mode_get(RHIAccessMode mode) {
+    switch (mode) {
+        case RHIAccessMode::Private:
+            return VK_SHARING_MODE_EXCLUSIVE;
+        case RHIAccessMode::Shared:
+            return VK_SHARING_MODE_CONCURRENT;
+        default:
+            return VK_SHARING_MODE_EXCLUSIVE;
     }
 }
 

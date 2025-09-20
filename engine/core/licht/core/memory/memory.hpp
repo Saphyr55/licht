@@ -130,7 +130,7 @@ public:
                                      const void* source,
                                      size_t size);
 
-    LICHT_CORE_API static void* copy_move(void* destination,
+    LICHT_CORE_API static void* move(void* destination,
                                           const void* source,
                                           size_t size);
 

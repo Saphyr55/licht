@@ -1,8 +1,8 @@
 #include <catch2/catch_all.hpp>
 
 #include "licht/core/containers/hash_map.hpp"
-
-#include <vector>
+#include "licht/core/defines.hpp"
+#include "licht/core/string/string.hpp"
 
 using namespace licht;
 
@@ -142,7 +142,7 @@ TEST_CASE("Clear and operator at behavior.", "[HashMap::clear]") {
     REQUIRE(map.size() == 0);
 
     // operator[] should insert a default value if missing
-    auto& v = map[50];
+    uint32& v = map[50];
     REQUIRE(v == 0u);
     REQUIRE(map.size() == 1);
     v = 55;

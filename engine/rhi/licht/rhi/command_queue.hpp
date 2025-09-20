@@ -5,29 +5,56 @@
 #include "licht/rhi/fence.hpp"
 #include "licht/rhi/semaphore.hpp"
 #include "licht/rhi/swapchain.hpp"
+#include "licht/rhi/rhi_types.hpp"
 
 namespace licht {
 
-enum class RHIQueueType {
-    Unknown,
-    Graphics,
-    Compute,
-    Transfer,
-};
-
+/**
+ * @brief Abstract interface for a GPU command queue.
+ *
+ * A command queue is responsible for submitting command buffers to the GPU,
+ * synchronizing via fences/semaphores, and presenting images to a swapchain.
+ */
 class RHICommandQueue {
 public:
-    virtual void submit(const Array<RHICommandBufferHandle>& command_buffers, RHIFrameContext& context) = 0;
+    virtual void submit(const Array<RHICommandBufferHandle>& command_buffers,
+                        const Array<RHISemaphoreHandle>& wait_semaphores,
+                        const Array<RHISemaphoreHandle>& signal_semaphores,
+                        const RHIFenceHandle fence) = 0;
 
+    /**
+     * @brief Present the current image to a swapchain.
+     * @param swapchain Swapchain handle to present into.
+     * @param context Frame context used for synchronization and per-frame resources.
+     */
     virtual void present(RHISwapchainHandle swapchain, RHIFrameContext& context) = 0;
 
+    /**
+     * @brief Get the type of this queue.
+     * @return The queue type.
+     */
     virtual RHIQueueType get_type() const = 0;
 
+    /**
+     * @brief Block until all submitted work on this queue has completed.
+     */
     virtual void wait_idle() = 0;
+        
+    /**
+     * @brief Check if the queue supports the present mode.
+     * @return Return true if supported, false otherwise.
+     */
+    virtual bool is_present_mode() = 0;
 
+    /**
+     * @brief Destructor.
+     */
     virtual ~RHICommandQueue() = default;
 };
 
+/**
+ * @brief Shared reference type for RHICommandQueue.
+ */
 using RHICommandQueueRef = SharedRef<RHICommandQueue>;
 
-}  //namespace licht
+}  // namespace licht

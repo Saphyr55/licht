@@ -7,12 +7,7 @@ namespace licht {
 
 class RHIResource {
 public:
-
-public:
-    RHIResource(const RHIResource&) = delete;
-    RHIResource(RHIResource&&) = delete;
-    RHIResource& operator=(const RHIResource&) = delete;
-    RHIResource& operator=(RHIResource&&) = delete;
+    virtual ~RHIResource() = default;
 };
 
 template<typename Resource>

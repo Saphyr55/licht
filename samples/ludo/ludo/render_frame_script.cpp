@@ -1,12 +1,16 @@
 #include "render_frame_script.hpp"
+#include <cstddef>
 #include "licht/core/defines.hpp"
 #include "licht/core/io/file_handle.hpp"
 #include "licht/core/io/file_system.hpp"
+#include "licht/core/math/vector3.hpp"
 #include "licht/core/modules/module_registry.hpp"
 #include "licht/core/platform/display.hpp"
 #include "licht/core/platform/window_handle.hpp"
 #include "licht/core/trace/trace.hpp"
+#include "licht/rhi/buffer.hpp"
 #include "licht/rhi/rhi_module.hpp"
+#include "licht/rhi/rhi_types.hpp"
 
 namespace licht {
 
@@ -18,7 +22,7 @@ RenderFrameScript::RenderFrameScript()
     , pipeline_(nullptr)
     , framebuffer_memory_allocator_(1024 /* 1 kB */)
     , framebuffers_(4, RHIFramebufferAllocator(framebuffer_memory_allocator_))
-    , command_allocator_(nullptr)
+    , graphics_command_allocator_(nullptr)
     , frame_context_()
     , pause_(false)
     , window_resized_(false) {
@@ -43,12 +47,50 @@ void RenderFrameScript::on_startup() {
                         "Failed to retrieve a valid window handle. Ensure a window is created before initializing the RHI Module.");
     }
 
+    // -- Vertices data --
+    {
+        positions_ = {
+            Vector3f(-0.5f, -0.5f, 0.0f),// Top Left
+            Vector3f(0.5f, -0.5f, 0.0f), // Top Right
+            Vector3f(0.5f, 0.5f, 0.0f),  // Bottom Right
+            Vector3f(-0.5f, 0.5f, 0.0f), // Bottom Left
+        };
+
+        colors_ = {
+            Vector3f(1.0f, 0.0f, 0.0f),  // Red
+            Vector3f(0.0f, 1.0f, 0.0f),  // Green
+            Vector3f(0.0f, 0.0f, 1.0f),  // Blue
+            Vector3f(1.0f, 1.0f, 1.0f),  // White
+        };
+
+        indices_ = {
+            0, 1, 2, 2, 3, 0
+        };
+    }
+
     // -- Swapchain --
     {
         WindowStatues window_statues = Display::get_default().query_window_statues(window_handle_);
         frame_context_.frame_height = static_cast<uint32>(window_statues.height);
         frame_context_.frame_width = static_cast<uint32>(window_statues.width);
         swapchain_ = device_->create_swapchain(frame_context_.frame_width, frame_context_.frame_height);
+    }
+
+    // -- Queues --
+    {
+        const Array<RHICommandQueueRef>& command_queues = device_->get_command_queues();
+
+        RHICommandQueueRef* graphics_command_queue_ptr = command_queues.get_if([](RHICommandQueueRef command_queue) {
+            return command_queue->get_type() == RHIQueueType::Graphics; 
+        });
+        LCHECK_MSG(graphics_command_queue_ptr, "Found no graphics command queue.");
+        graphics_command_queue_ = *graphics_command_queue_ptr;
+
+        RHICommandQueueRef* graphics_present_command_queue_ptr = command_queues.get_if([](RHICommandQueueRef command_queue) { 
+            return command_queue->get_type() == RHIQueueType::Graphics && command_queue->is_present_mode(); 
+        });
+        LCHECK_MSG(graphics_present_command_queue_ptr, "Found no graphics command queue that support the present mode.");
+        graphics_present_command_queue_ = *graphics_present_command_queue_ptr;
     }
 
     // -- Render Pass --
@@ -63,10 +105,38 @@ void RenderFrameScript::on_startup() {
     }
 
     // -- Graphics Pipeline --
-    {
+    {       
+        // -- Bindings and attributes --
+        RHIVertexBindingDescription position_input_binding_description = {};
+        position_input_binding_description.binding = 0;
+        position_input_binding_description.stride = sizeof(Vector3f);
+        position_input_binding_description.input_rate = RHIVertexInputRate::Vertex;
+
+        RHIVertexBindingDescription color_input_binding_description = {};
+        color_input_binding_description.binding = 1;
+        color_input_binding_description.stride = sizeof(Vector3f);
+        color_input_binding_description.input_rate = RHIVertexInputRate::Vertex;
+
+        RHIVertexAttributeDescription position_attribute_description = {};
+        position_attribute_description.binding = 0;
+        position_attribute_description.location = 0;
+        position_attribute_description.format = RHIFormat::RGB32Float;
+        position_attribute_description.offset = 0;
+
+        RHIVertexAttributeDescription color_attribute_description = {};
+        color_attribute_description.binding = 1;
+        color_attribute_description.location = 1;
+        color_attribute_description.format = RHIFormat::RGB32Float;
+        color_attribute_description.offset = 0;
+        
+        RHIPipelineVertexBindingInformation pipeline_vertex_binding_information = {};
+        pipeline_vertex_binding_information.bindings = { position_input_binding_description, color_input_binding_description };
+        pipeline_vertex_binding_information.attributes = { position_attribute_description, color_attribute_description };
+
         float32 width = static_cast<float32>(swapchain_->get_width());
         float32 height = static_cast<float32>(swapchain_->get_height());
 
+        // -- Load shaders binary codes --
         FileSystem& file_system = FileSystem::get_platform();
 
         FileHandleResult vertex_file_open_error = file_system.open_read("shaders/main.vert.spv");
@@ -113,6 +183,7 @@ void RenderFrameScript::on_startup() {
         pipeline_description.render_pass = render_pass_;
         pipeline_description.vertex_shader_info = vertex_stage_create_info;
         pipeline_description.fragment_shader_info = fragment_stage_create_info;
+        pipeline_description.vertex_binding_info = pipeline_vertex_binding_information;
         pipeline_description.viewport_info = viewport_info;
         pipeline_ = device_->create_graphics_pipeline(pipeline_description);
     }
@@ -133,9 +204,132 @@ void RenderFrameScript::on_startup() {
         }
     }
 
-    // -- Command Allocator
+    // -- Buffers --
+    {   
+        RHIBufferHandle staging_position_buffer;
+        RHIBufferHandle staging_color_buffer;
+        RHIBufferHandle staging_index_buffer;
+
+        // Positions
+        {
+            RHIBufferDescription staging_position_buffer_description = {};
+            staging_position_buffer_description.access_mode = RHIAccessMode::Shared;
+            staging_position_buffer_description.usage = RHIBufferUsage::TransferSrc;
+            staging_position_buffer_description.memory_usage = RHIBufferMemoryUsage::Host;
+            staging_position_buffer_description.size = sizeof(Vector3f) * positions_.size();
+
+            staging_position_buffer = device_->create_buffer(staging_position_buffer_description);
+            staging_position_buffer->update(positions_.data(), sizeof(Vector3f) * positions_.size());
+
+            RHIBufferDescription position_buffer_description = {};
+            position_buffer_description.access_mode = RHIAccessMode::Shared;
+            position_buffer_description.usage = RHIBufferUsage::Vertex | RHIBufferUsage::TransferDst;
+            position_buffer_description.memory_usage = RHIBufferMemoryUsage::Device;
+            position_buffer_description.size = sizeof(Vector3f) * positions_.size();
+
+            position_buffer_ = device_->create_buffer(position_buffer_description);
+        }
+            
+        // Colors
+        {
+            RHIBufferDescription staging_color_buffer_description = {};
+            staging_color_buffer_description.access_mode = RHIAccessMode::Shared;
+            staging_color_buffer_description.usage = RHIBufferUsage::TransferSrc;
+            staging_color_buffer_description.memory_usage = RHIBufferMemoryUsage::Host;
+            staging_color_buffer_description.size = sizeof(Vector3f) * colors_.size();
+
+            staging_color_buffer = device_->create_buffer(staging_color_buffer_description);
+            staging_color_buffer->update(colors_.data(), sizeof(Vector3f) * colors_.size());
+
+            RHIBufferDescription color_buffer_description = {};
+            color_buffer_description.access_mode = RHIAccessMode::Shared;
+            color_buffer_description.usage = RHIBufferUsage::Vertex | RHIBufferUsage::TransferDst;
+            color_buffer_description.memory_usage = RHIBufferMemoryUsage::Device;
+            color_buffer_description.size = sizeof(Vector3f) * colors_.size();
+
+            color_buffer_ = device_->create_buffer(color_buffer_description);
+        }
+            
+        // Indices
+        {
+            RHIBufferDescription staging_index_buffer_description = {};
+            staging_index_buffer_description.access_mode = RHIAccessMode::Shared;
+            staging_index_buffer_description.usage = RHIBufferUsage::TransferSrc;
+            staging_index_buffer_description.memory_usage = RHIBufferMemoryUsage::Host;
+            staging_index_buffer_description.size = sizeof(uint32) * indices_.size();
+
+            staging_index_buffer = device_->create_buffer(staging_index_buffer_description);
+            staging_index_buffer->update(indices_.data(), sizeof(uint32) * indices_.size());
+
+            RHIBufferDescription index_buffer_description = {};
+            index_buffer_description.access_mode = RHIAccessMode::Shared;
+            index_buffer_description.usage = RHIBufferUsage::Index | RHIBufferUsage::TransferDst;
+            index_buffer_description.memory_usage = RHIBufferMemoryUsage::Device;
+            index_buffer_description.size = sizeof(uint32) * indices_.size();
+
+            index_buffer_ = device_->create_buffer(index_buffer_description);
+        }
+
+        // -- Upload Data from Standing Buffers to Device Buffers --
+        {
+            // Fetch transfer queue.
+            const Array<RHICommandQueueRef>& command_queues = device_->get_command_queues();
+            RHICommandQueueRef* transfer_queue_ptr = command_queues.get_if([](RHICommandQueueRef queue) {
+                return queue->get_type() == RHIQueueType::Transfer;
+            });
+            LCHECK_MSG(transfer_queue_ptr, "Found no transfer command queue.");
+            RHICommandQueueRef transfer_queue = *transfer_queue_ptr;
+
+            RHICommandAllocatorDescription transfer_command_allocator_desc = {};
+            transfer_command_allocator_desc.count = 1;  // One command buffer allocated.
+            transfer_command_allocator_desc.command_queue = transfer_queue;
+
+            RHICommandAllocatorRef transfer_command_allocator_ = device_->create_command_allocator(transfer_command_allocator_desc);
+
+            // Open a transfer command buffer
+            RHICommandBufferHandle transfer_cmd = transfer_command_allocator_->open();
+            transfer_command_allocator_->reset_command_buffer(transfer_cmd);
+
+            transfer_cmd->begin();
+            {
+                // Copy positions
+                RHIBufferCopyCommand position_copy = {};
+                position_copy.size = sizeof(Vector3f) * positions_.size();
+                transfer_cmd->copy_buffer(staging_position_buffer, position_buffer_, position_copy);
+
+                // Copy colors
+                RHIBufferCopyCommand color_copy = {};
+                color_copy.size = sizeof(Vector3f) * colors_.size();
+                transfer_cmd->copy_buffer(staging_color_buffer, color_buffer_, color_copy);
+
+                // Copy indices
+                RHIBufferCopyCommand indices_copy = {};
+                indices_copy.size = sizeof(uint32) * indices_.size();
+                transfer_cmd->copy_buffer(staging_index_buffer, index_buffer_, indices_copy);
+            }
+            transfer_cmd->end();
+
+            // Submit and wait for transfer to complete
+            RHIFenceHandle upload_fence = device_->create_fence();
+            device_->reset_fence(upload_fence);
+            transfer_queue->submit({transfer_cmd}, {}, {}, upload_fence);
+
+            device_->wait_fence(upload_fence);
+            device_->destroy_fence(upload_fence);
+
+            // Standing buffers no longer needed after data upload
+            device_->destroy_buffer(staging_position_buffer);
+            device_->destroy_buffer(staging_color_buffer);
+        }
+    }
+
+    // -- Command Allocators
     {
-        command_allocator_ = device_->create_command_allocator(frame_context_.frame_count);
+        RHICommandAllocatorDescription graphics_command_allocator_desc = {};
+        graphics_command_allocator_desc.count = frame_context_.frame_count;
+        graphics_command_allocator_desc.command_queue = graphics_command_queue_; 
+
+        graphics_command_allocator_ = device_->create_command_allocator(graphics_command_allocator_desc);
     }
 
     // -- Frame Context Sync --
@@ -170,13 +364,13 @@ void RenderFrameScript::on_tick(float32 delta_time) {
     }
     LCHECK(frame_context_.success);
 
-    RHICommandBufferHandle command_buffer = command_allocator_->open(frame_context_.current_frame);
-    command_allocator_->reset_command_buffer(command_buffer);
+    RHICommandBufferHandle graphics_command_buffer = graphics_command_allocator_->open(frame_context_.current_frame);
+    graphics_command_allocator_->reset_command_buffer(graphics_command_buffer);
 
     float32 width = static_cast<float32>(swapchain_->get_width());
     float32 height = static_cast<float32>(swapchain_->get_height());
 
-    command_buffer->begin();
+    graphics_command_buffer->begin();
     {
         Rect2D render_pass_area = {};
         render_pass_area.x = 0.0f;
@@ -188,9 +382,9 @@ void RenderFrameScript::on_tick(float32 delta_time) {
         render_pass_begin_info.render_pass = render_pass_;
         render_pass_begin_info.framebuffer = framebuffers_[frame_context_.frame_index];
         render_pass_begin_info.area = render_pass_area;
-        command_buffer->begin_render_pass(render_pass_begin_info);
+        graphics_command_buffer->begin_render_pass(render_pass_begin_info);
         {
-            command_buffer->bind_pipeline(pipeline_);
+            graphics_command_buffer->bind_pipeline(pipeline_);
 
             Viewport viewport = {};
             viewport.x = 0.0f;
@@ -199,25 +393,29 @@ void RenderFrameScript::on_tick(float32 delta_time) {
             viewport.height = height;
             viewport.min_depth = 0.0f;
             viewport.max_depth = 1.0f;
-            command_buffer->set_viewports(&viewport, 1);
+
+            graphics_command_buffer->set_viewports(&viewport, 1);
 
             Rect2D scissor = {};
             scissor.x = 0.0f;
             scissor.y = 0.0f;
             scissor.width = width;
             scissor.height = height;
-            command_buffer->set_scissors(&scissor, 1);
 
-            RHIDrawCommand draw_command = {};
-            draw_command.vertex_count = 3;
-            draw_command.instance_count = 1;
-            draw_command.first_instance = 0;
-            draw_command.first_vertex = 0;
-            command_buffer->draw(draw_command);
+            graphics_command_buffer->set_scissors(&scissor, 1);
+
+            graphics_command_buffer->bind_vertex_buffers({position_buffer_, color_buffer_});
+            graphics_command_buffer->bind_index_buffer(index_buffer_);    
+
+            RHIDrawIndexedCommand draw_indexed_command = {};
+            draw_indexed_command.index_count = indices_.size();
+            draw_indexed_command.instance_count = 1;
+
+            graphics_command_buffer->draw(draw_indexed_command);
         }
-        command_buffer->end_render_pass();
+        graphics_command_buffer->end_render_pass();
     }
-    command_buffer->end();
+    graphics_command_buffer->end();
 
     if (RHIFenceHandle* fence = frame_context_.frame_in_flight_fences[frame_context_.frame_index]) {
         device_->wait_fence(*fence);
@@ -226,12 +424,13 @@ void RenderFrameScript::on_tick(float32 delta_time) {
     frame_context_.frame_in_flight_fences[frame_context_.frame_index] = &frame_context_.in_flight_fences[frame_context_.current_frame];
 
     device_->reset_fence(frame_context_.in_flight_fences[frame_context_.current_frame]);
+        
+    graphics_command_queue_->submit({graphics_command_buffer}, 
+        {frame_context_.current_frame_available_semaphore()}, 
+        {frame_context_.current_render_finished_semaphore()}, 
+        frame_context_.current_in_flight_fence());
 
-    RHICommandQueueRef graphics_queue = device_->query_queue(RHIQueueType::Graphics);
-    RHICommandQueueRef present_queue = device_->query_queue(RHIQueueType::Transfer);
-
-    graphics_queue->submit({command_buffer}, frame_context_);
-    present_queue->present(swapchain_, frame_context_);
+    graphics_present_command_queue_->present(swapchain_, frame_context_);
 
     if (window_resized_ || frame_context_.suboptimal || frame_context_.out_of_date) {
         reset();
@@ -272,7 +471,7 @@ void RenderFrameScript::reset() {
 void RenderFrameScript::on_shutdown() {
     device_->wait_idle();
 
-    // -- Frame Context Sync --
+    // -- Frame Context --
     {
         for (uint32 i = 0; i < frame_context_.frame_count; i++) {
             device_->destroy_semaphore(frame_context_.frame_available_semaphores[i]);
@@ -285,11 +484,17 @@ void RenderFrameScript::on_shutdown() {
         frame_context_.frame_in_flight_fences.clear();
     }
 
-    // -- Allocator
+    // -- Buffers --
     {
-        device_->destroy_command_allocator(command_allocator_);
+        device_->destroy_buffer(position_buffer_);
+        device_->destroy_buffer(color_buffer_);
     }
 
+    // -- Allocators
+    {
+        device_->destroy_command_allocator(graphics_command_allocator_);
+    }
+    
     // -- Framebuffers --
     {
         for (RHIFramebufferHandle framebuffer : framebuffers_) {

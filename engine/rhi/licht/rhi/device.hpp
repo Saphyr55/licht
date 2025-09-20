@@ -22,7 +22,7 @@ public:
     virtual void wait_fence(RHIFenceHandle fence) = 0;
     virtual void reset_fence(RHIFenceHandle fence) = 0;
     
-    virtual RHICommandAllocatorRef create_command_allocator(uint32 count) = 0;
+    virtual RHICommandAllocatorRef create_command_allocator(const RHICommandAllocatorDescription& description) = 0;
     virtual void destroy_command_allocator(RHICommandAllocatorRef command_allocator) = 0;
 
     virtual RHITextureHandle create_texture(const RHITextureDescription& description) = 0;
@@ -37,7 +37,7 @@ public:
     virtual RHIPipelineHandle create_graphics_pipeline(const RHIPipelineDescription& description) = 0;
     virtual void destroy_graphics_pipeline(RHIPipelineHandle pipeline) = 0;
 
-    virtual RHIBufferHandle create_buffer() = 0;
+    virtual RHIBufferHandle create_buffer(RHIBufferDescription description) = 0;
     virtual void destroy_buffer(RHIBufferHandle buffer) = 0; 
 
     virtual RHISwapchainHandle create_swapchain(uint32 width, uint32 height) = 0;
@@ -54,7 +54,7 @@ public:
     virtual RHIFenceHandle create_fence() = 0;
     virtual void destroy_fence(RHIFenceHandle fence) = 0;
 
-    virtual RHICommandQueueRef query_queue(RHIQueueType type) = 0;
+    virtual Array<RHICommandQueueRef> get_command_queues() = 0;
 };
 
 using RHIDeviceHandle = SharedRef<RHIDevice>;

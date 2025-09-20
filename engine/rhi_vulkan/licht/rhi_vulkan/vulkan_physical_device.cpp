@@ -68,9 +68,9 @@ bool VulkanPhysicalDeviceSelector::is_valid_queue_family(const VkQueueFamilyProp
 
 bool VulkanPhysicalDeviceSelector::select_queue_families() {
     for (uint32 queue_family_index = 0; queue_family_index < info_.queue_families.size(); queue_family_index++) {
-        const VkQueueFamilyProperties& queue_family = info_.queue_families[queue_family_index];
+        const VkQueueFamilyProperties& queue_family_properties = info_.queue_families[queue_family_index];
 
-        if (is_valid_queue_family(queue_family, queue_family_index)) {
+        if (is_valid_queue_family(queue_family_properties, queue_family_index)) {
             info_.graphics_queue_index = queue_family_index;
             info_.present_queue_index = queue_family_index;
             return true;
@@ -91,6 +91,8 @@ const VulkanPhysicalDeviceInformation& VulkanPhysicalDeviceSelector::query_info(
     bool is_suitable_queue_families = select_queue_families();
 
     bool is_suitable_extension_support = check_extension_support(g_physical_device_extensions);
+
+    VulkanAPI::lvkGetPhysicalDeviceMemoryProperties(context_.physical_device, &info_.memory_properties);
 
     info_.is_suitable =
         is_suitable_device_properties &&

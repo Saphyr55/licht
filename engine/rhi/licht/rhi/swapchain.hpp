@@ -23,16 +23,16 @@ public:
     uint32 current_frame = 0;
     uint32 frame_count = 2;
 
-    bool success;
-    bool suboptimal;
-    bool out_of_date;
+    bool success = false;
+    bool suboptimal = false;
+    bool out_of_date = false;
 
 public:
-    inline RHISemaphoreHandle current_frame_available_semaphore();
-    
-    inline RHISemaphoreHandle current_render_finished_semaphore();
-    
-    inline RHIFenceHandle current_in_flight_fence();    
+    RHISemaphoreHandle current_frame_available_semaphore();
+
+    RHISemaphoreHandle current_render_finished_semaphore();
+
+    RHIFenceHandle current_in_flight_fence();    
 
     inline void next_frame() {
         current_frame = (current_frame + 1) % frame_count;

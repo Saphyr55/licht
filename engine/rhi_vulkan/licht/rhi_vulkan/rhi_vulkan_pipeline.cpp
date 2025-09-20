@@ -3,6 +3,7 @@
 #include "licht/core/defines.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/memory/shared_ref_cast.hpp"
+#include "licht/rhi/buffer.hpp"
 #include "licht/rhi/pipeline/compiled_shader.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_render_pass.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
@@ -11,6 +12,23 @@
 #include <vulkan/vulkan_core.h>
 
 namespace licht {
+
+static constexpr auto vk_binding_map = [](const RHIVertexBindingDescription& description) -> VkVertexInputBindingDescription {
+    VkVertexInputBindingDescription vulkan_description;
+    vulkan_description.binding = description.binding;
+    vulkan_description.stride = description.stride;
+    vulkan_description.inputRate = vulkan_vertex_input_rate_get(description.input_rate);
+    return vulkan_description;
+};
+
+static constexpr auto vk_attribute_map = [](const RHIVertexAttributeDescription& description) -> VkVertexInputAttributeDescription {
+    VkVertexInputAttributeDescription vulkan_description;
+    vulkan_description.binding = description.binding;
+    vulkan_description.location = description.location;
+    vulkan_description.format = vulkan_format_get(description.format);
+    vulkan_description.offset = description.offset;
+    return vulkan_description;
+};
 
 RHIVulkanPipeline::RHIVulkanPipeline(VulkanContext& context,
                                      const RHIPipelineDescription& description)
@@ -30,12 +48,18 @@ void RHIVulkanPipeline::initialize() {
     pipeline_input_assembly_state_create_info.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     pipeline_input_assembly_state_create_info.primitiveRestartEnable = VK_FALSE;
 
+    Array<VkVertexInputBindingDescription> vertex_bindings = description_.vertex_binding_info.bindings
+                                                                 .map<VkVertexInputBindingDescription>(vk_binding_map);
+
+    Array<VkVertexInputAttributeDescription> vertex_attributes = description_.vertex_binding_info.attributes
+                                                                     .map<VkVertexInputAttributeDescription>(vk_attribute_map);
+
     VkPipelineVertexInputStateCreateInfo vertex_input_state_create_info = {};
     vertex_input_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertex_input_state_create_info.vertexBindingDescriptionCount = 0;
-    vertex_input_state_create_info.pVertexBindingDescriptions = nullptr;  // Optional
-    vertex_input_state_create_info.vertexAttributeDescriptionCount = 0;
-    vertex_input_state_create_info.pVertexAttributeDescriptions = nullptr;  // Optional
+    vertex_input_state_create_info.vertexBindingDescriptionCount = vertex_bindings.size();
+    vertex_input_state_create_info.pVertexBindingDescriptions = vertex_bindings.data();
+    vertex_input_state_create_info.vertexAttributeDescriptionCount = vertex_attributes.size();
+    vertex_input_state_create_info.pVertexAttributeDescriptions = vertex_attributes.data();
 
     VkPipelineRasterizationStateCreateInfo pipeline_rasterizer_state_create_info = {};
     pipeline_rasterizer_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;

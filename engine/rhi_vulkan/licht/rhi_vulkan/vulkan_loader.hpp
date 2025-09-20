@@ -1,8 +1,9 @@
 #pragma once
 
-#include <vulkan/vulkan_core.h>
 #include "licht/core/platform/dynamic_library.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_exports.hpp"
+
+#include <vulkan/vulkan_core.h>
 
 #define LICHT_DEFINE_RHI_VULKAN_FUNCTION_NAME(Name) l##Name
 

@@ -4,15 +4,10 @@
 #include "licht/rhi/rhi_types.hpp"
 
 namespace licht {
-    
-enum class RHITextureFormat {
-    RGBA8,
-    BGRA8,
-    Depth24Stencil8
-};
 
 class RHITexture {
-
+public:
+    virtual ~RHITexture() = default;
 };
 
 struct RHITextureDescription {
@@ -27,11 +22,10 @@ struct RHITextureViewDescription {
 };
 
 class RHITextureView {
-
+public:
+    virtual ~RHITextureView() = default;
 };
 
 using RHITextureViewHandle = SharedRef<RHITextureView>;
 
-
-
-}
+}  //namespace licht

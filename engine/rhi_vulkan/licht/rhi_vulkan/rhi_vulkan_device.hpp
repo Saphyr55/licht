@@ -20,7 +20,7 @@ public:
     virtual void wait_fence(RHIFenceHandle fence) override;
     virtual void reset_fence(RHIFenceHandle fence) override;
     
-    virtual RHICommandAllocatorRef create_command_allocator(uint32 count) override;
+    virtual RHICommandAllocatorRef create_command_allocator(const RHICommandAllocatorDescription& description) override;
     virtual void destroy_command_allocator(RHICommandAllocatorRef command_allocator) override;
 
     virtual RHITextureHandle create_texture(const RHITextureDescription& description) override;
@@ -35,7 +35,7 @@ public:
     virtual RHIPipelineHandle create_graphics_pipeline(const RHIPipelineDescription& description) override;
     virtual void destroy_graphics_pipeline(RHIPipelineHandle pipeline) override;
 
-    virtual RHIBufferHandle create_buffer() override;
+    virtual RHIBufferHandle create_buffer(RHIBufferDescription description) override;
     virtual void destroy_buffer(RHIBufferHandle buffer) override; 
 
     virtual RHISwapchainHandle create_swapchain(uint32 width, uint32 height) override;
@@ -52,14 +52,12 @@ public:
     virtual RHIFenceHandle create_fence() override;
     virtual void destroy_fence(RHIFenceHandle fence) override;
 
-    virtual RHICommandQueueRef query_queue(RHIQueueType type) override;
+    virtual Array<RHICommandQueueRef> get_command_queues() override;
 
 public:
     RHIVulkanDevice(VulkanContext& context);
 
 private:
-    RHICommandQueueRef present_queue_;
-    RHICommandQueueRef graphics_queue_;
     VulkanContext& context_; 
 };
 

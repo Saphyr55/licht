@@ -12,6 +12,7 @@ namespace licht {
 class VulkanInstance;
 
 struct VulkanPhysicalDeviceInformation {
+    VkPhysicalDeviceMemoryProperties memory_properties;
     VkPhysicalDeviceProperties properties;
     VkPhysicalDeviceFeatures features;
     Array<VkQueueFamilyProperties> queue_families;
