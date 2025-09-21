@@ -4,7 +4,7 @@
 ----------------------------------------------------
 target("ludo", function()
     set_kind("shared")
-    set_group("ludo")
+    add_rules("glsl")
 
     add_deps("licht.core", "licht.engine", "licht.rhi", "licht.rhi.vulkan")
 
@@ -13,13 +13,15 @@ target("ludo", function()
     add_files("ludo/**.cpp")
     add_headerfiles("ludo/**.hpp")
 
+    add_files("$(projectdir)/shaders/**.frag", "$(projectdir)/shaders/**.vert")
+
     add_defines("LICHT_LUDO_EXPORTS")
+
+    set_group("ludo")
 end)
 
 target("ludo.app", function()
     set_kind("binary")
-    set_group("ludo")
-    add_rules("glsl")
 
     local ludo_projectdir = path.join(os.projectdir(), "samples/ludo")
     local enginedir = path.join(os.projectdir(), "engine")
@@ -32,5 +34,6 @@ target("ludo.app", function()
     add_headerfiles("app/**.hpp")
 
     add_files("app/**.cpp")
-    add_files("$(projectdir)/shaders/**.frag", "$(projectdir)/shaders/**.vert")
+
+    set_group("ludo")
 end)

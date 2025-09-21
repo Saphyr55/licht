@@ -25,6 +25,7 @@
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_buffer.hpp"
+#include "licht/rhi_vulkan/rhi_vulkan_description_set.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -61,6 +62,17 @@ void RHIVulkanDevice::reset_fence(RHIFenceHandle fence) {
     LICHT_VULKAN_CHECK(VulkanAPI::lvkResetFences(context_.device, 1, &vkfence));
 
     rhi_vk_fence->set_signaled(false);
+}
+
+RHIDescriptorSetHandle RHIVulkanDevice::create_descriptor_set(const Array<RHIDescriptorSetLayoutBinding>& bindings) {
+    RHIVulkanDescriptorSetLayoutRef vkdesc = new_ref<RHIVulkanDescriptorSetLayout>(context_, bindings);
+    vkdesc->initialize();
+    return vkdesc;
+}
+
+void RHIVulkanDevice::destroy_descriptor_set(RHIDescriptorSetHandle desc) {
+    RHIVulkanDescriptorSetLayoutRef vkdesc = static_ref_cast<RHIVulkanDescriptorSetLayout>(desc);
+    vkdesc->destroy();
 }
 
 void RHIVulkanDevice::wait_idle() {

@@ -8,6 +8,7 @@
 #include "licht/rhi_vulkan/rhi_vulkan_render_pass.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
+#include "licht/rhi_vulkan/rhi_vulkan_description_set.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -30,8 +31,7 @@ static constexpr auto vk_attribute_map = [](const RHIVertexAttributeDescription&
     return vulkan_description;
 };
 
-RHIVulkanPipeline::RHIVulkanPipeline(VulkanContext& context,
-                                     const RHIPipelineDescription& description)
+RHIVulkanPipeline::RHIVulkanPipeline(VulkanContext& context, const RHIPipelineDescription& description)
     : context_(context)
     , description_(description) {
 }
@@ -143,7 +143,7 @@ void RHIVulkanPipeline::initialize() {
     pipeline_color_blend_attachment_state.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;  // Optional
     pipeline_color_blend_attachment_state.alphaBlendOp = VK_BLEND_OP_ADD;              // Optional
 
-    VkPipelineColorBlendStateCreateInfo pipeline_color_blend_state_create_info{};
+    VkPipelineColorBlendStateCreateInfo pipeline_color_blend_state_create_info = {};
     pipeline_color_blend_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     pipeline_color_blend_state_create_info.logicOpEnable = VK_FALSE;
     pipeline_color_blend_state_create_info.logicOp = VK_LOGIC_OP_COPY;  // Optional
@@ -154,12 +154,20 @@ void RHIVulkanPipeline::initialize() {
     pipeline_color_blend_state_create_info.blendConstants[2] = 0.0f;  // Optional
     pipeline_color_blend_state_create_info.blendConstants[3] = 0.0f;  // Optional
 
+    static constexpr auto mapping_desc_set_layout = [](const RHIDescriptorSetHandle desc) -> VkDescriptorSetLayout {
+        RHIVulkanDescriptorSetLayoutRef vk_desc_set_layout = static_ref_cast<RHIVulkanDescriptorSetLayout>(desc);
+        LCHECK(vk_desc_set_layout);
+        return vk_desc_set_layout->get_handle();
+    };
+
+    Array<VkDescriptorSetLayout> descriptor_set_layouts = description_.descriptor_set_layouts.map<VkDescriptorSetLayout>(mapping_desc_set_layout);
+
     VkPipelineLayoutCreateInfo pipeline_layout_create_info = {};
     pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_create_info.setLayoutCount = 0;             // Optional
-    pipeline_layout_create_info.pSetLayouts = nullptr;          // Optional
-    pipeline_layout_create_info.pushConstantRangeCount = 0;     // Optional
-    pipeline_layout_create_info.pPushConstantRanges = nullptr;  // Optional
+    pipeline_layout_create_info.setLayoutCount = descriptor_set_layouts.size();           
+    pipeline_layout_create_info.pSetLayouts = descriptor_set_layouts.data();        
+    pipeline_layout_create_info.pushConstantRangeCount = 0;   
+    pipeline_layout_create_info.pPushConstantRanges = nullptr;
 
     LICHT_VULKAN_CHECK(VulkanAPI::lvkCreatePipelineLayout(context_.device, &pipeline_layout_create_info, context_.allocator, &pipeline_layout_));
 

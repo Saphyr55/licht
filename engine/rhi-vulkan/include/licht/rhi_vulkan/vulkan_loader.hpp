@@ -127,6 +127,7 @@ public:
     LICHT_DEFINE_RHI_FUNCTION(vkCmdClearDepthStencilImage);
     LICHT_DEFINE_RHI_FUNCTION(vkCmdSetPrimitiveTopology);
     LICHT_DEFINE_RHI_FUNCTION(vkCmdPushConstants);
+    LICHT_DEFINE_RHI_FUNCTION(vkCmdBindDescriptorSets);
     LICHT_DEFINE_RHI_FUNCTION(vkCmdBindVertexBuffers);
     LICHT_DEFINE_RHI_FUNCTION(vkCmdBindIndexBuffer);
     LICHT_DEFINE_RHI_FUNCTION(vkCmdDraw);

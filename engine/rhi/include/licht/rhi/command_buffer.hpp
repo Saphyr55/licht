@@ -82,6 +82,8 @@ public:
      */
     virtual void bind_pipeline(RHIPipelineHandle pipeline) = 0;
 
+    virtual void bind_descriptor_sets(RHIPipelineHandle pipeline, const Array<RHIDescriptorSetHandle>& descriptor_sets);
+
     /**
      * @brief Bind vertex buffers for rendering.
      * @param buffers Array of buffer handles to bind.

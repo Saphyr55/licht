@@ -8,6 +8,7 @@
 #include "licht/rhi/fence.hpp"
 #include "licht/rhi/framebuffer.hpp"
 #include "licht/rhi/pipeline/pipeline.hpp"
+#include "licht/rhi/descriptor_set.hpp"
 #include "licht/rhi/render_pass.hpp"
 #include "licht/rhi/semaphore.hpp"
 #include "licht/rhi/swapchain.hpp"
@@ -21,7 +22,10 @@ public:
 
     virtual void wait_fence(RHIFenceHandle fence) = 0;
     virtual void reset_fence(RHIFenceHandle fence) = 0;
-    
+
+    virtual RHIDescriptorSetHandle create_descriptor_set(const Array<RHIDescriptorSetLayoutBinding>& bindings) = 0;
+    virtual void destroy_descriptor_set(RHIDescriptorSetHandle descriptor_set_layout) = 0;
+
     virtual RHICommandAllocatorRef create_command_allocator(const RHICommandAllocatorDescription& description) = 0;
     virtual void destroy_command_allocator(RHICommandAllocatorRef command_allocator) = 0;
 

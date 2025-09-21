@@ -5,8 +5,8 @@
 #include "licht/core/string/string_ref.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/pipeline/compiled_shader.hpp"
-#include "licht/rhi/pipeline/shader.hpp"
 #include "licht/rhi/render_pass.hpp"
+#include "licht/rhi/descriptor_set.hpp"
 #include "licht/rhi/rhi_types.hpp"
 
 namespace licht {
@@ -14,7 +14,7 @@ namespace licht {
 struct RHIPipelineShaderStageCreateInfo {
     StringRef name;
     CompiledShader* shader;
-    ShaderStageType type;
+    RHIShaderStage type;
 };
 
 struct RHIPipelineViewportStateInformation {
@@ -32,6 +32,7 @@ struct RHIPipelineDescription {
     RHIPipelineShaderStageCreateInfo fragment_shader_info;
     RHIPipelineViewportStateInformation viewport_info;
     RHIPipelineVertexBindingInformation vertex_binding_info;
+    Array<RHIDescriptorSetHandle> descriptor_set_layouts;
     RHIRenderPassHandle render_pass;
 };
 

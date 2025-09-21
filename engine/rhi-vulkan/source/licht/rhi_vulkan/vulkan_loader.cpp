@@ -269,6 +269,7 @@ bool vulkan_device_api_load(VkDevice device) {
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkCmdClearDepthStencilImage);
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkCmdSetPrimitiveTopology);
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkCmdPushConstants);
+    LICHT_LOAD_RHI_DEVICE_FUNCTION(vkCmdBindDescriptorSets);
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkCmdBindVertexBuffers);
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkCmdBindIndexBuffer);
     LICHT_LOAD_RHI_DEVICE_FUNCTION(vkCmdDraw);

@@ -1,10 +1,5 @@
 #version 450
 
-struct UniformBufferObject {
-    mat4 model;
-    mat4 view;
-    mat4 proj;
-};
 
 // Inputs
 layout(location = 0) in vec3 in_color;
