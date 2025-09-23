@@ -1,5 +1,6 @@
 #include "render_frame_script.hpp"
-#include <cstddef>
+#include "licht/rhi/descriptor_set.hpp"
+#include "ludo_types.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/io/file_handle.hpp"
 #include "licht/core/io/file_system.hpp"
@@ -8,9 +9,14 @@
 #include "licht/core/platform/display.hpp"
 #include "licht/core/platform/window_handle.hpp"
 #include "licht/core/trace/trace.hpp"
+#include "licht/core/math/matrix4.hpp"
+#include "licht/core/math/common_math.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/rhi_module.hpp"
 #include "licht/rhi/rhi_types.hpp"
+
+#include <chrono>
+#include <cstddef>
 
 namespace licht {
 
@@ -19,7 +25,7 @@ RenderFrameScript::RenderFrameScript()
     , device_(nullptr)
     , swapchain_(nullptr)
     , render_pass_(nullptr)
-    , pipeline_(nullptr)
+    , graphics_pipeline_(nullptr)
     , framebuffer_memory_allocator_(1024 /* 1 kB */)
     , framebuffers_(4, RHIFramebufferAllocator(framebuffer_memory_allocator_))
     , graphics_command_allocator_(nullptr)
@@ -153,12 +159,12 @@ void RenderFrameScript::on_startup() {
         RHIPipelineShaderStageCreateInfo vertex_stage_create_info;
         vertex_stage_create_info.name = "main";
         vertex_stage_create_info.shader = &vertex_shader;
-        vertex_stage_create_info.type = ShaderStageType::Vertex;
+        vertex_stage_create_info.type = RHIShaderStage::Vertex;
 
         RHIPipelineShaderStageCreateInfo fragment_stage_create_info;
         fragment_stage_create_info.name = "main";
         fragment_stage_create_info.shader = &fragment_shader;
-        fragment_stage_create_info.type = ShaderStageType::Fragment;
+        fragment_stage_create_info.type = RHIShaderStage::Fragment;
 
         // -- Graphics Pipeline --
         Viewport viewport = {};
@@ -179,13 +185,19 @@ void RenderFrameScript::on_startup() {
         viewport_info.viewport = viewport;
         viewport_info.scissor = scissor;
 
+        RHIDescriptorSetLayoutBinding ubo_binding = {};
+        ubo_binding.binding = 0;
+        ubo_binding.count = 1;
+        ubo_binding.type = RHIDescriptorSetType::Uniform;
+
         RHIPipelineDescription pipeline_description;
         pipeline_description.render_pass = render_pass_;
         pipeline_description.vertex_shader_info = vertex_stage_create_info;
         pipeline_description.fragment_shader_info = fragment_stage_create_info;
         pipeline_description.vertex_binding_info = pipeline_vertex_binding_information;
         pipeline_description.viewport_info = viewport_info;
-        pipeline_ = device_->create_graphics_pipeline(pipeline_description);
+        pipeline_description.bindings = {ubo_binding}; 
+        graphics_pipeline_ = device_->create_graphics_pipeline(pipeline_description);
     }
 
     // -- Framebuffers --
@@ -229,7 +241,7 @@ void RenderFrameScript::on_startup() {
 
             position_buffer_ = device_->create_buffer(position_buffer_description);
         }
-            
+
         // Colors
         {
             RHIBufferDescription staging_color_buffer_description = {};
@@ -239,7 +251,7 @@ void RenderFrameScript::on_startup() {
             staging_color_buffer_description.size = sizeof(Vector3f) * colors_.size();
 
             staging_color_buffer = device_->create_buffer(staging_color_buffer_description);
-            staging_color_buffer->update(colors_.data(), sizeof(Vector3f) * colors_.size());
+            staging_color_buffer->update(colors_.data(), sizeof(Vector3f)* colors_.size());
 
             RHIBufferDescription color_buffer_description = {};
             color_buffer_description.access_mode = RHIAccessMode::Shared;
@@ -249,7 +261,7 @@ void RenderFrameScript::on_startup() {
 
             color_buffer_ = device_->create_buffer(color_buffer_description);
         }
-            
+
         // Indices
         {
             RHIBufferDescription staging_index_buffer_description = {};
@@ -276,7 +288,7 @@ void RenderFrameScript::on_startup() {
             const Array<RHICommandQueueRef>& command_queues = device_->get_command_queues();
             RHICommandQueueRef* transfer_queue_ptr = command_queues.get_if([](RHICommandQueueRef queue) {
                 return queue->get_type() == RHIQueueType::Transfer;
-            });
+                });
             LCHECK_MSG(transfer_queue_ptr, "Found no transfer command queue.");
             RHICommandQueueRef transfer_queue = *transfer_queue_ptr;
 
@@ -312,7 +324,7 @@ void RenderFrameScript::on_startup() {
             // Submit and wait for transfer to complete
             RHIFenceHandle upload_fence = device_->create_fence();
             device_->reset_fence(upload_fence);
-            transfer_queue->submit({transfer_cmd}, {}, {}, upload_fence);
+            transfer_queue->submit({ transfer_cmd }, {}, {}, upload_fence);
 
             device_->wait_fence(upload_fence);
             device_->destroy_fence(upload_fence);
@@ -320,6 +332,41 @@ void RenderFrameScript::on_startup() {
             // Standing buffers no longer needed after data upload
             device_->destroy_buffer(staging_position_buffer);
             device_->destroy_buffer(staging_color_buffer);
+            device_->destroy_buffer(staging_index_buffer);
+
+            device_->destroy_command_allocator(transfer_command_allocator_);
+        }
+    }
+
+    // -- Uniform Buffers --
+    {
+        const uint32 image_count = swapchain_->get_texture_views().size();
+
+        uniform_buffers_.reserve(image_count);
+        for (uint32 i = 0; i < image_count; i++) {
+            RHIBufferDescription uniform_buffer_description = {};
+            uniform_buffer_description.access_mode = RHIAccessMode::Private;
+            uniform_buffer_description.usage = RHIBufferUsage::Uniform;
+            uniform_buffer_description.memory_usage = RHIBufferMemoryUsage::Host;
+            uniform_buffer_description.size = sizeof(UniformBufferObject);
+
+            RHIBufferHandle uniform_buffer = device_->create_buffer(uniform_buffer_description);
+            uniform_buffers_.append(uniform_buffer);
+        }
+    }
+
+    // -- Descriptor set layouts --
+    {
+        const uint32 image_count = swapchain_->get_texture_views().size();
+        constexpr uint32 binding = 0;
+        constexpr uint32 offset = 0;
+        constexpr uint32 size = sizeof(UniformBufferObject);
+
+        descriptor_pool_ = device_->create_descriptor_pool(graphics_pipeline_, RHIDescriptorSetInformation(image_count));
+    
+        for (uint32 i = 0; i < image_count; i++) {
+            RHIDescriptorSetRef descriptor_set = descriptor_pool_->get_descriptor_set(i);
+            descriptor_set->update(uniform_buffers_[i], binding, offset, size);
         }
     }
 
@@ -356,6 +403,7 @@ void RenderFrameScript::on_tick(float32 delta_time) {
         return;
     }
 
+
     swapchain_->acquire_next_frame(frame_context_);
 
     if (frame_context_.out_of_date) {
@@ -384,7 +432,7 @@ void RenderFrameScript::on_tick(float32 delta_time) {
         render_pass_begin_info.area = render_pass_area;
         graphics_command_buffer->begin_render_pass(render_pass_begin_info);
         {
-            graphics_command_buffer->bind_pipeline(pipeline_);
+            graphics_command_buffer->bind_pipeline(graphics_pipeline_);
 
             Viewport viewport = {};
             viewport.x = 0.0f;
@@ -407,6 +455,9 @@ void RenderFrameScript::on_tick(float32 delta_time) {
             graphics_command_buffer->bind_vertex_buffers({position_buffer_, color_buffer_});
             graphics_command_buffer->bind_index_buffer(index_buffer_);    
 
+            RHIDescriptorSetRef descriptor_set = descriptor_pool_->get_descriptor_set(frame_context_.current_frame);
+            graphics_command_buffer->bind_descriptor_sets(graphics_pipeline_, {descriptor_set});
+
             RHIDrawIndexedCommand draw_indexed_command = {};
             draw_indexed_command.index_count = indices_.size();
             draw_indexed_command.instance_count = 1;
@@ -417,14 +468,12 @@ void RenderFrameScript::on_tick(float32 delta_time) {
     }
     graphics_command_buffer->end();
 
-    if (RHIFenceHandle* fence = frame_context_.frame_in_flight_fences[frame_context_.frame_index]) {
-        device_->wait_fence(*fence);
-    }
-
     frame_context_.frame_in_flight_fences[frame_context_.frame_index] = &frame_context_.in_flight_fences[frame_context_.current_frame];
 
     device_->reset_fence(frame_context_.in_flight_fences[frame_context_.current_frame]);
-        
+
+    update_uniform();
+    
     graphics_command_queue_->submit({graphics_command_buffer}, 
         {frame_context_.current_frame_available_semaphore()}, 
         {frame_context_.current_render_finished_semaphore()}, 
@@ -443,17 +492,36 @@ void RenderFrameScript::on_tick(float32 delta_time) {
     frame_context_.next_frame();
 }
 
+void RenderFrameScript::update_uniform() {
+    static auto startTime = std::chrono::high_resolution_clock::now();
+
+    auto current_time = std::chrono::high_resolution_clock::now();
+    float32 time = std::chrono::duration<float32, std::chrono::seconds::period>(current_time - startTime).count();
+    
+    float32 aspect_ratio = swapchain_->get_width() / static_cast<float32>(swapchain_->get_height());
+    UniformBufferObject ubo;
+    ubo.model = Matrix4f::rotate(ubo.model, time * radians(90.0f), Vector3f(0.0f, 0.0f, 1.0f));
+    ubo.view = Matrix4f::look_at(Vector3f(2.0f, 2.0f, 2.0f), Vector3f(0.0f, 0.0f, 0.0f), Vector3f(0.0f, 0.0f, 1.0f));
+    ubo.proj = Matrix4f::perspective(radians(45.0f), aspect_ratio, 0.0f, 10.0f);
+    ubo.proj[1][1] *= -1.0f;
+
+    uniform_buffers_[frame_context_.current_frame]->update(&ubo, sizeof(UniformBufferObject), 0);
+}
+
 void RenderFrameScript::reset() {
     device_->wait_idle();
 
+    // Destroy all existing framebuffers
     for (RHIFramebufferHandle framebuffer : framebuffers_) {
         device_->destroy_framebuffer(framebuffer);
     }
     framebuffers_.clear();
     framebuffer_memory_allocator_.reset();
 
+    // Recreate swapchain
     device_->recreate_swapchain(swapchain_, frame_context_.frame_width, frame_context_.frame_height);
 
+    // Create new framebuffers
     framebuffers_.reserve(swapchain_->get_texture_views().size());
     for (RHITextureViewHandle texture : swapchain_->get_texture_views()) {
         RHIFramebufferDescription description = {};
@@ -488,6 +556,16 @@ void RenderFrameScript::on_shutdown() {
     {
         device_->destroy_buffer(position_buffer_);
         device_->destroy_buffer(color_buffer_);
+        device_->destroy_buffer(index_buffer_);
+    }
+
+    // -- Uniform buffers --
+    {
+        for (size_t i = 0; i < uniform_buffers_.size(); i++) {
+            device_->destroy_buffer(uniform_buffers_[i]);
+        }
+        uniform_buffers_.clear();
+        device_->destroy_descriptor_pool(descriptor_pool_);
     }
 
     // -- Allocators
@@ -501,9 +579,10 @@ void RenderFrameScript::on_shutdown() {
             device_->destroy_framebuffer(framebuffer);
         }
         framebuffers_.clear();
+        framebuffer_memory_allocator_.reset();
     }
-
-    device_->destroy_graphics_pipeline(pipeline_);
+        
+    device_->destroy_graphics_pipeline(graphics_pipeline_);
 
     device_->destroy_render_pass(render_pass_);
 

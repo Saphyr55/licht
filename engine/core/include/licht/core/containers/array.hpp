@@ -40,6 +40,19 @@ public:
         return other;
     }
 
+    template <typename OtherElementType = ElementType,
+              typename OtherAllocatorType = ReboundAllocator<OtherElementType>>
+    Array<OtherElementType, OtherAllocatorType> map(auto&& mapper,
+                                                    const OtherAllocatorType& other_allocator = OtherAllocatorType()) {
+        Array<OtherElementType, OtherAllocatorType> other(size_, other_allocator);
+
+        for (size_type i = 0; i < size_; i++) {
+            other.append(mapper(data_[i]));
+        }
+
+        return other;
+    }
+
     const_reference front() const {
         LCHECK_MSG(!empty(), "Call front with an empty array.");
         return data_[0];

@@ -8,6 +8,7 @@
 #include "licht/rhi_vulkan/rhi_vulkan_render_pass.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
+#include "licht/rhi_vulkan/rhi_vulkan_description_set.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -30,8 +31,7 @@ static constexpr auto vk_attribute_map = [](const RHIVertexAttributeDescription&
     return vulkan_description;
 };
 
-RHIVulkanPipeline::RHIVulkanPipeline(VulkanContext& context,
-                                     const RHIPipelineDescription& description)
+RHIVulkanPipeline::RHIVulkanPipeline(VulkanContext& context, const RHIPipelineDescription& description)
     : context_(context)
     , description_(description) {
 }
@@ -68,6 +68,7 @@ void RHIVulkanPipeline::initialize() {
     pipeline_rasterizer_state_create_info.polygonMode = VK_POLYGON_MODE_FILL;
     pipeline_rasterizer_state_create_info.lineWidth = 1.0f;
     pipeline_rasterizer_state_create_info.cullMode = VK_CULL_MODE_BACK_BIT;
+    // pipeline_rasterizer_state_create_info.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     pipeline_rasterizer_state_create_info.frontFace = VK_FRONT_FACE_CLOCKWISE;
     pipeline_rasterizer_state_create_info.depthBiasEnable = VK_FALSE;
     pipeline_rasterizer_state_create_info.depthBiasConstantFactor = 0.0f;  // Optional
@@ -143,7 +144,7 @@ void RHIVulkanPipeline::initialize() {
     pipeline_color_blend_attachment_state.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;  // Optional
     pipeline_color_blend_attachment_state.alphaBlendOp = VK_BLEND_OP_ADD;              // Optional
 
-    VkPipelineColorBlendStateCreateInfo pipeline_color_blend_state_create_info{};
+    VkPipelineColorBlendStateCreateInfo pipeline_color_blend_state_create_info = {};
     pipeline_color_blend_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     pipeline_color_blend_state_create_info.logicOpEnable = VK_FALSE;
     pipeline_color_blend_state_create_info.logicOp = VK_LOGIC_OP_COPY;  // Optional
@@ -154,12 +155,32 @@ void RHIVulkanPipeline::initialize() {
     pipeline_color_blend_state_create_info.blendConstants[2] = 0.0f;  // Optional
     pipeline_color_blend_state_create_info.blendConstants[3] = 0.0f;  // Optional
 
+    auto desc_set_mapping = [](const RHIDescriptorSetLayoutBinding& binding) {
+        VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; // TODO: Convert description information
+        VkDescriptorSetLayoutBinding layout_binding = {};
+        layout_binding.binding = binding.binding;
+        layout_binding.descriptorType = descriptor_type;
+        layout_binding.descriptorCount = binding.count;
+        layout_binding.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
+        layout_binding.pImmutableSamplers = nullptr;  // TODO: Supports texture.
+        return layout_binding;
+    };
+
+    Array<VkDescriptorSetLayoutBinding> layout_bindings = description_.bindings.map<VkDescriptorSetLayoutBinding>(desc_set_mapping);
+
+    VkDescriptorSetLayoutCreateInfo descriptor_pool_layout_create_info = {};
+    descriptor_pool_layout_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    descriptor_pool_layout_create_info.bindingCount = layout_bindings.size();
+    descriptor_pool_layout_create_info.pBindings = layout_bindings.data();
+
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateDescriptorSetLayout(context_.device, &descriptor_pool_layout_create_info, context_.allocator, &descriptor_set_layout_))
+
     VkPipelineLayoutCreateInfo pipeline_layout_create_info = {};
     pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_create_info.setLayoutCount = 0;             // Optional
-    pipeline_layout_create_info.pSetLayouts = nullptr;          // Optional
-    pipeline_layout_create_info.pushConstantRangeCount = 0;     // Optional
-    pipeline_layout_create_info.pPushConstantRanges = nullptr;  // Optional
+    pipeline_layout_create_info.setLayoutCount = 1;           
+    pipeline_layout_create_info.pSetLayouts = &descriptor_set_layout_;        
+    pipeline_layout_create_info.pushConstantRangeCount = 0;   
+    pipeline_layout_create_info.pPushConstantRanges = nullptr;
 
     LICHT_VULKAN_CHECK(VulkanAPI::lvkCreatePipelineLayout(context_.device, &pipeline_layout_create_info, context_.allocator, &pipeline_layout_));
 
@@ -167,21 +188,21 @@ void RHIVulkanPipeline::initialize() {
 
     VkGraphicsPipelineCreateInfo graphics_pipeline_create_info = {};
     graphics_pipeline_create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    graphics_pipeline_create_info.stageCount = 2;
+    graphics_pipeline_create_info.stageCount = 2;               // TODO: Configurable
     graphics_pipeline_create_info.pVertexInputState = &vertex_input_state_create_info;
     graphics_pipeline_create_info.pInputAssemblyState = &pipeline_input_assembly_state_create_info;
     graphics_pipeline_create_info.pStages = pipeline_shader_state_create_info;
     graphics_pipeline_create_info.pViewportState = &pipeline_viewport_state_create_info;
     graphics_pipeline_create_info.pRasterizationState = &pipeline_rasterizer_state_create_info;
     graphics_pipeline_create_info.pMultisampleState = &pipeline_multisampling_state_create_info;
-    graphics_pipeline_create_info.pDepthStencilState = nullptr;  // Optional
+    graphics_pipeline_create_info.pDepthStencilState = nullptr;  // TODO: Configurable
     graphics_pipeline_create_info.pColorBlendState = &pipeline_color_blend_state_create_info;
     graphics_pipeline_create_info.pDynamicState = &pipeline_dymanic_state_create_info;
     graphics_pipeline_create_info.layout = pipeline_layout_;
     graphics_pipeline_create_info.renderPass = render_pass->get_handle();
-    graphics_pipeline_create_info.subpass = 0;
-    graphics_pipeline_create_info.basePipelineHandle = VK_NULL_HANDLE;  // Optional
-    graphics_pipeline_create_info.basePipelineIndex = -1;               // Optional
+    graphics_pipeline_create_info.subpass = 0;                          // TODO: Configurable
+    graphics_pipeline_create_info.basePipelineHandle = VK_NULL_HANDLE;  // TODO: Configurable
+    graphics_pipeline_create_info.basePipelineIndex = -1;               // TODO: Configurable
 
     LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateGraphicsPipelines(context_.device, VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, context_.allocator, &pipeline_));
 
@@ -192,6 +213,7 @@ void RHIVulkanPipeline::initialize() {
 void RHIVulkanPipeline::destroy() {
     VulkanAPI::lvkDestroyPipeline(context_.device, pipeline_, context_.allocator);
     VulkanAPI::lvkDestroyPipelineLayout(context_.device, pipeline_layout_, context_.allocator);
+    VulkanAPI::lvkDestroyDescriptorSetLayout(context_.device, descriptor_set_layout_, context_.allocator);
 }
 
 }  //namespace licht

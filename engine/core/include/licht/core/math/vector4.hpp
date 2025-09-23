@@ -89,9 +89,9 @@ R& Vector4<R>::operator[](const size_t i) {
         case 3:
             return w;
         default:
-            // TODO: Replace it for a crash method or macro.
-            LCHECK(false);
+            LCRASH("");
     }
+    return w;
 }
 
 template <Real R>
@@ -107,9 +107,9 @@ const R& Vector4<R>::operator[](size_t i) const {
         case 3:
             return w;
         default:
-            // TODO: Replace it for a crash method or macro.
-            LCHECK(false)
+            LCRASH("");
     }
+    return 0;
 }
 
 template <Real R>

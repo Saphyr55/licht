@@ -22,8 +22,11 @@ public:
     virtual void end_render_pass() override;
 
     virtual void bind_pipeline(RHIPipelineHandle pipeline) override;
+    
+    virtual void bind_descriptor_sets(RHIPipelineHandle pipeline, const Array<RHIDescriptorSetRef>& descriptor_sets) override;
 
     virtual void bind_vertex_buffers(const Array<RHIBufferHandle>& buffers) override;
+
     virtual void bind_index_buffer(RHIBufferHandle buffer) override;
 
     virtual void set_scissors(const Rect2D* scissors, uint32 count) override;

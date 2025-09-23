@@ -12,18 +12,21 @@ class RHIVulkanFramebuffer : public RHIFramebuffer {
 public:
     VkFramebuffer& get_handle();
 
+    void initialize();
+
+    void destroy();
+
 public:
-    virtual ~RHIVulkanFramebuffer() override = default;
+    RHIVulkanFramebuffer(VulkanContext& context, const RHIFramebufferDescription& description);
+    virtual ~RHIVulkanFramebuffer() override;
 
 private:
+    RHIFramebufferDescription description_;
     VkFramebuffer handle_;
+    VulkanContext& context_;
 };
 
 using RHIVulkanFramebufferRef = SharedRef<RHIVulkanFramebuffer>;
-
-void vulkan_framebuffer_init(VulkanContext& context, RHIVulkanFramebufferRef framebuffer, const RHIFramebufferDescription& description);
-
-void vulkan_framebuffer_destroy(VulkanContext& context, RHIVulkanFramebufferRef framebuffer);
 
 
 }  //namespace licht

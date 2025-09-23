@@ -6,6 +6,7 @@
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/framebuffer.hpp"
 #include "licht/rhi/pipeline/pipeline.hpp"
+#include "licht/rhi/descriptor_set.hpp"
 #include "licht/rhi/rhi_types.hpp"
 
 namespace licht {
@@ -81,6 +82,8 @@ public:
      * @param pipeline Handle to the pipeline to bind.
      */
     virtual void bind_pipeline(RHIPipelineHandle pipeline) = 0;
+
+    virtual void bind_descriptor_sets(RHIPipelineHandle pipeline, const Array<RHIDescriptorSetRef>& descriptor_sets) = 0;
 
     /**
      * @brief Bind vertex buffers for rendering.

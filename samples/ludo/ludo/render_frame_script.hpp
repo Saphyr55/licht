@@ -21,6 +21,8 @@ public:
 
     virtual void on_tick(float32 delta_time) override;
 
+    void update_uniform();
+
     void update_resized(const uint32 width, const uint32 height);
 
     void pause();
@@ -47,6 +49,8 @@ private:
     RHIBufferHandle index_buffer_;
     Array<uint32> indices_;
 
+    Array<RHIBufferHandle> uniform_buffers_;
+
     WindowHandle window_handle_;
     RHIDeviceHandle device_;
     
@@ -56,7 +60,8 @@ private:
     RHICommandQueueRef graphics_present_command_queue_;
 
     RHIRenderPassHandle render_pass_;
-    RHIPipelineHandle pipeline_;
+    RHIDescriptorPoolRef descriptor_pool_;
+    RHIPipelineHandle graphics_pipeline_;
 
     LinearAllocator framebuffer_memory_allocator_;
     RHIFramebufferRegistry framebuffers_;

@@ -16,9 +16,13 @@ public:
 
     void destroy();
 
-    VkPipeline& pipeline() { return pipeline_; };
+    VkDescriptorSetLayout get_descriptor_set_layout() {
+        return descriptor_set_layout_;
+    }
 
-    VkPipelineLayout& layout() { return pipeline_layout_; };
+    VkPipeline& get_handle() { return pipeline_; };
+
+    VkPipelineLayout& get_layout() { return pipeline_layout_; };
     
 public:
     RHIVulkanPipeline(VulkanContext& context, const RHIPipelineDescription& description);
@@ -28,6 +32,7 @@ private:
     VkPipeline pipeline_ = VK_NULL_HANDLE;
     VkPipelineLayout pipeline_layout_ = VK_NULL_HANDLE;
     RHIPipelineDescription description_;
+    VkDescriptorSetLayout descriptor_set_layout_;
 };
 
 using RHIVulkanPipelineRef = SharedRef<RHIVulkanPipeline>;

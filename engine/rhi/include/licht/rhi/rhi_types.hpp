@@ -20,11 +20,27 @@ struct Rect2D {
     float32 height = 0.0f;
 };
 
+enum class RHIShaderStage {
+    Vertex,
+    Fragment,
+    Geometry,
+    Tesselation,
+    Compute
+};
+
 enum class RHICommandBufferUsage {
     None = 0,
     OneTimeSubmit = 1 << 0,
     RenderPassContinue = 1 << 1,
     SimultaneousUse = 1 << 2,
+};
+
+enum class RHIDescriptorSetType {
+    Uniform,
+    Sampler,
+    StorageBuffer,
+    StorageImage,
+    CombinedImageSampler
 };
 
 inline RHICommandBufferUsage operator|(RHICommandBufferUsage lhs, RHICommandBufferUsage rhs) {
@@ -53,14 +69,11 @@ inline bool rhi_command_buffer_usage_has_flag(RHICommandBufferUsage value, RHICo
     return (value & flag) != RHICommandBufferUsage::None;
 }
 
-/**
- * @brief Types of hardware queues available in the RHI.
- */
 enum class RHIQueueType {
-    Unknown,   ///< Unknown or uninitialized queue type.
-    Graphics,  ///< Graphics queue, capable of rendering and presentation.
-    Compute,   ///< Compute queue.
-    Transfer,  ///< Transfer queue.
+    Unknown,
+    Graphics,
+    Compute,
+    Transfer,
 };
 
 enum class RHIVertexInputRate {

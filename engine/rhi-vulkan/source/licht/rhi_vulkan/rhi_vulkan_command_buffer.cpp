@@ -10,6 +10,7 @@
 #include "licht/rhi_vulkan/rhi_vulkan_pipeline.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_render_pass.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_command_queue.hpp"
+#include "licht/rhi_vulkan/rhi_vulkan_description_set.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
 
@@ -46,7 +47,20 @@ void RHIVulkanCommandBuffer::end() {
 
 void RHIVulkanCommandBuffer::bind_pipeline(RHIPipelineHandle pipeline) {
     RHIVulkanPipelineRef vulkan_graphics_pipeline = static_ref_cast<RHIVulkanPipeline>(pipeline);
-    VulkanAPI::lvkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, vulkan_graphics_pipeline->pipeline());
+    VulkanAPI::lvkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, vulkan_graphics_pipeline->get_handle());
+}
+
+void RHIVulkanCommandBuffer::bind_descriptor_sets(RHIPipelineHandle pipeline, const Array<RHIDescriptorSetRef>& descriptor_sets) {
+    static constexpr auto mapping_desc_set = [](const RHIDescriptorSetRef& descriptor_set) -> VkDescriptorSet {
+        RHIVulkanDescriptorSetRef vk_descriptor_set = static_ref_cast<RHIVulkanDescriptorSet>(descriptor_set);
+        return vk_descriptor_set->get_handle();
+    };
+
+    Array<VkDescriptorSet> vk_descriptor_sets = descriptor_sets.map<VkDescriptorSet>(mapping_desc_set);
+    RHIVulkanPipelineRef vk_pipeline = static_ref_cast<RHIVulkanPipeline>(pipeline);
+
+    VulkanAPI::lvkCmdBindDescriptorSets(command_buffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, 
+        vk_pipeline->get_layout(), 0, vk_descriptor_sets.size(), vk_descriptor_sets.data(), 0, nullptr);
 }
 
 void RHIVulkanCommandBuffer::bind_vertex_buffers(const Array<RHIBufferHandle>& buffers) {

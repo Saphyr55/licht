@@ -1,5 +1,6 @@
 #version 450
 
+
 // Inputs
 layout(location = 0) in vec3 in_color;
 

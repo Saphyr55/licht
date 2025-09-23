@@ -20,6 +20,9 @@ public:
     virtual void wait_fence(RHIFenceHandle fence) override;
     virtual void reset_fence(RHIFenceHandle fence) override;
     
+    virtual RHIDescriptorPoolRef create_descriptor_pool(RHIPipelineHandle pipeline, const RHIDescriptorSetInformation& information) override;
+    virtual void destroy_descriptor_pool(RHIDescriptorPoolRef descriptor_set_layout) override;
+
     virtual RHICommandAllocatorRef create_command_allocator(const RHICommandAllocatorDescription& description) override;
     virtual void destroy_command_allocator(RHICommandAllocatorRef command_allocator) override;
 
