@@ -32,7 +32,7 @@ struct RHIPipelineDescription {
     RHIPipelineShaderStageCreateInfo fragment_shader_info;
     RHIPipelineViewportStateInformation viewport_info;
     RHIPipelineVertexBindingInformation vertex_binding_info;
-    Array<RHIDescriptorSetHandle> descriptor_set_layouts;
+    Array<RHIDescriptorSetLayoutBinding> bindings;
     RHIRenderPassHandle render_pass;
 };
 

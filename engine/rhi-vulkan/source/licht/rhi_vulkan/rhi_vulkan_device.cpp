@@ -64,14 +64,15 @@ void RHIVulkanDevice::reset_fence(RHIFenceHandle fence) {
     rhi_vk_fence->set_signaled(false);
 }
 
-RHIDescriptorSetHandle RHIVulkanDevice::create_descriptor_set(const Array<RHIDescriptorSetLayoutBinding>& bindings) {
-    RHIVulkanDescriptorSetLayoutRef vkdesc = new_ref<RHIVulkanDescriptorSetLayout>(context_, bindings);
+RHIDescriptorPoolRef RHIVulkanDevice::create_descriptor_pool(RHIPipelineHandle pipeline, const RHIDescriptorSetInformation& information) {
+    RHIVulkanPipelineRef vkpileline = static_ref_cast<RHIVulkanPipeline>(pipeline);
+    RHIVulkanDescriptorPoolRef vkdesc = new_ref<RHIVulkanDescriptorPool>(context_, vkpileline->get_descriptor_set_layout(), information);
     vkdesc->initialize();
     return vkdesc;
 }
 
-void RHIVulkanDevice::destroy_descriptor_set(RHIDescriptorSetHandle desc) {
-    RHIVulkanDescriptorSetLayoutRef vkdesc = static_ref_cast<RHIVulkanDescriptorSetLayout>(desc);
+void RHIVulkanDevice::destroy_descriptor_pool(RHIDescriptorPoolRef desc) {
+    RHIVulkanDescriptorPoolRef vkdesc = static_ref_cast<RHIVulkanDescriptorPool>(desc);
     vkdesc->destroy();
 }
 

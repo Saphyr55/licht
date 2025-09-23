@@ -35,6 +35,14 @@ enum class RHICommandBufferUsage {
     SimultaneousUse = 1 << 2,
 };
 
+enum class RHIDescriptorSetType {
+    Uniform,
+    Sampler,
+    StorageBuffer,
+    StorageImage,
+    CombinedImageSampler
+};
+
 inline RHICommandBufferUsage operator|(RHICommandBufferUsage lhs, RHICommandBufferUsage rhs) {
     return static_cast<RHICommandBufferUsage>(
         static_cast<std::underlying_type<RHICommandBufferUsage>::type>(lhs) |

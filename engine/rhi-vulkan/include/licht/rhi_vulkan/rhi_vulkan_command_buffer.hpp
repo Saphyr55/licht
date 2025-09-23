@@ -23,7 +23,7 @@ public:
 
     virtual void bind_pipeline(RHIPipelineHandle pipeline) override;
     
-    virtual void bind_descriptor_sets(RHIPipelineHandle pipeline, const Array<RHIDescriptorSetHandle>& descriptor_sets) override;
+    virtual void bind_descriptor_sets(RHIPipelineHandle pipeline, const Array<RHIDescriptorSetRef>& descriptor_sets) override;
 
     virtual void bind_vertex_buffers(const Array<RHIBufferHandle>& buffers) override;
 

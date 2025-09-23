@@ -60,8 +60,8 @@ private:
     RHICommandQueueRef graphics_present_command_queue_;
 
     RHIRenderPassHandle render_pass_;
-    RHIDescriptorSetHandle uniform_layout_;
-    RHIPipelineHandle pipeline_;
+    RHIDescriptorPoolRef descriptor_pool_;
+    RHIPipelineHandle graphics_pipeline_;
 
     LinearAllocator framebuffer_memory_allocator_;
     RHIFramebufferRegistry framebuffers_;

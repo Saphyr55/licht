@@ -5,10 +5,10 @@
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/command_queue.hpp"
+#include "licht/rhi/descriptor_set.hpp"
 #include "licht/rhi/fence.hpp"
 #include "licht/rhi/framebuffer.hpp"
 #include "licht/rhi/pipeline/pipeline.hpp"
-#include "licht/rhi/descriptor_set.hpp"
 #include "licht/rhi/render_pass.hpp"
 #include "licht/rhi/semaphore.hpp"
 #include "licht/rhi/swapchain.hpp"
@@ -23,8 +23,9 @@ public:
     virtual void wait_fence(RHIFenceHandle fence) = 0;
     virtual void reset_fence(RHIFenceHandle fence) = 0;
 
-    virtual RHIDescriptorSetHandle create_descriptor_set(const Array<RHIDescriptorSetLayoutBinding>& bindings) = 0;
-    virtual void destroy_descriptor_set(RHIDescriptorSetHandle descriptor_set_layout) = 0;
+    virtual RHIDescriptorPoolRef create_descriptor_pool(RHIPipelineHandle pipeline, 
+                                                        const RHIDescriptorSetInformation& information) = 0;
+    virtual void destroy_descriptor_pool(RHIDescriptorPoolRef descriptor_set_layout) = 0;
 
     virtual RHICommandAllocatorRef create_command_allocator(const RHICommandAllocatorDescription& description) = 0;
     virtual void destroy_command_allocator(RHICommandAllocatorRef command_allocator) = 0;
@@ -42,11 +43,11 @@ public:
     virtual void destroy_graphics_pipeline(RHIPipelineHandle pipeline) = 0;
 
     virtual RHIBufferHandle create_buffer(RHIBufferDescription description) = 0;
-    virtual void destroy_buffer(RHIBufferHandle buffer) = 0; 
+    virtual void destroy_buffer(RHIBufferHandle buffer) = 0;
 
     virtual RHISwapchainHandle create_swapchain(uint32 width, uint32 height) = 0;
     virtual void recreate_swapchain(RHISwapchainHandle swapchain, uint32 width, uint32 height) = 0;
-    virtual void destroy_swapchain(RHISwapchainHandle swapchain) = 0; 
+    virtual void destroy_swapchain(RHISwapchainHandle swapchain) = 0;
 
     virtual RHIFramebufferHandle create_framebuffer(RHIRenderPassHandle render_pass,
                                                     const RHIFramebufferDescription& description) = 0;

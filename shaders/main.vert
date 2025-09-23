@@ -7,7 +7,7 @@ layout(location = 1) in vec3 in_color;
 // Outputs
 layout(location = 0) out vec3 out_frag_color;
 
-layout(std140, binding = 0) uniform UniformBufferObject {
+layout(set = 0, binding = 0) uniform UniformBufferObject {
     mat4 model;
     mat4 view;
     mat4 proj;
@@ -15,5 +15,5 @@ layout(std140, binding = 0) uniform UniformBufferObject {
 
 void main() {
     out_frag_color = in_color;
-    gl_Position = u_mvp.model * u_mvp.view * u_mvp.proj * vec4(in_position, 1.0);
+    gl_Position = u_mvp.proj * u_mvp.view * u_mvp.model * vec4(in_position, 1.0);
 }

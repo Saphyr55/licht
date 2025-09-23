@@ -132,10 +132,10 @@ Matrix4<R> Matrix4<R>::perspective(const Real auto& view,
                                    const Real auto& far_) {
     Mat result(0);
 
-    const R tanHalfFovy = rtan(view / static_cast<R>(2));
+    const R tan_half_fovy = rtan(view / static_cast<R>(2.0));
 
-    result[0][0] = R(1) / (tanHalfFovy * aspect);
-    result[1][1] = R(1) / tanHalfFovy;
+    result[0][0] = R(1) / (tan_half_fovy * aspect);
+    result[1][1] = R(1) / tan_half_fovy;
     result[2][2] = R(-far_ - near_) / (far_ - near_);
     result[3][2] = -R(2 * near_ * far_) / (far_ - near_);
     result[2][3] = -R(1);
@@ -249,13 +249,13 @@ Matrix4<R> Matrix4<R>::operator*(const Mat& m) const {
 template <Real R>
 Vector4<R> Matrix4<R>::operator*(const Vector4<R>& v) const {
     return Vec((*this)[0][0] * v[0] + (*this)[0][1] * v[1] +
-                   (*this)[0][2] * v[2] + (*this)[0][3] * v[3],
+               (*this)[0][2] * v[2] + (*this)[0][3] * v[3],
                (*this)[1][0] * v[0] + (*this)[1][1] * v[1] +
-                   (*this)[1][2] * v[2] + (*this)[1][3] * v[3],
+               (*this)[1][2] * v[2] + (*this)[1][3] * v[3],
                (*this)[2][0] * v[0] + (*this)[2][1] * v[1] +
-                   (*this)[2][2] * v[2] + (*this)[2][3] * v[3],
+               (*this)[2][2] * v[2] + (*this)[2][3] * v[3],
                (*this)[3][0] * v[0] + (*this)[3][1] * v[1] +
-                   (*this)[3][2] * v[2] + (*this)[3][3] * v[3]);
+               (*this)[3][2] * v[2] + (*this)[3][3] * v[3]);
 }
 
 template <Real R>
