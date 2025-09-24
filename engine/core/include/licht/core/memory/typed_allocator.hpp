@@ -25,75 +25,75 @@ public:
         AllocatorType*>;
 
 public:
-    ElementType* allocate(size_t n)
+    constexpr ElementType* allocate(size_t n)
         requires(ownership == MemoryOwnership::Owner)
     {
         return static_cast<ElementType*>(
             allocator_.allocate(n * sizeof(ElementType), alignof(ElementType)));
     }
 
-    ElementType* allocate(size_t n)
+    constexpr ElementType* allocate(size_t n)
         requires(ownership == MemoryOwnership::NonOwner)
     {
         return static_cast<ElementType*>(
             allocator_->allocate(n * sizeof(ElementType), alignof(ElementType)));
     }
 
-    void deallocate(ElementType* element, size_t n)
+    constexpr void deallocate(ElementType* element, size_t n)
         requires(ownership == MemoryOwnership::Owner)
     {
         allocator_.deallocate(element, n * sizeof(ElementType), alignof(ElementType));
     }
 
-    void deallocate(ElementType* element, size_t n)
+    constexpr void deallocate(ElementType* element, size_t n)
         requires(ownership == MemoryOwnership::NonOwner)
     {
         allocator_->deallocate(element, n * sizeof(ElementType), alignof(ElementType));
     }
 
-    ElementType* allocate(size_t n, size_t alignment)
+    constexpr ElementType* allocate(size_t n, size_t alignment)
         requires(ownership == MemoryOwnership::Owner)
     {
         return static_cast<ElementType*>(
             allocator_.allocate(n * sizeof(ElementType), alignment));
     }
 
-    ElementType* allocate(size_t n, size_t alignment)
+    constexpr ElementType* allocate(size_t n, size_t alignment)
         requires(ownership == MemoryOwnership::NonOwner)
     {
         return static_cast<ElementType*>(
             allocator_->allocate(n * sizeof(ElementType), alignment));
     }
 
-    void deallocate(ElementType* element, size_t n, size_t alignment)
+    constexpr void deallocate(ElementType* element, size_t n, size_t alignment)
         requires(ownership == MemoryOwnership::Owner)
     {
         allocator_.deallocate(element, n * sizeof(ElementType), alignment);
     }
 
-    void deallocate(ElementType* element, size_t n, size_t alignment)
+    constexpr void deallocate(ElementType* element, size_t n, size_t alignment)
         requires(ownership == MemoryOwnership::NonOwner)
     {
         allocator_->deallocate(element, n * sizeof(ElementType), alignment);
     }
 
-    bool is_valid() const
+    constexpr bool is_valid() const
         requires(ownership == MemoryOwnership::NonOwner)
     {
         return allocator_ != nullptr;
     }
 
-    bool is_valid() const
+    constexpr bool is_valid() const
         requires(ownership == MemoryOwnership::Owner)
     {
         return true;
     }
 
-    bool is_owner() const {
+    constexpr bool is_owner() const {
         return ownership == MemoryOwnership::Owner;
     }
 
-    void set_allocator(AllocatorType& allocator) {
+    constexpr void set_allocator(AllocatorType& allocator) {
         if constexpr (ownership == MemoryOwnership::Owner) {
             allocator_ = allocator;
         } else {
@@ -102,7 +102,7 @@ public:
     }
 
 protected:
-    AllocatorType& get_allocator() {
+    constexpr AllocatorType& get_allocator() {
         if constexpr (ownership == MemoryOwnership::Owner) {
             return allocator_;
         } else {
@@ -111,41 +111,41 @@ protected:
     }
 
 public:
-    TypedAllocator() = default;
+    constexpr TypedAllocator() = default;
 
-    TypedAllocator(AllocatorType* memory)
+    constexpr TypedAllocator(AllocatorType* memory)
         requires(ownership == MemoryOwnership::NonOwner)
         : allocator_(memory) {}
 
-    TypedAllocator(AllocatorType& memory)
+    constexpr TypedAllocator(AllocatorType& memory)
         requires(ownership == MemoryOwnership::NonOwner)
         : allocator_(&memory) {}
 
-    TypedAllocator(size_t size)
+    constexpr TypedAllocator(size_t size)
         requires(ownership == MemoryOwnership::Owner)
         : allocator_(size) {}
 
-    ~TypedAllocator() = default;
+    constexpr ~TypedAllocator() = default;
 
-    TypedAllocator(const TypedAllocator& other)
+    constexpr TypedAllocator(const TypedAllocator& other)
         requires(ownership == MemoryOwnership::Owner)
         : allocator_(other.allocator_) {}
 
-    TypedAllocator(const TypedAllocator& other)
+    constexpr TypedAllocator(const TypedAllocator& other)
         requires(ownership == MemoryOwnership::NonOwner)
         : allocator_(other.allocator_) {}
 
-    TypedAllocator(TypedAllocator&& other) noexcept
+    constexpr TypedAllocator(TypedAllocator&& other) noexcept
         requires(ownership == MemoryOwnership::Owner)
         : allocator_(std::move(other.allocator_)) {}
 
-    TypedAllocator(TypedAllocator&& other) noexcept
+    constexpr TypedAllocator(TypedAllocator&& other) noexcept
         requires(ownership == MemoryOwnership::NonOwner)
         : allocator_(other.allocator_) {
         other.allocator_ = nullptr;
     }
 
-    TypedAllocator& operator=(const TypedAllocator& other) {
+    constexpr TypedAllocator& operator=(const TypedAllocator& other) {
         if (this != &other) {
             if constexpr (ownership == MemoryOwnership::Owner) {
                 allocator_ = other.allocator_;
@@ -156,7 +156,7 @@ public:
         return *this;
     }
 
-    TypedAllocator& operator=(TypedAllocator&& other) noexcept
+    constexpr TypedAllocator& operator=(TypedAllocator&& other) noexcept
         requires(ownership == MemoryOwnership::Owner)
     {
         if (this != &other) {
@@ -165,7 +165,7 @@ public:
         return *this;
     }
 
-    TypedAllocator& operator=(TypedAllocator&& other) noexcept
+    constexpr TypedAllocator& operator=(TypedAllocator&& other) noexcept
         requires(ownership == MemoryOwnership::NonOwner)
     {
         if (this != &other) {
@@ -175,7 +175,7 @@ public:
         return *this;
     }
 
-    bool operator==(const TypedAllocator& other) const {
+    constexpr bool operator==(const TypedAllocator& other) const {
         if constexpr (ownership == MemoryOwnership::Owner) {
             return &allocator_ == &other.allocator_;
         } else {
@@ -183,7 +183,7 @@ public:
         }
     }
 
-    bool operator!=(const TypedAllocator& other) const {
+    constexpr bool operator!=(const TypedAllocator& other) const {
         return !(*this == other);
     }
 

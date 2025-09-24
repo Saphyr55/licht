@@ -34,3 +34,6 @@ includes("engine/rhi-vulkan")
 
 -- Sample sources --
 includes("samples/ludo")
+
+-- Third Party -- 
+includes("third_party")

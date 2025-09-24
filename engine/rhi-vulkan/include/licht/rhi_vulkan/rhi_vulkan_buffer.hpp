@@ -1,5 +1,6 @@
 #pragma once
 
+#include "licht/core/containers/array.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/rhi_types.hpp"
@@ -25,6 +26,12 @@ public:
 
     virtual void update(const void* data, size_t size, size_t offset = 0) override;
 
+    VkMemoryRequirements get_memory_requirements();
+    
+    VkMemoryPropertyFlags get_memory_property_flags();
+    
+    Array<uint32> get_queue_family_indices();
+    
     void initialize();
 
     void destroy();

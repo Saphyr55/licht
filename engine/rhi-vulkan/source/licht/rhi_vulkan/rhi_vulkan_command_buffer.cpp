@@ -116,7 +116,6 @@ void RHIVulkanCommandBuffer::copy_buffer(RHIBufferHandle source, RHIBufferHandle
     buffer_copy.dstOffset = command.destination_offset;
     buffer_copy.size = command.size;
     VulkanAPI::lvkCmdCopyBuffer(command_buffer_, vksource->get_handle(), vkdestination->get_handle(), 1, &buffer_copy);
-
 }
 
 void RHIVulkanCommandBuffer::begin_render_pass(const RHIRenderPassBeginInfo& begin_info) {

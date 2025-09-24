@@ -52,9 +52,4 @@ public:
     virtual ~RHICommandQueue() = default;
 };
 
-/**
- * @brief Shared reference type for RHICommandQueue.
- */
-using RHICommandQueueRef = SharedRef<RHICommandQueue>;
-
 }  // namespace licht

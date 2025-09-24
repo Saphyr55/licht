@@ -3,6 +3,7 @@
 #include <concepts>
 #include <memory>
 
+#include "licht/core/memory/deleter.hpp"
 #include "licht/core/memory/reference_counter.hpp"
 
 namespace licht {
@@ -42,7 +43,7 @@ public:
         return reference_counter_->is_unique();
     }
 
-    template <typename DeleterType = std::default_delete<ResourceType>>
+    template <typename DeleterType = DefaultDeleter<ResourceType>>
     void reset(ResourceType* resource = nullptr,
                DeleterType deleter = DeleterType()) {
         release_shared_reference();

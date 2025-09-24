@@ -1,12 +1,9 @@
 #pragma once
 
-#include "licht/core/defines.hpp"
-#include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/string/string_ref.hpp"
 #include "licht/rhi/buffer.hpp"
-#include "licht/rhi/pipeline/compiled_shader.hpp"
-#include "licht/rhi/render_pass.hpp"
 #include "licht/rhi/descriptor_set.hpp"
+#include "licht/rhi/pipeline/compiled_shader.hpp"
 #include "licht/rhi/rhi_types.hpp"
 
 namespace licht {
@@ -38,8 +35,8 @@ struct RHIPipelineDescription {
 
 class RHIPipeline {
 public:
+    virtual ~RHIPipeline() = default;
 };
 
-using RHIPipelineHandle = SharedRef<RHIPipeline>;
 
 }

@@ -1,9 +1,8 @@
 #pragma once
 
+#include "licht/core/containers/array.hpp"
 #include "licht/core/defines.hpp"
-#include "licht/core/memory/shared_ref.hpp"
-#include "licht/rhi/render_pass.hpp"
-#include "licht/rhi/texture.hpp"
+#include "licht/rhi/rhi_fowards.hpp"
 
 namespace licht {
 
@@ -20,6 +19,5 @@ public:
     virtual ~RHIFramebuffer() = default;
 };
 
-using RHIFramebufferHandle = SharedRef<RHIFramebuffer>;
 
 }  //namespace licht

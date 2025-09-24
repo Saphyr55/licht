@@ -10,12 +10,12 @@ template <typename DeleterType>
 class DeleterHolder {
 public:
     template <typename ResourceType>
-    void invoke_deleter(ResourceType* resource) {
-        deleter_.destroy(resource);
+    void invoke_deleter(ResourceType* resource) noexcept {
+        deleter_(resource);
     }
 
-    explicit DeleterHolder(DeleterType&& deleter)
-        : deleter_(std::move(deleter)) {}
+    explicit DeleterHolder(const DeleterType& deleter)
+        : deleter_(deleter) {}
 
 private:
     DeleterType deleter_;
@@ -24,11 +24,11 @@ private:
 template <typename ResourceType>
 class DefaultDeleter {
 public:
-    void operator()(ResourceType* ptr) const { destroy(ptr); }
+    void operator()(ResourceType* resource) noexcept { destroy(resource); }
 
-    void destroy(ResourceType* ptr) const {
-        if (ptr) {
-            ::delete ptr;
+    void destroy(ResourceType* resource) noexcept {
+        if (resource) {
+            Memory::delete_resource(resource);
         }
     }
 

@@ -91,7 +91,7 @@ R& Vector4<R>::operator[](const size_t i) {
         default:
             LCRASH("");
     }
-    return w;
+    return x;
 }
 
 template <Real R>
@@ -109,7 +109,7 @@ const R& Vector4<R>::operator[](size_t i) const {
         default:
             LCRASH("");
     }
-    return 0;
+    return x;
 }
 
 template <Real R>

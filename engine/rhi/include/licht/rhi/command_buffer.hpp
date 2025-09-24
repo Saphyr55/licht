@@ -1,17 +1,12 @@
 #pragma once
 
-#include "licht/core/containers/array_view.hpp"
+#include "licht/core/containers/array.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/memory/shared_ref.hpp"
-#include "licht/rhi/buffer.hpp"
-#include "licht/rhi/framebuffer.hpp"
-#include "licht/rhi/pipeline/pipeline.hpp"
-#include "licht/rhi/descriptor_set.hpp"
 #include "licht/rhi/rhi_types.hpp"
+#include "licht/rhi/rhi_fowards.hpp"
 
 namespace licht {
-
-class RHICommandQueue;
 
 /**
  * @brief Base type for all RHI commands.
@@ -123,12 +118,6 @@ public:
     virtual ~RHICommandBuffer() = default;
 };
 
-/**
- * @brief Shared reference type for RHICommandBuffer.
- */
-using RHICommandBufferHandle = SharedRef<RHICommandBuffer>;
-
-
 struct RHICommandAllocatorDescription {
     SharedRef<RHICommandQueue> command_queue;
     uint32 count = 0;
@@ -157,10 +146,5 @@ public:
      */
     virtual ~RHICommandAllocator() = default;
 };
-
-/**
- * @brief Shared reference type for RHICommandAllocator.
- */
-using RHICommandAllocatorRef = SharedRef<RHICommandAllocator>;
 
 }  // namespace licht

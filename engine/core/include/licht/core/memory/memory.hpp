@@ -39,12 +39,12 @@ class Memory {
 public:
     template <typename ResourceType>
     static ResourceType* new_resource(auto... args) noexcept {
-        return new (licht::MemoryCategory::General) ResourceType(std::forward<decltype(args)>(args)...);
+        return ::new (MemoryCategory::General) ResourceType(std::forward<decltype(args)>(args)...);
     }
 
     template <typename ResourceType>
     static void delete_resource(ResourceType* resource) noexcept {
-        delete resource;
+        ::delete resource;
     }
 
     /**

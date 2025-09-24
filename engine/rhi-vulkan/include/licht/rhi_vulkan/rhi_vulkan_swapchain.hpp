@@ -5,7 +5,6 @@
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/rhi/rhi_types.hpp"
 #include "licht/rhi/swapchain.hpp"
-#include "licht/rhi/texture.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_render_surface.hpp"
 
 #include <vulkan/vulkan_core.h>

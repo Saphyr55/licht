@@ -55,7 +55,6 @@ public:
     virtual const Array<RHITextureViewHandle>& get_texture_views() = 0;
 };
 
-using RHISwapchainHandle = SharedRef<RHISwapchain>;
 
 inline RHISemaphoreHandle RHIFrameContext::current_frame_available_semaphore() {
     return frame_available_semaphores[current_frame]; 

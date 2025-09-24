@@ -2,6 +2,7 @@
 
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/rhi/rhi_types.hpp"
+#include "licht/rhi/rhi_fowards.hpp"
 
 namespace licht {
 
@@ -14,7 +15,6 @@ struct RHITextureDescription {
     RHIFormat format;
 };
 
-using RHITextureHandle = SharedRef<RHITexture>;
 
 struct RHITextureViewDescription {
     RHITextureHandle texture;
@@ -25,7 +25,5 @@ class RHITextureView {
 public:
     virtual ~RHITextureView() = default;
 };
-
-using RHITextureViewHandle = SharedRef<RHITextureView>;
 
 }  //namespace licht

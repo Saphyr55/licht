@@ -2,7 +2,8 @@
 
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/rhi/texture.hpp"
-#include "vulkan/vulkan_core.h"
+
+#include <vulkan/vulkan_core.h>
 
 namespace licht {
 
@@ -24,6 +25,9 @@ private:
 };
 
 class RHIVulkanTextureView : public RHITextureView {
+public:
+    static RHIVulkanTextureView create(VkImageView view);
+
 public:
     VkImageView& get_handle() {
         return handle_;

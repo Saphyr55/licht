@@ -11,6 +11,5 @@ public:
     virtual ~RHIFence() = default;
 };
 
-using RHIFenceHandle = SharedRef<RHIFence>;
 
 }  //namespace licht

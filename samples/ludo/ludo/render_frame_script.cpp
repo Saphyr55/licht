@@ -1,5 +1,6 @@
 #include "render_frame_script.hpp"
 #include "licht/rhi/descriptor_set.hpp"
+#include "licht/rhi/rhi_fowards.hpp"
 #include "ludo_types.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/io/file_handle.hpp"
@@ -14,11 +15,12 @@
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/rhi_module.hpp"
 #include "licht/rhi/rhi_types.hpp"
+#include "licht/rhi/command_queue.hpp"
 
 #include <chrono>
-#include <cstddef>
 
 namespace licht {
+
 
 RenderFrameScript::RenderFrameScript()
     : window_handle_(Display::InvalidWindowHandle)
@@ -216,126 +218,15 @@ void RenderFrameScript::on_startup() {
         }
     }
 
-    // -- Buffers --
-    {   
-        RHIBufferHandle staging_position_buffer;
-        RHIBufferHandle staging_color_buffer;
-        RHIBufferHandle staging_index_buffer;
+    // -- Device Buffers --
+    {
+        RHIDeviceMemoryUploader uploader(device_, 3);
 
-        // Positions
-        {
-            RHIBufferDescription staging_position_buffer_description = {};
-            staging_position_buffer_description.access_mode = RHIAccessMode::Shared;
-            staging_position_buffer_description.usage = RHIBufferUsage::TransferSrc;
-            staging_position_buffer_description.memory_usage = RHIBufferMemoryUsage::Host;
-            staging_position_buffer_description.size = sizeof(Vector3f) * positions_.size();
-
-            staging_position_buffer = device_->create_buffer(staging_position_buffer_description);
-            staging_position_buffer->update(positions_.data(), sizeof(Vector3f) * positions_.size());
-
-            RHIBufferDescription position_buffer_description = {};
-            position_buffer_description.access_mode = RHIAccessMode::Shared;
-            position_buffer_description.usage = RHIBufferUsage::Vertex | RHIBufferUsage::TransferDst;
-            position_buffer_description.memory_usage = RHIBufferMemoryUsage::Device;
-            position_buffer_description.size = sizeof(Vector3f) * positions_.size();
-
-            position_buffer_ = device_->create_buffer(position_buffer_description);
-        }
-
-        // Colors
-        {
-            RHIBufferDescription staging_color_buffer_description = {};
-            staging_color_buffer_description.access_mode = RHIAccessMode::Shared;
-            staging_color_buffer_description.usage = RHIBufferUsage::TransferSrc;
-            staging_color_buffer_description.memory_usage = RHIBufferMemoryUsage::Host;
-            staging_color_buffer_description.size = sizeof(Vector3f) * colors_.size();
-
-            staging_color_buffer = device_->create_buffer(staging_color_buffer_description);
-            staging_color_buffer->update(colors_.data(), sizeof(Vector3f)* colors_.size());
-
-            RHIBufferDescription color_buffer_description = {};
-            color_buffer_description.access_mode = RHIAccessMode::Shared;
-            color_buffer_description.usage = RHIBufferUsage::Vertex | RHIBufferUsage::TransferDst;
-            color_buffer_description.memory_usage = RHIBufferMemoryUsage::Device;
-            color_buffer_description.size = sizeof(Vector3f) * colors_.size();
-
-            color_buffer_ = device_->create_buffer(color_buffer_description);
-        }
-
-        // Indices
-        {
-            RHIBufferDescription staging_index_buffer_description = {};
-            staging_index_buffer_description.access_mode = RHIAccessMode::Shared;
-            staging_index_buffer_description.usage = RHIBufferUsage::TransferSrc;
-            staging_index_buffer_description.memory_usage = RHIBufferMemoryUsage::Host;
-            staging_index_buffer_description.size = sizeof(uint32) * indices_.size();
-
-            staging_index_buffer = device_->create_buffer(staging_index_buffer_description);
-            staging_index_buffer->update(indices_.data(), sizeof(uint32) * indices_.size());
-
-            RHIBufferDescription index_buffer_description = {};
-            index_buffer_description.access_mode = RHIAccessMode::Shared;
-            index_buffer_description.usage = RHIBufferUsage::Index | RHIBufferUsage::TransferDst;
-            index_buffer_description.memory_usage = RHIBufferMemoryUsage::Device;
-            index_buffer_description.size = sizeof(uint32) * indices_.size();
-
-            index_buffer_ = device_->create_buffer(index_buffer_description);
-        }
-
-        // -- Upload Data from Standing Buffers to Device Buffers --
-        {
-            // Fetch transfer queue.
-            const Array<RHICommandQueueRef>& command_queues = device_->get_command_queues();
-            RHICommandQueueRef* transfer_queue_ptr = command_queues.get_if([](RHICommandQueueRef queue) {
-                return queue->get_type() == RHIQueueType::Transfer;
-                });
-            LCHECK_MSG(transfer_queue_ptr, "Found no transfer command queue.");
-            RHICommandQueueRef transfer_queue = *transfer_queue_ptr;
-
-            RHICommandAllocatorDescription transfer_command_allocator_desc = {};
-            transfer_command_allocator_desc.count = 1;  // One command buffer allocated.
-            transfer_command_allocator_desc.command_queue = transfer_queue;
-
-            RHICommandAllocatorRef transfer_command_allocator_ = device_->create_command_allocator(transfer_command_allocator_desc);
-
-            // Open a transfer command buffer
-            RHICommandBufferHandle transfer_cmd = transfer_command_allocator_->open();
-            transfer_command_allocator_->reset_command_buffer(transfer_cmd);
-
-            transfer_cmd->begin();
-            {
-                // Copy positions
-                RHIBufferCopyCommand position_copy = {};
-                position_copy.size = sizeof(Vector3f) * positions_.size();
-                transfer_cmd->copy_buffer(staging_position_buffer, position_buffer_, position_copy);
-
-                // Copy colors
-                RHIBufferCopyCommand color_copy = {};
-                color_copy.size = sizeof(Vector3f) * colors_.size();
-                transfer_cmd->copy_buffer(staging_color_buffer, color_buffer_, color_copy);
-
-                // Copy indices
-                RHIBufferCopyCommand indices_copy = {};
-                indices_copy.size = sizeof(uint32) * indices_.size();
-                transfer_cmd->copy_buffer(staging_index_buffer, index_buffer_, indices_copy);
-            }
-            transfer_cmd->end();
-
-            // Submit and wait for transfer to complete
-            RHIFenceHandle upload_fence = device_->create_fence();
-            device_->reset_fence(upload_fence);
-            transfer_queue->submit({ transfer_cmd }, {}, {}, upload_fence);
-
-            device_->wait_fence(upload_fence);
-            device_->destroy_fence(upload_fence);
-
-            // Standing buffers no longer needed after data upload
-            device_->destroy_buffer(staging_position_buffer);
-            device_->destroy_buffer(staging_color_buffer);
-            device_->destroy_buffer(staging_index_buffer);
-
-            device_->destroy_command_allocator(transfer_command_allocator_);
-        }
+        position_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsage::Vertex, positions_));
+        color_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsage::Vertex, colors_));
+        index_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsage::Index, indices_));
+        
+        uploader.upload();
     }
 
     // -- Uniform Buffers --
