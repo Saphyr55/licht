@@ -39,7 +39,7 @@ public:
     virtual RHIBufferHandle create_buffer(RHIBufferDescription description) = 0;
     virtual void destroy_buffer(RHIBufferHandle buffer) = 0;
 
-    virtual RHISwapchainHandle create_swapchain(uint32 width, uint32 height) = 0;
+    virtual RHISwapchainHandle create_swapchain(uint32 width, uint32 height, uint32 image_count) = 0;
     virtual void recreate_swapchain(RHISwapchainHandle swapchain, uint32 width, uint32 height) = 0;
     virtual void destroy_swapchain(RHISwapchainHandle swapchain) = 0;
 

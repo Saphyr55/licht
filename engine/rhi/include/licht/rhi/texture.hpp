@@ -1,6 +1,5 @@
 #pragma once
 
-#include "licht/core/memory/shared_ref.hpp"
 #include "licht/rhi/rhi_types.hpp"
 #include "licht/rhi/rhi_fowards.hpp"
 

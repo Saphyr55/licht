@@ -2,7 +2,6 @@
 
 #include "licht/core/platform/display_message_handler.hpp"
 #include "licht/core/platform/window_handle.hpp"
-#include "licht/rhi/rhi_module.hpp"
 #include "render_frame_script.hpp"
 
 using namespace licht;

@@ -41,7 +41,7 @@ public:
     virtual RHIBufferHandle create_buffer(RHIBufferDescription description) override;
     virtual void destroy_buffer(RHIBufferHandle buffer) override; 
 
-    virtual RHISwapchainHandle create_swapchain(uint32 width, uint32 height) override;
+    virtual RHISwapchainHandle create_swapchain(uint32 width, uint32 height, uint32 image_count) override;
     virtual void recreate_swapchain(RHISwapchainHandle swapchain, uint32 width, uint32 height) override;
     virtual void destroy_swapchain(RHISwapchainHandle swapchain) override; 
 

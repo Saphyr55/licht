@@ -1,4 +1,5 @@
 #include "licht/rhi_vulkan/rhi_vulkan_swapchain.hpp"
+#include "licht/core/defines.hpp"
 #include "licht/core/math/common_math.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/memory/shared_ref_cast.hpp"
@@ -12,11 +13,13 @@
 
 namespace licht {
 
-uint32 vulkan_swapchain_count_image(const VkSurfaceCapabilitiesKHR& capabilities) {
-    uint32 image_count = capabilities.minImageCount + 1;
-
+uint32 vulkan_swapchain_count_image(const VkSurfaceCapabilitiesKHR& capabilities, uint32 required_image_count) {
+    uint32 image_count = required_image_count;
+    
     if (capabilities.maxImageCount > 0 && image_count > capabilities.maxImageCount) {
         image_count = capabilities.maxImageCount;
+    } else if (image_count < capabilities.minImageCount) {
+        image_count = capabilities.minImageCount + 1;
     }
 
     return image_count;
@@ -56,9 +59,10 @@ VkSurfaceFormatKHR vulkan_choose_swasurface_format(const Array<VkSurfaceFormatKH
     return available_surface_formats[0];
 }
 
-RHIVulkanSwapchain::RHIVulkanSwapchain(VulkanContext& context, uint32 width, uint32 height)
+RHIVulkanSwapchain::RHIVulkanSwapchain(VulkanContext& context, uint32 width, uint32 height, uint32 image_count)
     : context_(context)
-    , extent_({width, height}) {
+    , extent_({width, height})
+    , image_count_(image_count) {
 }
 
 RHIFormat RHIVulkanSwapchain::get_format() {
@@ -100,7 +104,7 @@ void RHIVulkanSwapchain::initialize() {
     VkSurfaceFormatKHR surface_format = vulkan_choose_swasurface_format(swapchain_support_details.surface_formats);
     VkPresentModeKHR present_mode = vulkan_choose_swapresent_mode(swapchain_support_details.present_modes);
     VkExtent2D extent = vulkan_choose_swapchain_extent(extent_, swapchain_support_details.capabilities);
-    uint32 image_count = vulkan_swapchain_count_image(swapchain_support_details.capabilities);
+    uint32 image_count = vulkan_swapchain_count_image(swapchain_support_details.capabilities, image_count_);
 
     VkSwapchainCreateInfoKHR swapchain_create_info = {};
     swapchain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -135,8 +139,8 @@ void RHIVulkanSwapchain::initialize() {
 
     LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateSwapchainKHR(context_.device, &swapchain_create_info, context_.allocator, &handle_));
 
-    image_count = 0;
-    VulkanAPI::lvkGetSwapchainImagesKHR(context_.device, handle_, &image_count, nullptr);
+    image_count = 0;  
+    VulkanAPI::lvkGetSwapchainImagesKHR(context_.device, handle_, &image_count, images_.data());
 
     images_.resize(image_count);
     texture_views_.reserve(image_count);

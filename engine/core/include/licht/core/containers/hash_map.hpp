@@ -344,6 +344,10 @@ public:
         size_ = 0;
     }
 
+    bool empty() const {
+        return size_ == 0;
+    }
+
     size_t size() const {
         return size_;
     }

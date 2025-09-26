@@ -2,7 +2,7 @@
 
 #ifdef _WIN32
 
-#include <windows.h>
+#include "licht/core/platform/windows/windows.hpp"
 
 #include "licht/core/defines.hpp"
 #include "licht/core/platform/dynamic_library.hpp"

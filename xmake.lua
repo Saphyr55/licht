@@ -27,6 +27,7 @@ end
 
 -- Engine sources --
 includes("engine/core")
+includes("engine/messaging")
 includes("engine/engine")
 includes("engine/launcher")
 includes("engine/rhi")

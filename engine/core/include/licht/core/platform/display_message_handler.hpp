@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include "licht/core/platform/input.hpp"
 #include "licht/core/platform/window_handle.hpp"
 #include "licht/core/core_exports.hpp"
