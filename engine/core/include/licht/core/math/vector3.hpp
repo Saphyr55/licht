@@ -1,6 +1,6 @@
 #pragma once
 
-#include "licht/core/math/common_math.hpp"
+#include "licht/core/math/math.hpp"
 #include "licht/core/math/vector2.hpp"
 
 namespace licht {
@@ -18,14 +18,14 @@ struct Vector3 {
 
     auto dot(const Vector3& vec) const;
 
-    Vector3 operator*(const Real auto&) const;
+    Vector3 operator*(const Real auto&) const;    
     Vector3 operator+(const Real auto&) const;
     Vector3 operator-(const Real auto&) const;
     Vector3 operator*(const Vector3& vec) const;
     Vector3 operator+(const Vector3& vec) const;
     Vector3 operator-(const Vector3& vec) const;
     Vector3 operator-() const;
-
+    
     constexpr bool operator==(const Vector3& other) const {
         return x == other.x && y == other.y && z == other.z;
     }

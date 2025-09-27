@@ -68,8 +68,8 @@ void RHIVulkanPipeline::initialize() {
     pipeline_rasterizer_state_create_info.polygonMode = VK_POLYGON_MODE_FILL;
     pipeline_rasterizer_state_create_info.lineWidth = 1.0f;
     pipeline_rasterizer_state_create_info.cullMode = VK_CULL_MODE_BACK_BIT;
-    // pipeline_rasterizer_state_create_info.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-    pipeline_rasterizer_state_create_info.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    pipeline_rasterizer_state_create_info.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    // pipeline_rasterizer_state_create_info.frontFace = VK_FRONT_FACE_CLOCKWISE;
     pipeline_rasterizer_state_create_info.depthBiasEnable = VK_FALSE;
     pipeline_rasterizer_state_create_info.depthBiasConstantFactor = 0.0f;  // Optional
     pipeline_rasterizer_state_create_info.depthBiasClamp = 0.0f;           // Optional

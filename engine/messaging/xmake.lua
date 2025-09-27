@@ -1,5 +1,5 @@
 
-target("licht.messagin", function()
+target("licht.messaging", function()
     set_kind("shared")
     set_group("engine")
 

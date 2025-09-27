@@ -1,7 +1,7 @@
 #pragma once
 
 #include "licht/core/defines.hpp"
-#include "licht/core/math/common_math.hpp"
+#include "licht/core/math/math.hpp"
 #include "licht/core/math/vector3.hpp"
 #include "licht/core/math/vector4.hpp"
 
@@ -52,26 +52,12 @@ private:
 };
 
 using Matrix4f = Matrix4<float32>;
-using Matrix4f32 = Matrix4<float32>;
-using Matrix4f64 = Matrix4<float64>;
+using Matrix4d = Matrix4<float64>;
 
 template <Real R>
 Matrix4<R> Matrix4<R>::identity() {
     return Matrix4(1);
 }
-
-/*
-template <Real R>
-std::array<R, 4 * 4> Matrix4<R>::ValueArray(const Mat& mat) {
-    std::array<R, 4 * 4> content;
-    for (int8 i = 0; i < 4; i++) {
-        for (int8 j = 0; j < 4; j++) {
-            content[i * 4 + j] = mat[i][j];
-        }
-    }
-    return content;
-}
-*/
 
 template <Real R>
 Matrix4<R> Matrix4<R>::translate(const Mat& mat, const Vector3<R>& vec) {
@@ -90,8 +76,8 @@ template <Real R>
 Matrix4<R> Matrix4<R>::rotate(const Mat& mat,
                               const Real auto& theta,
                               const Vector3<R>& vec) {
-    auto c = rcos(theta);
-    auto s = rsin(theta);
+    auto c = Math::cos(theta);
+    auto s = Math::sin(theta);
     auto v = Vector3<R>::normalize(vec);
 
     return mat * Mat(c + v.x * v.x * (1 - c), v.x * v.y * (1 - c) - v.z * s,
@@ -105,23 +91,23 @@ Matrix4<R> Matrix4<R>::rotate(const Mat& mat,
 template <Real R>
 Matrix4<R> Matrix4<R>::rotate_x(const float32& theta) {
     return Mat(Vector4<R>(1, 0, 0, 0),
-               Vector4<R>(0, rcos(theta), rsin(theta), 0),
-               Vector4<R>(0, -rsin(theta), rcos(theta), 0),
+               Vector4<R>(0, Math::cos(theta), Math::sin(theta), 0),
+               Vector4<R>(0, -Math::sin(theta), Math::cos(theta), 0),
                Vector4<R>(0, 0, 0, 1));
 }
 
 template <Real R>
 Matrix4<R> Matrix4<R>::rotate_y(const float32& theta) {
-    return Mat(Vector4<R>(rcos(theta), 0, -rsin(theta), 0),
+    return Mat(Vector4<R>(Math::cos(theta), 0, -Math::sin(theta), 0),
                Vector4<R>(0, 1, 0, 0),
-               Vector4<R>(rsin(theta), 0, rcos(theta), 0),
+               Vector4<R>(Math::sin(theta), 0, Math::cos(theta), 0),
                Vector4<R>(0, 0, 0, 1));
 }
 
 template <Real R>
 Matrix4<R> Matrix4<R>::rotate_z(const float32& theta) {
-    return Matrix4<R>(Vector4<R>(rcos(theta), rsin(theta), 0, 0),
-                      Vector4<R>(-rsin(theta), rcos(theta), 0, 0),
+    return Matrix4<R>(Vector4<R>(Math::cos(theta), Math::sin(theta), 0, 0),
+                      Vector4<R>(-Math::sin(theta), Math::cos(theta), 0, 0),
                       Vector4<R>(0, 0, 1, 0), Vector4<R>(0, 0, 0, 1));
 }
 
@@ -132,7 +118,7 @@ Matrix4<R> Matrix4<R>::perspective(const Real auto& view,
                                    const Real auto& far_) {
     Mat result(0);
 
-    const R tan_half_fovy = rtan(view / static_cast<R>(2.0));
+    const R tan_half_fovy = Math::tan(view / static_cast<R>(2.0));
 
     result[0][0] = R(1) / (tan_half_fovy * aspect);
     result[1][1] = R(1) / tan_half_fovy;
@@ -249,13 +235,13 @@ Matrix4<R> Matrix4<R>::operator*(const Mat& m) const {
 template <Real R>
 Vector4<R> Matrix4<R>::operator*(const Vector4<R>& v) const {
     return Vec((*this)[0][0] * v[0] + (*this)[0][1] * v[1] +
-               (*this)[0][2] * v[2] + (*this)[0][3] * v[3],
+                   (*this)[0][2] * v[2] + (*this)[0][3] * v[3],
                (*this)[1][0] * v[0] + (*this)[1][1] * v[1] +
-               (*this)[1][2] * v[2] + (*this)[1][3] * v[3],
+                   (*this)[1][2] * v[2] + (*this)[1][3] * v[3],
                (*this)[2][0] * v[0] + (*this)[2][1] * v[1] +
-               (*this)[2][2] * v[2] + (*this)[2][3] * v[3],
+                   (*this)[2][2] * v[2] + (*this)[2][3] * v[3],
                (*this)[3][0] * v[0] + (*this)[3][1] * v[1] +
-               (*this)[3][2] * v[2] + (*this)[3][3] * v[3]);
+                   (*this)[3][2] * v[2] + (*this)[3][3] * v[3]);
 }
 
 template <Real R>

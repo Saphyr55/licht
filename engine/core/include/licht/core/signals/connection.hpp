@@ -1,5 +1,7 @@
 #pragma once
 
+#include "licht/core/core_exports.hpp"
+
 namespace licht {
 
 template <typename... ArgumentTypes>
@@ -15,6 +17,7 @@ public:
     size_t get_id() const;
 
 public:
+    Connection() = default;
     Connection(size_t id, Signal<ArgumentTypes...>* signal);
     ~Connection();
 
@@ -25,9 +28,9 @@ public:
     Connection& operator=(Connection&& other) noexcept = default;
 
 private:
-    size_t id_;
-    Signal<ArgumentTypes...>* signal_;
-    bool connected_;
+    size_t id_ = 0;
+    Signal<ArgumentTypes...>* signal_ = nullptr;
+    bool connected_ = false;
 };
 
 template <typename... Args>
@@ -55,7 +58,7 @@ Connection<ArgumentTypes...>::Connection(size_t id, Signal<ArgumentTypes...>* si
 
 template <typename... Args>
 Connection<Args...>::~Connection() {
-    disconnect();
+    // disconnect();
 }
 
 }  //namespace licht

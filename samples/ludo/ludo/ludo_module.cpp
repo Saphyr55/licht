@@ -1,6 +1,8 @@
 #include "ludo_module.hpp"
+#include "licht/core/platform/input.hpp"
 #include "ludo_message_handler.hpp"
 #include "render_frame_script.hpp"
+#include "camera.hpp"
 
 #include <licht/core/defines.hpp>
 #include <licht/core/memory/shared_ref.hpp>
@@ -49,9 +51,13 @@ int32 ludo_application_launch(int32 argc, const char** argv) {
     // TODO: Startup and shutdown must be launched automatically after refactoring the engine loop.
     rhi_module->on_startup();
 
-    // Create and start the render frame script.
-    RenderFrameScript render_frame_script;
-    render_frame_script.on_startup();
+    Camera camera(Vector3f(2.0f, 2.0f, 2.0f), Vector3f(-2.0f, -2.0f, -2.0f), Vector3f(0.0f, 0.0f, 1.0f));
+
+    auto conn = Input::on_mouse_move.connect([&camera](const MouseMove& mouse_move) -> void {
+        camera.look_around(mouse_move.pos_rel_x, mouse_move.pos_rel_y);
+    });
+
+    RenderFrameScript render_frame_script(&camera);
 
     // By creating a DisplayMessageHandler, you can intercept the platform and window events.
     SharedRef<DemoMessageHandler> demo_message_handler = new_ref<DemoMessageHandler>();
@@ -64,12 +70,15 @@ int32 ludo_application_launch(int32 argc, const char** argv) {
     // We use global variable for the loop.
     // TODO: Must externalize the loop.
     g_is_running = true;
-    
+
+    render_frame_script.on_startup();
+
     // Main loop
     while (g_is_running) {
-
         // Handle window and platform events
         display.handle_events(); 
+
+        camera_update_position(camera);
 
         // Tick the render frame script with a fixed delta time (0.0f for now)
         render_frame_script.on_tick(0.0f);
@@ -79,6 +88,8 @@ int32 ludo_application_launch(int32 argc, const char** argv) {
     // TODO: Need to be done by a manager
     render_frame_script.on_shutdown();
     rhi_module->on_shutdown();
+    
+    conn.disconnect();
 
     return EXIT_SUCCESS;
 }

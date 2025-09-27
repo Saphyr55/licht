@@ -2,7 +2,7 @@
 #include "licht/core/defines.hpp"
 #include "licht/core/io/file_handle.hpp"
 #include "licht/core/io/file_system.hpp"
-#include "licht/core/math/common_math.hpp"
+#include "licht/core/math/math.hpp"
 #include "licht/core/math/matrix4.hpp"
 #include "licht/core/math/vector3.hpp"
 #include "licht/core/modules/module_registry.hpp"
@@ -16,13 +16,14 @@
 #include "licht/rhi/rhi_module.hpp"
 #include "licht/rhi/rhi_types.hpp"
 #include "ludo_types.hpp"
-
+#include "ludo_message_handler.hpp"
+#include "camera.hpp"
 
 #include <chrono>
 
 namespace licht {
 
-RenderFrameScript::RenderFrameScript()
+RenderFrameScript::RenderFrameScript(Camera* camera)
     : window_handle_(Display::InvalidWindowHandle)
     , device_(nullptr)
     , swapchain_(nullptr)
@@ -33,10 +34,14 @@ RenderFrameScript::RenderFrameScript()
     , graphics_command_allocator_(nullptr)
     , frame_context_()
     , pause_(false)
+    , camera_(camera)
     , window_resized_(false) {
 }
 
 void RenderFrameScript::on_startup() {
+
+    RenderFrameScript* self = this;
+
     ModuleRegistry& registry = ModuleRegistry::get_instance();
     RHIModule* module = registry.get_module<RHIModule>(RHIModule::ModuleName);
 
@@ -391,9 +396,11 @@ void RenderFrameScript::update_uniform() {
     float32 aspect_ratio = swapchain_->get_width() / static_cast<float32>(swapchain_->get_height());
 
     UniformBufferObject ubo;
-    ubo.model = Matrix4f::rotate(ubo.model, time * radians(90.0f), Vector3f(0.0f, 0.0f, 1.0f));
-    ubo.view = Matrix4f::look_at(Vector3f(2.0f, 2.0f, 2.0f), Vector3f(0.0f, 0.0f, 0.0f), Vector3f(0.0f, 0.0f, 1.0f));
-    ubo.proj = Matrix4f::perspective(radians(45.0f), aspect_ratio, 0.0f, 10.0f);
+    ubo.model = Matrix4f::translate(ubo.model, Vector3f(-1.0f, 1.0f, -2.0f));
+    // ubo.model = Matrix4f::rotate(ubo.model, time * Math::radians(90.0f), Vector3f(0.0f, 0.0f, 1.0f));
+    ubo.view = Matrix4f::translate(ubo.model, Vector3f(0.0f, 0.0f, 0.0f));
+    ubo.proj = Matrix4f::perspective(Math::radians(75.0f), aspect_ratio, 0.0f, 10000.0f);
+
     ubo.proj[1][1] *= -1.0f;
 
     uniform_buffers_[frame_context_.current_frame]->update(&ubo, sizeof(UniformBufferObject), 0);

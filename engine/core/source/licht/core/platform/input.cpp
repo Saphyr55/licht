@@ -2,6 +2,17 @@
 
 namespace licht {
 
+Signal<const Key&> Input::on_key_down;
+Signal<const Key&> Input::on_key_up;
+Signal<const Key&> Input::on_key_pressed;
+Signal<const Key&> Input::on_key_release;
+Signal<const MouseMove&> Input::on_mouse_move;
+Signal<const MouseWheel&> Input::on_mouse_wheel;
+std::set<Key> Input::keys_dow_;
+std::set<Key> Input::keys_up_;
+Array<Key> Input::keys_pressed_;
+Array<Key> Input::keys_release_;
+
 StringRef key_to_string(Key key) {
     switch (key) {
         case Key::A: return "A";

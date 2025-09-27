@@ -3,6 +3,8 @@
 #include "licht/core/math/vector3.hpp"
 #include "licht/core/memory/linear_allocator.hpp"
 #include "licht/core/platform/window_handle.hpp"
+#include "licht/core/platform/input.hpp"
+#include "licht/core/signals/signal.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/device.hpp"
@@ -11,6 +13,8 @@
 #include "licht/rhi/swapchain.hpp"
 
 namespace licht {
+
+class Camera;
 
 class RenderFrameScript {
 public:
@@ -32,12 +36,15 @@ private:
     void reset();
 
 public:
-    RenderFrameScript();
+    RenderFrameScript(Camera* camera);
     ~RenderFrameScript() = default;
 
 private:
     using RHIFramebufferAllocator = TypedLinearAllocator<RHIFramebufferHandle, MemoryOwnership::NonOwner>;
     using RHIFramebufferRegistry = Array<RHIFramebufferHandle, RHIFramebufferAllocator>;
+        
+    Camera* camera_;
+    Signal<Key>::connection_t camera_move_connection_;
 
     RHIBufferHandle position_buffer_;
     Array<Vector3f> positions_;

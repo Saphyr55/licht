@@ -1,6 +1,6 @@
 #pragma once
 
-#include "licht/core/math/common_math.hpp"
+#include "licht/core/math/math.hpp"
 #include "licht/core/math/vector3.hpp"
 
 namespace licht {
@@ -59,8 +59,8 @@ Matrix3<R> Matrix3<R>::scale(Mat mat, Vector3<R> vec) {
 
 template <Real R>
 Matrix3<R> Matrix3<R>::rotate(Mat mat, const Real auto& theta, Vector3<R> vec) {
-    auto c = rcos(theta);
-    auto s = rsin(theta);
+    auto c = Math::cos(theta);
+    auto s = Math::sin(theta);
     auto v = Vector3<R>::Normalize(vec);
 
     return mat * Mat(
@@ -73,23 +73,23 @@ template <Real R>
 Matrix3<R> Matrix3<R>::rotate_x(const float32 theta) {
     return Mat(
         Vector3<R>(1, 0, 0),
-        Vector3<R>(0, rcos(theta), rsin(theta)),
-        Vector3<R>(0, -rsin(theta), rcos(theta)));
+        Vector3<R>(0, Math::cos(theta), Math::sin(theta)),
+        Vector3<R>(0, -Math::sin(theta), Math::cos(theta)));
 }
 
 template <Real R>
 Matrix3<R> Matrix3<R>::rotate_y(const float32 theta) {
     return Mat(
-        Vector3<R>(rcos(theta), 0, -rsin(theta)),
+        Vector3<R>(Math::cos(theta), 0, -Math::sin(theta)),
         Vector3<R>(0, 1, 0),
-        Vector3<R>(rsin(theta), 0, rcos(theta)));
+        Vector3<R>(Math::sin(theta), 0, Math::cos(theta)));
 }
 
 template <Real R>
 Matrix3<R> Matrix3<R>::rotate_z(const float32 theta) {
     return Matrix3<R>(
-        Vector3<R>(rcos(theta), rsin(theta), 0),
-        Vector3<R>(-rsin(theta), rcos(theta), 0),
+        Vector3<R>(Math::cos(theta), Math::sin(theta), 0),
+        Vector3<R>(-Math::sin(theta), Math::cos(theta), 0),
         Vector3<R>(0, 0, 1));
 }
 

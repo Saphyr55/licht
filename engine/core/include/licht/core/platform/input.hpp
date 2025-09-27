@@ -1,11 +1,24 @@
 #pragma once
 
 #include "licht/core/defines.hpp"
+#include "licht/core/signals/signal.hpp"
 #include "licht/core/string/string_ref.hpp"
 
+#include <set>
 
 namespace licht {
- 
+
+struct MouseMove {
+    float32 pos_rel_x;
+    float32 pos_rel_y;
+    float32 pos_x;
+    float32 pos_y;
+};
+
+struct MouseWheel {
+    float32 delta;
+};
+
 enum class Button : uint8 {
     Left = 1,
     Middle = 2,
@@ -133,5 +146,41 @@ enum class Key : uint32 {
 };
 
 LICHT_CORE_API StringRef key_to_string(Key p_key);
+
+class LICHT_CORE_API Input {
+public:
+    static Signal<const Key&> on_key_down;
+    static Signal<const Key&> on_key_up;
+    static Signal<const Key&> on_key_pressed;
+    static Signal<const Key&> on_key_release;
+
+    static Signal<const MouseMove&> on_mouse_move;
+    static Signal<const MouseWheel&> on_mouse_wheel;
+
+    // TODO: static Signal<const Button&> on_button_down;
+    // TODO: static Signal<const Button&> on_button_up;
+    // TODO: static Signal<const Button&> on_button_pressed;
+    // TODO: static Signal<const Button&> on_button_release;
+
+    static bool key_is_down(Key key);
+    static bool key_is_up(Key key);
+    static bool key_is_pressed(Key key);
+    static bool key_is_release(Key key);
+
+    // TODO: static bool button_is_down(Key key);
+    // TODO: static bool button_is_up(Key key);
+    // TODO: static bool button_is_pressed(Key key);
+    // TODO: static bool button_is_release(Key key);
+
+    static std::set<Key> keys_dow_;
+    static std::set<Key> keys_up_;
+    static Array<Key> keys_release_;
+    static Array<Key> keys_pressed_;
+    
+    // TODO: static std::set<Key> buttons_dow_;
+    // TODO: static std::set<Key> buttons_up_;
+    // TODO: static Array<Key>    buttons_release_;
+    // TODO: static Array<Key>    buttons_pressed_;
+};
 
 }  //namespace licht

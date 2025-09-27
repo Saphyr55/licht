@@ -1,6 +1,5 @@
 #include "licht/rhi_vulkan/rhi_vulkan_swapchain.hpp"
-#include "licht/core/defines.hpp"
-#include "licht/core/math/common_math.hpp"
+#include "licht/core/math/math.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/memory/shared_ref_cast.hpp"
 #include "licht/rhi/texture.hpp"
@@ -13,29 +12,26 @@
 
 namespace licht {
 
-uint32 vulkan_swapchain_count_image(const VkSurfaceCapabilitiesKHR& capabilities, uint32 required_image_count) {
-    uint32 image_count = required_image_count;
-    
+uint32 vulkan_swapchain_count_image(const VkSurfaceCapabilitiesKHR& capabilities) {
+    uint32 image_count = capabilities.minImageCount + 1;
+
     if (capabilities.maxImageCount > 0 && image_count > capabilities.maxImageCount) {
         image_count = capabilities.maxImageCount;
-    } else if (image_count < capabilities.minImageCount) {
-        image_count = capabilities.minImageCount + 1;
     }
 
     return image_count;
 }
 
 VkExtent2D vulkan_choose_swapchain_extent(VkExtent2D extent, const VkSurfaceCapabilitiesKHR& capabilities) {
-    
     if (capabilities.currentExtent.width != UINT32_MAX) {
         extent = capabilities.currentExtent;
     }
-    
+
     VkExtent2D min = capabilities.minImageExtent;
     VkExtent2D max = capabilities.maxImageExtent;
 
-    extent.width = clamp(extent.width, min.width, max.width);
-    extent.height = clamp(extent.height, min.height, max.height);
+    extent.width = Math::clamp(extent.width, min.width, max.width);
+    extent.height = Math::clamp(extent.height, min.height, max.height);
 
     return extent;
 }
@@ -104,12 +100,12 @@ void RHIVulkanSwapchain::initialize() {
     VkSurfaceFormatKHR surface_format = vulkan_choose_swasurface_format(swapchain_support_details.surface_formats);
     VkPresentModeKHR present_mode = vulkan_choose_swapresent_mode(swapchain_support_details.present_modes);
     VkExtent2D extent = vulkan_choose_swapchain_extent(extent_, swapchain_support_details.capabilities);
-    uint32 image_count = vulkan_swapchain_count_image(swapchain_support_details.capabilities, image_count_);
+    uint32 min_image_count = vulkan_swapchain_count_image(swapchain_support_details.capabilities);
 
     VkSwapchainCreateInfoKHR swapchain_create_info = {};
     swapchain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     swapchain_create_info.surface = context_.surface->get_handle();
-    swapchain_create_info.minImageCount = image_count;
+    swapchain_create_info.minImageCount = min_image_count;
     swapchain_create_info.imageFormat = surface_format.format;
     swapchain_create_info.imageColorSpace = surface_format.colorSpace;
     swapchain_create_info.imageExtent = extent;
@@ -139,8 +135,12 @@ void RHIVulkanSwapchain::initialize() {
 
     LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateSwapchainKHR(context_.device, &swapchain_create_info, context_.allocator, &handle_));
 
-    image_count = 0;  
-    VulkanAPI::lvkGetSwapchainImagesKHR(context_.device, handle_, &image_count, images_.data());
+    uint32 image_count = 0;
+    VulkanAPI::lvkGetSwapchainImagesKHR(context_.device, handle_, &image_count, nullptr);
+
+    if (image_count_ >= image_count) {
+        image_count_ = image_count;
+    }
 
     images_.resize(image_count);
     texture_views_.reserve(image_count);
@@ -188,9 +188,8 @@ void RHIVulkanSwapchain::destroy() {
 }
 
 void RHIVulkanSwapchain::acquire_next_frame(RHIFrameContext& context) {
-    
     SharedRef<RHIVulkanSemaphore> frame_available_semaphore = static_ref_cast<RHIVulkanSemaphore>(context.current_frame_available_semaphore());
-    
+
     VkResult acquire_next_image_result = VulkanAPI::lvkAcquireNextImageKHR(context_.device, handle_, UINT64_MAX, frame_available_semaphore->get_handle(), VK_NULL_HANDLE, &context.frame_index);
     switch (acquire_next_image_result) {
         case VK_SUCCESS: {
@@ -205,10 +204,10 @@ void RHIVulkanSwapchain::acquire_next_frame(RHIFrameContext& context) {
         case VK_ERROR_OUT_OF_DATE_KHR: {
             context.out_of_date = true;
             return;
-        } 
+        }
         default: {
             LICHT_VULKAN_CHECK(acquire_next_image_result);
-            return; 
+            return;
         }
     }
 }

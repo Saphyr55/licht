@@ -1,5 +1,8 @@
 #pragma once
 
+#include <functional>
+#include "licht/core/trace/trace.hpp"
+#include "licht/core/signals/connection.hpp"
 #include "licht/core/containers/array.hpp"
 #include "licht/core/containers/hash_map.hpp"
 #include "licht/core/function/function_ref.hpp"
@@ -8,19 +11,19 @@
 namespace licht {
 
 template <typename... ArgumentTypes>
-class Connection;
-
-template <typename... ArgumentTypes>
 class Signal {
 public:
+    using connection_t = Connection<ArgumentTypes...>;
+
+public:
     template <typename Callable>
-    Connection<ArgumentTypes...> connect(Callable&& callable);
+    connection_t connect(Callable&& callable);
 
     template <typename ObjectType>
-    Connection<ArgumentTypes...> connect(ObjectType* object, void (ObjectType::*method)(ArgumentTypes...));
+    connection_t connect(ObjectType* object, void (ObjectType::*method)(ArgumentTypes...));
 
     template <typename ObjectType>
-    Connection<ArgumentTypes...> connect(SharedRef<ObjectType> object, void (ObjectType::*method)(ArgumentTypes...));
+    connection_t connect(SharedRef<ObjectType> object, void (ObjectType::*method)(ArgumentTypes...));
 
     void emit(ArgumentTypes... args);
 
@@ -49,35 +52,36 @@ private:
 
 private:
     size_t next_id_ = 1;
-    HashMap<size_t, FunctionRef<void(ArgumentTypes...)>> handlers_;
+    HashMap<size_t, std::function<void(ArgumentTypes...)>> handlers_;
     Array<size_t> pending_removals_;
     bool emitting_ = false;
 };
 
 template <typename... ArgumentTypes>
 template <typename Callable>
-Connection<ArgumentTypes...> Signal<ArgumentTypes...>::connect(Callable&& callable) {
+auto Signal<ArgumentTypes...>::connect(Callable&& callable) -> connection_t {
     size_t id = next_id_++;
-    handlers_[id] = std::forward<Callable>(callable);
-    return Connection<ArgumentTypes...>(id, *this);
+    handlers_[id] = [callable = std::move(callable)](ArgumentTypes... args) mutable -> void {
+        callable(std::forward<ArgumentTypes>(args)...);
+    };
+    return Connection<ArgumentTypes...>(id, this);
 }
 
 template <typename... ArgumentTypes>
 template <typename ObjectType>
-Connection<ArgumentTypes...> Signal<ArgumentTypes...>::connect(ObjectType* object, void (ObjectType::*method)(ArgumentTypes...)) {
-    return connect([object, method](ArgumentTypes... args) {
-        (object->*method)(std::forward<ArgumentTypes>(args)...);
-    });
-}
-
-template <typename... ArgumentTypes>
-template <typename ObjectType>
-Connection<ArgumentTypes...> Signal<ArgumentTypes...>::connect(SharedRef<ObjectType> object, void (ObjectType::*method)(ArgumentTypes...)) {
-    return connect([&object, method](ArgumentTypes... args) {
-        if (auto* shared_obj = &object) {
-            (shared_obj->*method)(std::forward<ArgumentTypes>(args)...);
+auto Signal<ArgumentTypes...>::connect(ObjectType* object, void (ObjectType::*method)(ArgumentTypes...)) -> connection_t {
+    auto callback = [object, method](ArgumentTypes... args) {
+        if (object) {
+            (object->*method)(args...);
         }
-    });
+    };
+    return connect(callback);
+}
+
+template <typename... ArgumentTypes>
+template <typename ObjectType>
+auto Signal<ArgumentTypes...>::connect(SharedRef<ObjectType> object, void (ObjectType::*method)(ArgumentTypes...)) -> connection_t {
+    return connect(object.get_resource(), method);
 }
 
 template <typename... ArgumentTypes>
@@ -88,12 +92,8 @@ void Signal<ArgumentTypes...>::emit(ArgumentTypes... args) {
 
     emitting_ = true;
 
-    HashMap<size_t, FunctionRef<void(ArgumentTypes...)>> handlers_copy = handlers_;
-
-    for (auto& [id, handler] : handlers_copy) {
-        if (handlers_.contains(id)) {
-            handler(std::forward<ArgumentTypes>(args)...);
-        }
+    for (auto& [id, handler] : handlers_) {
+        handler(std::forward<ArgumentTypes>(args)...);
     }
 
     emitting_ = false;
@@ -130,7 +130,7 @@ void Signal<Args...>::disconnect_all() {
 template <typename... Args>
 void Signal<Args...>::cleanup_pending() {
     for (size_t id : pending_removals_) {
-        handlers_.erase(id);
+        handlers_.remove(id);
     }
     pending_removals_.clear();
 }

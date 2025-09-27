@@ -1,10 +1,11 @@
 #pragma once
 
 #include "licht/core/modules/module.hpp"
+#include "message_exports.hpp"
 
 namespace licht {
 
-class MessageModule : public Module {
+class LICHT_MESSAGING_API MessageModule : public Module {
 public:
     virtual void on_load() = 0;
 

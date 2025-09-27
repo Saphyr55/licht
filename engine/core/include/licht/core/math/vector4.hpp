@@ -63,7 +63,7 @@ auto Vector4<R>::dot(const Vector4& vec) const {
 
 template <Real R>
 float32 Vector4<R>::norm(Vector4 vec) {
-    return rsqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z + vec.w * vec.w);
+    return Math::sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z + vec.w * vec.w);
 }
 
 template <Real R>

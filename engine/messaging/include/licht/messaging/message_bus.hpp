@@ -1,25 +1,33 @@
 #pragma once
 
 #include "licht/core/containers/hash_map.hpp"
-#include "licht/core/function/callable.hpp"
-#include "licht/core/function/function_ref.hpp"
-#include "licht/core/string/string_ref.hpp"
+#include "licht/core/memory/shared_ref.hpp"
+#include "licht/messaging/message.hpp"
+#include "licht/messaging/message_receiver.hpp"
+#include "licht/messaging/message_exports.hpp"
 
 namespace licht {
 
-class MessageBus {
+class LICHT_MESSAGING_API MessageBus {
 public:
     static MessageBus& get_instance();
+
+    void register_receiver(const MessageAddress& address, const SharedRef<MessageReceiver>& receiver);
+
+    void unregister_receiver(const MessageAddress& address);
+
+    void send(const MessageAddress& address, const SharedRef<Message>& message);
+
+    void dispatch(const MessageAddress& address);
+
+    void process_messages();
+
+    MessageBus();
+    ~MessageBus() = default;
     
-    template<typename Signature>
-    void register_handler(StringRef channel, FunctionRef<Signature>&& function);
-
-    void register_handler(StringRef channel, Callable* callable);
-
 private:
-    HashMap<StringRef, Callable*> channel_registry_; 
+    HashMap<MessageAddress, Array<SharedRef<MessageReceiver>>> receivers_;
+    Array<SharedRef<MessageContext>> pending_messages_; 
 };
 
 }
-
-#include "message_bus.inl"

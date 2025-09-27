@@ -317,6 +317,14 @@ public:
         return e ? &e->entry.value : nullptr;
     }
 
+    ValueType& get_or_add(const KeyType& key, const ValueType& value) {
+        auto* cvalue = get_ptr(key);
+        if (cvalue) {
+            return *cvalue;
+        }
+        return put(key, value).value;
+    }
+    
     const ValueType& get(const KeyType& key) const {
         const ElementType* e = find_element(key);
         LCHECK_MSG(e, "HashMap: key not found");
@@ -462,9 +470,6 @@ private:
     }
 
     void initialize_buckets() {
-        if (capacity_ == 0) {
-            capacity_ = 1;
-        }
         buckets_ = new ElementType*[capacity_];
         Memory::write(buckets_, 0, sizeof(ElementType*) * capacity_);
     }
@@ -479,8 +484,8 @@ private:
 private:
     ElementType** buckets_;
     AllocatorType allocator_;
-    size_t size_;
-    size_t capacity_;
+    size_t size_ = 0;
+    size_t capacity_ = 1;
     static constexpr float64 load_factor_ = 0.75;
 };
 
