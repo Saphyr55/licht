@@ -53,22 +53,22 @@ public:
         return other;
     }
 
-    const_reference front() const {
+    constexpr const_reference front() const {
         LCHECK_MSG(!empty(), "Call front with an empty array.");
         return data_[0];
     }
 
-    reference front() {
+    constexpr reference front() {
         LCHECK_MSG(!empty(), "Call front with an empty array.");
         return data_[0];
     }
 
-    const_reference back() const {
+    constexpr const_reference back() const {
         LCHECK_MSG(!empty(), "Call front with an empty array.");
         return data_[size_ - 1];
     }
 
-    reference back() {
+    constexpr reference back() {
         LCHECK_MSG(!empty(), "Call front with an empty array.");
         return data_[size_ - 1];
     }
@@ -132,7 +132,7 @@ public:
         return size() == 0;
     }
 
-    void clear() {
+    constexpr void clear() {
         for (size_type i = 0; i < size_; i++) {
             data_[i].~ElementType();
         }
@@ -141,14 +141,8 @@ public:
     }
 
     void remove(const ElementType& value) {
-        remove(value, [](auto& p_1, auto& p_2) -> int32 {
-            if (p_1 == p_2) {
-                return 0;
-            } else if (p_1 > p_2) {
-                return 1;
-            } else {
-                return -1;
-            }
+        remove(value, [](auto& p_1, auto& p_2) -> bool {
+            return (p_1 == p_2);
         });
     }
 
@@ -204,11 +198,11 @@ public:
         std::swap(allocator_, other.allocator_);
     }
 
-    inline const ElementType* data() const {
+    inline constexpr const ElementType* data() const {
         return data_;
     }
 
-    inline ElementType* data() {
+    inline constexpr  ElementType* data() {
         return data_;
     }
 
@@ -294,7 +288,7 @@ public:
         other.data_ = nullptr;
     }
 
-    ~Array() {
+    constexpr ~Array() {
         if (data_) {
             clear();
             allocator_deallocate(data_, capacity_);
@@ -392,13 +386,13 @@ private:
         }
     }
 
-    inline ElementType* allocator_allocate(size_type n) {
+    inline constexpr ElementType* allocator_allocate(size_type n) {
         ElementType* elements = allocator_.allocate(n);
         LCHECK(elements);
         return elements;
     }
 
-    void allocator_deallocate(ElementType* p, size_type n) {
+    constexpr void allocator_deallocate(ElementType* p, size_type n) {
         if (p) {
             allocator_.deallocate(p, n);
         }

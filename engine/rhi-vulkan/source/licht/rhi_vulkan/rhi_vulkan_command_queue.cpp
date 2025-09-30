@@ -84,7 +84,7 @@ void RHIVulkanCommandQueue::present(RHISwapchainHandle swapchain, RHIFrameContex
 
     VkSwapchainKHR swapchains[] = {vk_swapchain->get_handle()};
 
-    VkPresentInfoKHR present_info{};
+    VkPresentInfoKHR present_info = {};
     present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     present_info.waitSemaphoreCount = 1;
     present_info.pWaitSemaphores = &vksemaphore;

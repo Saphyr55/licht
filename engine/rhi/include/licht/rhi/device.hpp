@@ -1,18 +1,12 @@
 #pragma once
 
 #include "licht/core/defines.hpp"
-#include "licht/core/memory/shared_ref.hpp"
-#include "licht/rhi/buffer.hpp"
 #include "licht/rhi/command_buffer.hpp"
-#include "licht/rhi/command_queue.hpp"
-#include "licht/rhi/descriptor_set.hpp"
-#include "licht/rhi/fence.hpp"
 #include "licht/rhi/framebuffer.hpp"
 #include "licht/rhi/pipeline/pipeline.hpp"
-#include "licht/rhi/render_pass.hpp"
-#include "licht/rhi/semaphore.hpp"
-#include "licht/rhi/swapchain.hpp"
+#include "licht/rhi/rhi_fowards.hpp"
 #include "licht/rhi/texture.hpp"
+#include "licht/rhi/render_pass.hpp"
 
 namespace licht {
 
@@ -45,7 +39,7 @@ public:
     virtual RHIBufferHandle create_buffer(RHIBufferDescription description) = 0;
     virtual void destroy_buffer(RHIBufferHandle buffer) = 0;
 
-    virtual RHISwapchainHandle create_swapchain(uint32 width, uint32 height) = 0;
+    virtual RHISwapchainHandle create_swapchain(uint32 width, uint32 height, uint32 image_count) = 0;
     virtual void recreate_swapchain(RHISwapchainHandle swapchain, uint32 width, uint32 height) = 0;
     virtual void destroy_swapchain(RHISwapchainHandle swapchain) = 0;
 
@@ -61,7 +55,5 @@ public:
 
     virtual Array<RHICommandQueueRef> get_command_queues() = 0;
 };
-
-using RHIDeviceHandle = SharedRef<RHIDevice>;
 
 }  //namespace licht

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "licht/core/math/common_math.hpp"
+#include "licht/core/math/math.hpp"
 #include "licht/core/math/vector2.hpp"
 
 namespace licht {
@@ -26,6 +26,14 @@ struct Vector3 {
     Vector3 operator-(const Vector3& vec) const;
     Vector3 operator-() const;
 
+    Vector3& operator+=(const Vector3& vec);
+    Vector3& operator-=(const Vector3& vec);
+    Vector3& operator*=(const Vector3& vec);
+    Vector3& operator+=(const Real auto& t);
+    Vector3& operator-=(const Real auto& t);
+    Vector3& operator*=(const Real auto& t);
+    Vector3& operator/=(const Real auto& t);
+
     constexpr bool operator==(const Vector3& other) const {
         return x == other.x && y == other.y && z == other.z;
     }
@@ -34,10 +42,11 @@ struct Vector3 {
         return !(*this == other);
     }
 
-    static float32 length(const Vector3<R>& vec);
-    static Vector3 normalize(const Vector3<R>& vec);
-    static Vector3 cross(const Vector3<R>& v1, const Vector3<R>& v2);
-    static auto dot(const Vector3& v1, const Vector3& v2);
+    static constexpr Vector3 forward();
+    static constexpr float32 length(const Vector3<R>& vec);
+    static constexpr Vector3 normalize(const Vector3<R>& vec);
+    static constexpr Vector3 cross(const Vector3<R>& v1, const Vector3<R>& v2);
+    static constexpr auto dot(const Vector3& v1, const Vector3& v2);
 };
 
 using Vector3f = Vector3<float32>;
@@ -62,25 +71,30 @@ constexpr Vector3<R>::Vector3(R r)
 }
 
 template <Real R>
-float32 Vector3<R>::length(const Vector3& vec) {
-    return std::sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+constexpr Vector3<R> Vector3<R>::forward() {
+    return Vector3<R>(R(0.0), R(0.0), R(1.0));
 }
 
 template <Real R>
-Vector3<R> Vector3<R>::normalize(const Vector3& vec) {
+constexpr float32 Vector3<R>::length(const Vector3& vec) {
+    return Math::sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+}
+
+template <Real R>
+constexpr Vector3<R> Vector3<R>::normalize(const Vector3& vec) {
     auto l = length(vec);
     return Vector3(vec.x / l, vec.y / l, vec.z / l);
 }
 
 template <Real R>
-Vector3<R> Vector3<R>::cross(const Vector3& v1, const Vector3& v2) {
-    return Vector3((v1.y * v2.z - v1.z * v2.y) * 1, 0, 0) -
-           Vector3(0, (v1.x * v2.z - v1.z * v2.x) * 1, 0) -
-           Vector3(0, 0, (v1.x * v2.y - v1.y * v2.x) * 1);
+constexpr Vector3<R> Vector3<R>::cross(const Vector3& v1, const Vector3& v2) {
+    return Vector3((v1.y * v2.z - v1.z * v2.y), 0, 0) -
+           Vector3(0, (v1.x * v2.z - v1.z * v2.x), 0) -
+           Vector3(0, 0, (v1.x * v2.y - v1.y * v2.x));
 }
 
 template <Real R>
-auto Vector3<R>::dot(const Vector3& v1, const Vector3& v2) {
+constexpr auto Vector3<R>::dot(const Vector3& v1, const Vector3& v2) {
     return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
 
@@ -124,4 +138,60 @@ Vector3<R> Vector3<R>::operator-(const Vector3& vec) const {
     return Vector3{vec.x - x, vec.y - y, vec.z - z};
 }
 
-}  //namespace licht
+template <Real R>
+Vector3<R>& Vector3<R>::operator+=(const Vector3& vec) {
+    x += vec.x;
+    y += vec.y;
+    z += vec.z;
+    return *this;
+}
+
+template <Real R>
+Vector3<R>& Vector3<R>::operator-=(const Vector3& vec) {
+    x -= vec.x;
+    y -= vec.y;
+    z -= vec.z;
+    return *this;
+}
+
+template <Real R>
+Vector3<R>& Vector3<R>::operator*=(const Vector3& vec) {
+    x *= vec.x;
+    y *= vec.y;
+    z *= vec.z;
+    return *this;
+}
+
+template <Real R>
+Vector3<R>& Vector3<R>::operator+=(const Real auto& t) {
+    x += t;
+    y += t;
+    z += t;
+    return *this;
+}
+
+template <Real R>
+Vector3<R>& Vector3<R>::operator-=(const Real auto& t) {
+    x -= t;
+    y -= t;
+    z -= t;
+    return *this;
+}
+
+template <Real R>
+Vector3<R>& Vector3<R>::operator*=(const Real auto& t) {
+    x *= t;
+    y *= t;
+    z *= t;
+    return *this;
+}
+
+template <Real R>
+Vector3<R>& Vector3<R>::operator/=(const Real auto& t) {
+    x /= t;
+    y /= t;
+    z /= t;
+    return *this;
+}
+
+}  // namespace licht

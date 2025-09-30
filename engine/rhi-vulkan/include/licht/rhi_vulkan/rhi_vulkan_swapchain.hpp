@@ -5,7 +5,6 @@
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/rhi/rhi_types.hpp"
 #include "licht/rhi/swapchain.hpp"
-#include "licht/rhi/texture.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_render_surface.hpp"
 
 #include <vulkan/vulkan_core.h>
@@ -54,7 +53,7 @@ public:
     }
 
 public:
-    RHIVulkanSwapchain(VulkanContext& context, uint32 width, uint32 height);
+    RHIVulkanSwapchain(VulkanContext& context, uint32 width, uint32 height, uint32 image_count);
 
 private:
     VulkanSwapchainSupportDetails query_support_details();
@@ -66,6 +65,7 @@ private:
     Array<VkImage> images_;
     Array<RHITextureViewHandle> texture_views_;
     VkSwapchainKHR handle_ = VK_NULL_HANDLE;
+    uint32 image_count_;
 };
 
 using RHIVulkanSwapchainRef = SharedRef<RHIVulkanSwapchain>;

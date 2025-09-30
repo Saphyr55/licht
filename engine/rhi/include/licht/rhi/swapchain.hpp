@@ -1,11 +1,8 @@
 #pragma once
 
 #include "licht/core/containers/array.hpp"
-#include "licht/core/memory/shared_ref.hpp"
-#include "licht/rhi/fence.hpp"
+#include "licht/rhi/rhi_fowards.hpp"
 #include "licht/rhi/rhi_types.hpp"
-#include "licht/rhi/semaphore.hpp"
-#include "licht/rhi/texture.hpp"
 
 namespace licht {
 
@@ -21,7 +18,7 @@ public:
 
     uint32 frame_index = 0;
     uint32 current_frame = 0;
-    uint32 frame_count = 2;
+    uint32 frame_count = 3;
 
     bool success = false;
     bool suboptimal = false;
@@ -55,7 +52,6 @@ public:
     virtual const Array<RHITextureViewHandle>& get_texture_views() = 0;
 };
 
-using RHISwapchainHandle = SharedRef<RHISwapchain>;
 
 inline RHISemaphoreHandle RHIFrameContext::current_frame_available_semaphore() {
     return frame_available_semaphores[current_frame]; 

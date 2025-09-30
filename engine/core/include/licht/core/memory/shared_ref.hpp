@@ -3,6 +3,7 @@
 #include <concepts>
 #include <memory>
 
+#include "licht/core/memory/deleter.hpp"
 #include "licht/core/memory/reference_counter.hpp"
 
 namespace licht {
@@ -42,7 +43,7 @@ public:
         return reference_counter_->is_unique();
     }
 
-    template <typename DeleterType = std::default_delete<ResourceType>>
+    template <typename DeleterType = DefaultDeleter<ResourceType>>
     void reset(ResourceType* resource = nullptr,
                DeleterType deleter = DeleterType()) {
         release_shared_reference();
@@ -65,9 +66,10 @@ public:
         , reference_counter_(nullptr) {
         if (resource_) {
             reference_counter_ = new_default_reference_counter<ResourceType>(resource_);
+            reference_counter_->add_shared_reference();
         }
     }
-    
+
     SharedRef(ResourceType* resource, ReferenceCounter* reference_counter) noexcept
         : resource_(resource)
         , reference_counter_(reference_counter) {
@@ -82,6 +84,7 @@ public:
         : resource_(resource) {
         if (resource_) {
             reference_counter_ = new_default_reference_counter<DerivedType>(resource_);
+            reference_counter_->add_shared_reference();
         }
     }
 
@@ -90,6 +93,7 @@ public:
         : resource_(resource) {
         if (resource_) {
             reference_counter_ = new_reference_counter_with_deleter<ResourceType, DeleterType>(resource_, deleter);
+            reference_counter_->add_shared_reference();
         }
     }
 
@@ -99,6 +103,7 @@ public:
         : resource_(resource) {
         if (resource_) {
             reference_counter_ = new_reference_counter_with_deleter<DerivedType, DeleterType>(resource_, deleter);
+            reference_counter_->add_shared_reference();
         }
     }
 
@@ -221,6 +226,11 @@ private:
 template <typename ResourceType, typename... Args>
 constexpr inline SharedRef<ResourceType> new_ref(Args&&... args) noexcept {
     return SharedRef<ResourceType>(new ResourceType(std::forward<Args>(args)...));
+}
+
+template <typename ResourceType>
+bool operator==(const SharedRef<ResourceType>& lhs, const SharedRef<ResourceType>& rhs) {
+    return lhs.get_resource() == rhs.get_resource();
 }
 
 }  // namespace licht

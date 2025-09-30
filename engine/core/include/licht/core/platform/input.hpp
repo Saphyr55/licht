@@ -1,11 +1,24 @@
 #pragma once
 
 #include "licht/core/defines.hpp"
+#include "licht/core/signals/signal.hpp"
 #include "licht/core/string/string_ref.hpp"
 
+#include <set>
 
 namespace licht {
- 
+
+struct MouseMove {
+    float32 pos_rel_x;
+    float32 pos_rel_y;
+    float32 pos_x;
+    float32 pos_y;
+};
+
+struct MouseWheel {
+    float32 delta;
+};
+
 enum class Button : uint8 {
     Left = 1,
     Middle = 2,
@@ -14,7 +27,7 @@ enum class Button : uint8 {
     XButton2 = 5
 };
 
-enum class Key : uint32 {
+enum class VirtualKey : uint32 {
     None,
 
     Back = 0x08,
@@ -132,6 +145,42 @@ enum class Key : uint32 {
     RightAlt = 0xA5,
 };
 
-LICHT_CORE_API StringRef key_to_string(Key p_key);
+LICHT_CORE_API StringRef key_to_string(VirtualKey p_key);
+
+class LICHT_CORE_API Input {
+public:
+    static Signal<const VirtualKey&> on_key_down;
+    static Signal<const VirtualKey&> on_key_up;
+    static Signal<const VirtualKey&> on_key_pressed;
+    static Signal<const VirtualKey&> on_key_release;
+
+    static Signal<const MouseMove&> on_mouse_move;
+    static Signal<const MouseWheel&> on_mouse_wheel;
+
+    static Signal<const Button&> on_button_down;
+    static Signal<const Button&> on_button_up;
+    static Signal<const Button&> on_button_pressed;
+    static Signal<const Button&> on_button_release;
+
+    static bool key_is_down(VirtualKey key);
+    static bool key_is_up(VirtualKey key);
+    static bool key_is_pressed(VirtualKey key);
+    static bool key_is_release(VirtualKey key);
+
+    static bool button_is_down(Button button);
+    static bool button_is_up(Button button);
+    static bool button_is_pressed(Button button);
+    static bool button_is_release(Button button);
+
+    static std::set<VirtualKey> keys_dow_;
+    static std::set<VirtualKey> keys_up_;
+    static Array<VirtualKey> keys_release_;
+    static Array<VirtualKey> keys_pressed_;
+    
+    static std::set<Button> buttons_dow_;
+    static std::set<Button> buttons_up_;
+    static Array<Button> buttons_release_;
+    static Array<Button> buttons_pressed_;
+};
 
 }  //namespace licht

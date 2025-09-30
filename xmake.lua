@@ -27,6 +27,7 @@ end
 
 -- Engine sources --
 includes("engine/core")
+includes("engine/messaging")
 includes("engine/engine")
 includes("engine/launcher")
 includes("engine/rhi")
@@ -34,3 +35,6 @@ includes("engine/rhi-vulkan")
 
 -- Sample sources --
 includes("samples/ludo")
+
+-- Third Party -- 
+includes("third_party")

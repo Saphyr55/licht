@@ -18,6 +18,5 @@ class RHIRenderPass {
 public:
 };
 
-using RHIRenderPassHandle = SharedRef<RHIRenderPass>;
 
 }

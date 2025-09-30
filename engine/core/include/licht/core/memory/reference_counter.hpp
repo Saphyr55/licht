@@ -68,8 +68,8 @@ public:
         }
     }
 
-    ReferenceCounterWithDeleter(ResourceType* resource, DeleterType&& deleter)
-        : DeleterHolder<DeleterType>(std::move(deleter))
+    ReferenceCounterWithDeleter(ResourceType* resource, const DeleterType& deleter)
+        : DeleterHolder<DeleterType>(deleter)
         , resource_(resource) {
         LCHECK(resource_);
     }
@@ -96,9 +96,9 @@ private:
 };
 
 template <typename ResourceType, typename DeleterType>
-inline ReferenceCounter* new_reference_counter_with_deleter(ResourceType* resource, DeleterType&& deleter) noexcept {
-    using RefCounterwithDel = ReferenceCounterWithDeleter<ResourceType, DeleterType>;
-    return new (MemoryCategory::General) RefCounterwithDel(resource, std::move(deleter));
+inline ReferenceCounter* new_reference_counter_with_deleter(ResourceType* resource, const DeleterType& deleter) noexcept {
+    using RefCounterWithDeleter = ReferenceCounterWithDeleter<ResourceType, DeleterType>;
+    return new (MemoryCategory::General) RefCounterWithDeleter(resource, deleter);
 }
 
 template <typename ResourceType>
