@@ -5,18 +5,35 @@
 namespace licht {
 
 void camera_update_position(Camera& camera) {
+
+    if (Input::key_is_down(VirtualKey::Z)) {
+        camera.position += camera.front * camera.movement_speed;
+        camera.update_view();
+    }
+
+    if (Input::key_is_down(VirtualKey::S)) {
+        camera.position -= camera.front * camera.movement_speed;
+        camera.update_view();
+    }
     
-    if (Input::key_is_down(Key::Z)) {
-        camera.position = camera.position + camera.front * camera.movement_speed;
+    if (Input::key_is_down(VirtualKey::Q)) {
+        camera.position -= camera.right * camera.movement_speed;
+        camera.update_view();
     }
-    if (Input::key_is_down(Key::S)) {
-        camera.position = camera.position - camera.front * camera.movement_speed;
+    
+    if (Input::key_is_down(VirtualKey::D)) {
+        camera.position += camera.right * camera.movement_speed;
+        camera.update_view();
     }
-    if (Input::key_is_down(Key::D)) {
-        camera.position = camera.position + camera.right * camera.movement_speed;
+
+    if (Input::key_is_down(VirtualKey::E)) {
+        camera.position += camera.world_up * camera.movement_speed;
+        camera.update_view();
     }
-    if (Input::key_is_down(Key::Q)) {
-        camera.position = camera.position - camera.right * camera.movement_speed;
+
+    if (Input::key_is_down(VirtualKey::A)) {
+        camera.position -= camera.world_up * camera.movement_speed;
+        camera.update_view();
     }
 
 }

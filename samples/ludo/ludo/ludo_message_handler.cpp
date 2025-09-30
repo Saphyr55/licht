@@ -1,22 +1,6 @@
 #include "ludo_message_handler.hpp"
 #include "licht/core/trace/trace.hpp"
 
-bool Input::key_is_down(Key key) {
-    return keys_dow_.contains(key);
-}
-
-bool Input::key_is_up(Key key) {
-    return keys_up_.contains(key);
-}
-
-bool Input::key_is_pressed(Key key) {
-    return keys_pressed_.contains(key);
-}
-
-bool Input::key_is_release(Key key) {
-    return keys_release_.contains(key);
-}
-
 void DemoMessageHandler::on_window_close(const WindowHandle window) {
     LLOG_INFO("[DemoMessageHandler::on_window_close]", "Window closed.");
     g_is_running = false;
@@ -43,7 +27,33 @@ void DemoMessageHandler::on_mouse_move(float32 pos_rel_x, float32 pos_rel_y, flo
     Input::on_mouse_move.emit(MouseMove(pos_rel_x, pos_rel_y, pos_x, pos_y));
 }
 
-void DemoMessageHandler::on_key_down(const Key key) {
+void DemoMessageHandler::on_button_up(Button button) {
+    Input::buttons_pressed_.remove(button);
+    Input::buttons_dow_.erase(button);
+
+    if (!Input::buttons_release_.contains(button)) {
+        Input::buttons_release_.append(button);
+        Input::on_button_release.emit(button);
+    }
+
+    Input::buttons_up_.insert(button);
+    Input::on_button_up(button);
+}
+
+void DemoMessageHandler::on_button_down(const Button button) {
+    Input::buttons_release_.remove(button);
+    Input::buttons_up_.erase(button);
+
+    if (!Input::buttons_pressed_.contains(button)) {
+        Input::buttons_pressed_.append(button);
+        Input::on_button_pressed(button);
+    }
+
+    Input::buttons_dow_.insert(button);
+    Input::on_button_down(button);
+}
+
+void DemoMessageHandler::on_key_down(const VirtualKey key) {
     Input::keys_release_.remove(key);
     Input::keys_up_.erase(key);
 
@@ -56,7 +66,7 @@ void DemoMessageHandler::on_key_down(const Key key) {
     Input::on_key_down(key);
 }
 
-void DemoMessageHandler::on_key_up(const Key key) {
+void DemoMessageHandler::on_key_up(const VirtualKey key) {
     Input::keys_pressed_.remove(key);
     Input::keys_dow_.erase(key);
 

@@ -12,38 +12,37 @@ struct Matrix4 {
     using Mat = Matrix4<R>;
     using Vec = Vector4<R>;
 
-    Mat operator*(const Mat& m) const;
-    Vec operator*(const Vector4<R>& v) const;
-    Vec& operator[](size_t i);
-    const Vec& operator[](size_t i) const;
-    Vec col(uint32 index) const;
+    constexpr Mat operator*(const Mat& m) const;
+    constexpr Vec operator*(const Vector4<R>& v) const;
+    constexpr Vec& operator[](size_t i);
+    constexpr const Vec& operator[](size_t i) const;
+    constexpr Vec col(uint32 index) const;
 
-    Matrix4() = default;
-    Matrix4(R r);
-    Matrix4(R m11, R m21, R m31, R m41, R m12, R m22, R m32, R m42, R m13, R m23, R m33, R m43, R m14, R m24, R m34, R m44);
-    Matrix4(const Vec& col_1, const Vec& col_2, const Vec& col_3, const Vec& col_4);
+    constexpr Matrix4() = default;
+    constexpr Matrix4(R r);
+    constexpr Matrix4(R m11, R m21, R m31, R m41, R m12, R m22, R m32, R m42, R m13, R m23, R m33, R m43, R m14, R m24, R m34, R m44);
+    constexpr Matrix4(const Vec& col_1, const Vec& col_2, const Vec& col_3, const Vec& col_4);
 
-    static Matrix4 identity();
-    // static std::array<R, 4 * 4> ValueArray(const Mat& mat);
-    static Matrix4 translate(const Mat& mat, const Vector3<R>& vec);
-    static Matrix4 scale(const Mat& mat, const Vector3<R>& vec);
-    static Matrix4 rotate(const Mat& mat,
+    static constexpr Matrix4 identity();
+    static constexpr Matrix4 translate(const Mat& mat, const Vector3<R>& vec);
+    static constexpr Matrix4 scale(const Mat& mat, const Vector3<R>& vec);
+    static constexpr Matrix4 rotate(const Mat& mat,
                           const Real auto& theta,
                           const Vector3<R>& vec);
-    static Matrix4 rotate_x(const float32& theta);
-    static Matrix4 rotate_y(const float32& theta);
-    static Matrix4 rotate_z(const float32& theta);
-    static Matrix4 perspective(const Real auto& view,
+    static constexpr Matrix4 rotate_x(const float32& theta);
+    static constexpr Matrix4 rotate_y(const float32& theta);
+    static constexpr Matrix4 rotate_z(const float32& theta);
+    static constexpr Matrix4 perspective(const Real auto& view,
                                const Real auto& aspect,
                                const Real auto& near,
                                const Real auto& far);
-    static Matrix4 orthographic(const Real auto& left,
+    static constexpr Matrix4 orthographic(const Real auto& left,
                                 const Real auto& right,
                                 const Real auto& bottom,
                                 const Real auto& top,
                                 const Real auto& near,
                                 const Real auto& far);
-    static Matrix4 look_at(const Vector3<R>& eye,
+    static constexpr Matrix4 look_at(const Vector3<R>& eye,
                            const Vector3<R>& center,
                            const Vector3<R>& up);
 
@@ -55,25 +54,25 @@ using Matrix4f = Matrix4<float32>;
 using Matrix4d = Matrix4<float64>;
 
 template <Real R>
-Matrix4<R> Matrix4<R>::identity() {
+constexpr Matrix4<R> Matrix4<R>::identity() {
     return Matrix4(1);
 }
 
 template <Real R>
-Matrix4<R> Matrix4<R>::translate(const Mat& mat, const Vector3<R>& vec) {
+constexpr Matrix4<R> Matrix4<R>::translate(const Mat& mat, const Vector3<R>& vec) {
     Mat transformation_mat(1);
     transformation_mat[3] = Vector4<R>(vec, 1);
     return mat * transformation_mat;
 }
 
 template <Real R>
-Matrix4<R> Matrix4<R>::scale(const Mat& mat, const Vector3<R>& vec) {
+constexpr Matrix4<R> Matrix4<R>::scale(const Mat& mat, const Vector3<R>& vec) {
     return mat * Mat(Vector4<R>(vec.x, 0, 0, 0), Vector4<R>(0, vec.y, 0, 0),
                      Vector4<R>(0, 0, vec.z, 0), Vector4<R>(0, 0, 0, 1));
 }
 
 template <Real R>
-Matrix4<R> Matrix4<R>::rotate(const Mat& mat,
+constexpr Matrix4<R> Matrix4<R>::rotate(const Mat& mat,
                               const Real auto& theta,
                               const Vector3<R>& vec) {
     auto c = Math::cos(theta);
@@ -89,7 +88,7 @@ Matrix4<R> Matrix4<R>::rotate(const Mat& mat,
 }
 
 template <Real R>
-Matrix4<R> Matrix4<R>::rotate_x(const float32& theta) {
+constexpr Matrix4<R> Matrix4<R>::rotate_x(const float32& theta) {
     return Mat(Vector4<R>(1, 0, 0, 0),
                Vector4<R>(0, Math::cos(theta), Math::sin(theta), 0),
                Vector4<R>(0, -Math::sin(theta), Math::cos(theta), 0),
@@ -97,7 +96,7 @@ Matrix4<R> Matrix4<R>::rotate_x(const float32& theta) {
 }
 
 template <Real R>
-Matrix4<R> Matrix4<R>::rotate_y(const float32& theta) {
+constexpr Matrix4<R> Matrix4<R>::rotate_y(const float32& theta) {
     return Mat(Vector4<R>(Math::cos(theta), 0, -Math::sin(theta), 0),
                Vector4<R>(0, 1, 0, 0),
                Vector4<R>(Math::sin(theta), 0, Math::cos(theta), 0),
@@ -105,56 +104,56 @@ Matrix4<R> Matrix4<R>::rotate_y(const float32& theta) {
 }
 
 template <Real R>
-Matrix4<R> Matrix4<R>::rotate_z(const float32& theta) {
+constexpr Matrix4<R> Matrix4<R>::rotate_z(const float32& theta) {
     return Matrix4<R>(Vector4<R>(Math::cos(theta), Math::sin(theta), 0, 0),
                       Vector4<R>(-Math::sin(theta), Math::cos(theta), 0, 0),
                       Vector4<R>(0, 0, 1, 0), Vector4<R>(0, 0, 0, 1));
 }
 
 template <Real R>
-Matrix4<R> Matrix4<R>::perspective(const Real auto& view,
+constexpr Matrix4<R> Matrix4<R>::perspective(const Real auto& view,
                                    const Real auto& aspect,
                                    const Real auto& near_,
                                    const Real auto& far_) {
-    Mat result(0);
+    Mat result(0.0);
 
     const R tan_half_fovy = Math::tan(view / static_cast<R>(2.0));
 
-    result[0][0] = R(1) / (tan_half_fovy * aspect);
-    result[1][1] = R(1) / tan_half_fovy;
-    result[2][2] = R(-far_ - near_) / (far_ - near_);
-    result[3][2] = -R(2 * near_ * far_) / (far_ - near_);
-    result[2][3] = -R(1);
+    result[0][0] = R(1.0) / R(tan_half_fovy * aspect);
+    result[1][1] = R(1.0) / tan_half_fovy;
+    result[2][2] = R(-far_ - near_) / R(far_ - near_);
+    result[3][2] = -R(2.0 * near_ * far_) / R(far_ - near_);
+    result[2][3] = -R(1.0);
     return result;
 }
 
 template <Real R>
-Matrix4<R> Matrix4<R>::orthographic(const Real auto& left,
+constexpr Matrix4<R> Matrix4<R>::orthographic(const Real auto& left,
                                     const Real auto& right,
                                     const Real auto& bottom,
                                     const Real auto& top,
                                     const Real auto& near_,
                                     const Real auto& far_) {
     LCHECK(far_ - near_ != 0);
-    Mat result(1);
-    result[0][0] = R(2) / (right - left);
-    result[1][1] = R(2) / (top - bottom);
-    result[2][2] = -R(2) / (far_ - near_);
-    result[3][0] = -R(right + left) / (right - left);
-    result[3][1] = -R(top + bottom) / (top - bottom);
-    result[3][2] = -R(far_ + near_) / (far_ - near_);
+    Mat result(1.0);
+    result[0][0] = R(2.0f) / R(right - left);
+    result[1][1] = R(2.0f) / R(top - bottom);
+    result[2][2] = -R(2.0f) / R(far_ - near_);
+    result[3][0] = -R(right + left) / R(right - left);
+    result[3][1] = -R(top + bottom) / R(top - bottom);
+    result[3][2] = -R(far_ + near_) / R(far_ - near_);
     return result;
 }
 
 template <Real R>
-Matrix4<R> Matrix4<R>::look_at(const Vector3<R>& eye,
+constexpr Matrix4<R> Matrix4<R>::look_at(const Vector3<R>& eye,
                                const Vector3<R>& center,
                                const Vector3<R>& up) {
     auto f = Vector3<R>::normalize(center - eye);
     auto s = Vector3<R>::normalize(Vector3<R>::cross(f, up));
     auto u = Vector3<R>::cross(s, f);
 
-    Mat result(1);
+    Mat result(1.0);
     result[0][0] = s.x;
     result[1][0] = s.y;
     result[2][0] = s.z;
@@ -171,12 +170,12 @@ Matrix4<R> Matrix4<R>::look_at(const Vector3<R>& eye,
 }
 
 template <Real R>
-Vector4<R> Matrix4<R>::col(uint32 index) const {
+constexpr Vector4<R> Matrix4<R>::col(uint32 index) const {
     return (*this)[index];
 }
 
 template <Real R>
-Matrix4<R>::Matrix4(const Vec& col_1,
+constexpr Matrix4<R>::Matrix4(const Vec& col_1,
                     const Vec& col_2,
                     const Vec& col_3,
                     const Vec& col_4) {
@@ -187,7 +186,7 @@ Matrix4<R>::Matrix4(const Vec& col_1,
 }
 
 template <Real R>
-Matrix4<R>::Matrix4(R m11,
+constexpr Matrix4<R>::Matrix4(R m11,
                     R m21,
                     R m31,
                     R m41,
@@ -210,7 +209,7 @@ Matrix4<R>::Matrix4(R m11,
 }
 
 template <Real R>
-Matrix4<R>::Matrix4(R r)
+constexpr Matrix4<R>::Matrix4(R r)
     : Matrix4(Vec(r, 0, 0, 0),
               Vec(0, r, 0, 0),
               Vec(0, 0, r, 0),
@@ -218,7 +217,7 @@ Matrix4<R>::Matrix4(R r)
 }
 
 template <Real R>
-Matrix4<R> Matrix4<R>::operator*(const Mat& m) const {
+constexpr Matrix4<R> Matrix4<R>::operator*(const Mat& m) const {
     Mat result(0);
     for (int8 i = 0; i < 4; i++) {
         for (int8 j = 0; j < 4; j++) {
@@ -233,7 +232,7 @@ Matrix4<R> Matrix4<R>::operator*(const Mat& m) const {
 }
 
 template <Real R>
-Vector4<R> Matrix4<R>::operator*(const Vector4<R>& v) const {
+constexpr Vector4<R> Matrix4<R>::operator*(const Vector4<R>& v) const {
     return Vec((*this)[0][0] * v[0] + (*this)[0][1] * v[1] +
                    (*this)[0][2] * v[2] + (*this)[0][3] * v[3],
                (*this)[1][0] * v[0] + (*this)[1][1] * v[1] +
@@ -245,12 +244,12 @@ Vector4<R> Matrix4<R>::operator*(const Vector4<R>& v) const {
 }
 
 template <Real R>
-const Vector4<R>& Matrix4<R>::operator[](size_t i) const {
+constexpr const Vector4<R>& Matrix4<R>::operator[](size_t i) const {
     return value[i];
 }
 
 template <Real R>
-Vector4<R>& Matrix4<R>::operator[](size_t i) {
+constexpr Vector4<R>& Matrix4<R>::operator[](size_t i) {
     return value[i];
 }
 

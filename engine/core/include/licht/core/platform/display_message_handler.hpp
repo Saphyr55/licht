@@ -23,10 +23,10 @@ public:
     virtual void on_mouse_wheel(float32 delta) {
     }
 
-    virtual void on_key_up(Key key) {
+    virtual void on_key_up(VirtualKey key) {
     }
 
-    virtual void on_key_down(Key key) {
+    virtual void on_key_down(VirtualKey key) {
     }
 
     virtual void on_button_up(Button button) {

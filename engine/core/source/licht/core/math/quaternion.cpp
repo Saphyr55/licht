@@ -4,19 +4,19 @@
 
 namespace licht {
 
-Quaternion Quaternion::from_axis_angle(Vector3f axis, float32 angle) {
+constexpr Quaternion Quaternion::from_axis_angle(Vector3f axis, float32 angle) {
     const float32 half_angle = 0.5f * angle;
     float32 half_angle_sin = Math::sin(half_angle);
     float32 half_angle_cos = Math::cos(half_angle);
 
-    return Quaternion(
+    return {
         half_angle_sin * axis.x,
         half_angle_sin * axis.y,
         half_angle_sin * axis.z,
-        half_angle_cos);
+        half_angle_cos};
 }
 
-Matrix4f Quaternion::rotation_matrix(const Quaternion& q) {
+constexpr Matrix4f Quaternion::rotation_matrix(const Quaternion& q) {
     Matrix4f result = Matrix4f::identity();
     float32 qxx(q.x * q.x);
     float32 qyy(q.y * q.y);
@@ -53,43 +53,43 @@ constexpr Quaternion::Quaternion(float32 x,
     , w(w) {
 }
 
-float32 Quaternion::normal(const Quaternion& q) {
+constexpr float32 Quaternion::normal(const Quaternion& q) {
     return Math::sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
 }
 
-Quaternion Quaternion::normalize(const Quaternion& quaternion) {
+constexpr Quaternion Quaternion::normalize(const Quaternion& quaternion) {
     float32 quaternionNorm = normal(quaternion);
-    return Quaternion(
+    return {
         quaternion.x / quaternionNorm,
         quaternion.y / quaternionNorm,
         quaternion.z / quaternionNorm,
-        quaternion.w / quaternionNorm);
+        quaternion.w / quaternionNorm};
 }
 
-Quaternion Quaternion::conjugate(const Quaternion& quaternion) {
-    return Quaternion(
+constexpr Quaternion Quaternion::conjugate(const Quaternion& quaternion) {
+    return {
         -quaternion.x,
         -quaternion.y,
         -quaternion.z,
-        quaternion.w);
+        quaternion.w};
 }
 
-Quaternion Quaternion::operator*(const Quaternion& q) const {
+constexpr Quaternion Quaternion::operator*(const Quaternion& q) const {
     const float32 new_x = x * q.w + w * q.x + y * q.z - z * q.y;
     const float32 new_y = y * q.w + w * q.y + z * q.x - x * q.z;
     const float32 new_z = z * q.w + w * q.z + x * q.y - y * q.x;
     const float32 new_w = w * q.w - x * q.x - y * q.y - z * q.z;
 
-    return Quaternion(new_x, new_y, new_z, new_w);
+    return {new_x, new_y, new_z, new_w};
 }
 
-Quaternion Quaternion::operator*(const Vector3f& vec) const {
+constexpr Quaternion Quaternion::operator*(const Vector3f& vec) const {
     const float32 new_x = w * vec.x + y * vec.z - z * vec.y;
     const float32 new_y = w * vec.y + z * vec.x - x * vec.z;
     const float32 new_z = w * vec.z + x * vec.y - y * vec.x;
     const float32 new_w = -x * vec.x - y * vec.y - z * vec.z;
 
-    return Quaternion(new_x, new_y, new_z, new_w);
+    return {new_x, new_y, new_z, new_w};
 }
 
 }  //namespace licht

@@ -5,6 +5,7 @@
 #include "licht/core/math/math.hpp"
 #include "licht/core/math/matrix4.hpp"
 #include "licht/core/math/vector3.hpp"
+#include "licht/core/math/quaternion.hpp"
 #include "licht/core/modules/module_registry.hpp"
 #include "licht/core/platform/display.hpp"
 #include "licht/core/platform/window_handle.hpp"
@@ -396,9 +397,12 @@ void RenderFrameScript::update_uniform() {
     float32 aspect_ratio = swapchain_->get_width() / static_cast<float32>(swapchain_->get_height());
 
     UniformBufferObject ubo;
-    ubo.model = Matrix4f::translate(ubo.model, Vector3f(-1.0f, 1.0f, -2.0f));
-    // ubo.model = Matrix4f::rotate(ubo.model, time * Math::radians(90.0f), Vector3f(0.0f, 0.0f, 1.0f));
-    ubo.view = Matrix4f::translate(ubo.model, Vector3f(0.0f, 0.0f, 0.0f));
+
+    Quaternion rotation = Quaternion::from_axis_angle(Vector3f::forward(), time * Math::radians(90.0f));
+    ubo.model = Quaternion::rotation_matrix(rotation);
+
+    ubo.view = camera_->view;
+
     ubo.proj = Matrix4f::perspective(Math::radians(75.0f), aspect_ratio, 0.0f, 10000.0f);
 
     ubo.proj[1][1] *= -1.0f;

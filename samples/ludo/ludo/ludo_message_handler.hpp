@@ -24,11 +24,15 @@ public:
 
     virtual void on_mouse_wheel(float32 delta) override;
 
-    virtual void on_key_down(Key key) override;
+    virtual void on_key_down(VirtualKey key) override;
 
-    virtual void on_key_up(Key key) override;
+    virtual void on_key_up(VirtualKey key) override;
     
     virtual void on_mouse_move(float32 pos_rel_x, float32 pos_rel_y, float32 pos_x, float32 pos_y) override;
+
+    virtual void on_button_up(Button button) override;
+
+    virtual void on_button_down(Button button) override;
 
     inline void set_render_frame_script(RenderFrameScript* frame_script) {
         frame_script_ = frame_script;

@@ -44,7 +44,7 @@ private:
     using RHIFramebufferRegistry = Array<RHIFramebufferHandle, RHIFramebufferAllocator>;
         
     Camera* camera_;
-    Signal<Key>::connection_t camera_move_connection_;
+    Signal<VirtualKey>::connection_t camera_move_connection_;
 
     RHIBufferHandle position_buffer_;
     Array<Vector3f> positions_;

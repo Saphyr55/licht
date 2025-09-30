@@ -51,10 +51,13 @@ int32 ludo_application_launch(int32 argc, const char** argv) {
     // TODO: Startup and shutdown must be launched automatically after refactoring the engine loop.
     rhi_module->on_startup();
 
-    Camera camera(Vector3f(2.0f, 2.0f, 2.0f), Vector3f(-2.0f, -2.0f, -2.0f), Vector3f(0.0f, 0.0f, 1.0f));
+    Camera camera(Vector3f(0.0f, 0.0f, -2.0f));
+    camera.look_at(Vector3f(0.0f));
 
     auto conn = Input::on_mouse_move.connect([&camera](const MouseMove& mouse_move) -> void {
-        camera.look_around(mouse_move.pos_rel_x, mouse_move.pos_rel_y);
+        if (Input::button_is_down(Button::Left)) {
+            camera.look_around(mouse_move.pos_rel_x, mouse_move.pos_rel_y);
+        }
     });
 
     RenderFrameScript render_frame_script(&camera);

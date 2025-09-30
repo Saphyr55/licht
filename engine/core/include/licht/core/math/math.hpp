@@ -45,6 +45,10 @@ public:
         return angle * (pi() / 180.0);
     }
 
+    static constexpr inline auto degrees(const Real auto& angle) -> auto {
+        return angle * (180.0 / pi());
+    }
+
     static constexpr inline auto signum(const Real auto& r) -> auto {
         return r == decltype(r)(0) ? 0 : rabs(r) / r;
     }
@@ -54,8 +58,16 @@ public:
                                                    : value;
     }
 
+    static constexpr inline auto atan(const Real auto& value) -> auto {
+        return std::atan(value);
+    }
+
     static constexpr inline auto atan2(const Real auto& value1, const Real auto& value2) -> auto {
         return std::atan2(value1, value2);
+    }
+
+    static constexpr inline auto mod(const Real auto& value, const Real auto& degree) -> auto {
+        return std::fmod(value, degree);
     }
 
     static constexpr inline auto asin(const Real auto& value) -> auto {

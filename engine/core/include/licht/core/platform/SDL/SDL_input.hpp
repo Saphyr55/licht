@@ -9,10 +9,10 @@ namespace licht {
 
 Button button_from_SDL(int32 p_button_code);
 
-Key key_from_SDL(SDL_Keycode p_key_code);
+VirtualKey key_from_SDL(SDL_Keycode p_key_code);
 
 int32 button_to_SDL(Button p_button);
 
-SDL_Keycode key_to_SDL(Key p_key);
+SDL_Keycode key_to_SDL(VirtualKey p_key);
 
 }
