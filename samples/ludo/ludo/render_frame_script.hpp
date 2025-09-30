@@ -4,17 +4,18 @@
 #include "licht/core/memory/linear_allocator.hpp"
 #include "licht/core/platform/window_handle.hpp"
 #include "licht/rhi/swapchain.hpp"
-#include "scritable_tick.hpp"
 
 namespace licht {
 
-class RenderFrameScript : public ScriptableTick {
+class Camera;
+
+class RenderFrameScript {
 public:
-    virtual void on_startup() override;
+    void on_startup();
 
-    virtual void on_shutdown() override;
+    void on_shutdown();
 
-    virtual void on_tick(float32 delta_time) override;
+    void on_tick(float32 delta_time);
 
     void update_uniform();
 
@@ -24,17 +25,19 @@ public:
 
     void unpause();
 
-
 private:
     void reset();
 
 public:
-    RenderFrameScript();
-    virtual ~RenderFrameScript() override;
+    RenderFrameScript(Camera* camera);
+    ~RenderFrameScript() = default;
 
 private:
     using RHIFramebufferAllocator = TypedLinearAllocator<RHIFramebufferHandle, MemoryOwnership::NonOwner>;
     using RHIFramebufferRegistry = Array<RHIFramebufferHandle, RHIFramebufferAllocator>;
+        
+    Camera* camera_;
+    Signal<VirtualKey>::connection_t camera_move_connection_;
 
     RHIBufferHandle position_buffer_;
     Array<Vector3f> positions_;

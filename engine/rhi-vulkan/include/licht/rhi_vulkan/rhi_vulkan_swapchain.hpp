@@ -53,7 +53,7 @@ public:
     }
 
 public:
-    RHIVulkanSwapchain(VulkanContext& context, uint32 width, uint32 height);
+    RHIVulkanSwapchain(VulkanContext& context, uint32 width, uint32 height, uint32 image_count);
 
 private:
     VulkanSwapchainSupportDetails query_support_details();
@@ -65,6 +65,7 @@ private:
     Array<VkImage> images_;
     Array<RHITextureViewHandle> texture_views_;
     VkSwapchainKHR handle_ = VK_NULL_HANDLE;
+    uint32 image_count_;
 };
 
 using RHIVulkanSwapchainRef = SharedRef<RHIVulkanSwapchain>;

@@ -2,19 +2,21 @@
 
 #include <type_traits>
 
+#include "licht/core/function/callable.hpp"
+
 namespace licht {
 
 template <typename Signature>
 class FunctionRef;
 
 template <typename ReturnType, typename... ArgumentTypes>
-class FunctionRef<ReturnType(ArgumentTypes...)> {
+class FunctionRef<ReturnType(ArgumentTypes...)> : public Callable {
 public:
-    FunctionRef() = default;
+    constexpr FunctionRef() = default;
 
     template <typename Callable,
               typename = std::enable_if_t<!std::is_same_v<std::decay_t<Callable>, FunctionRef>>>
-    FunctionRef(Callable&& c) {
+    constexpr FunctionRef(Callable&& c) {
         obj_ = (void*)std::addressof(c);
         callback_ = [](void* obj, ArgumentTypes&&... args) -> ReturnType {
             return (*reinterpret_cast<std::add_pointer_t<Callable>>(obj))(

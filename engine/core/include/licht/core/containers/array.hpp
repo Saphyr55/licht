@@ -141,14 +141,8 @@ public:
     }
 
     void remove(const ElementType& value) {
-        remove(value, [](auto& p_1, auto& p_2) -> int32 {
-            if (p_1 == p_2) {
-                return 0;
-            } else if (p_1 > p_2) {
-                return 1;
-            } else {
-                return -1;
-            }
+        remove(value, [](auto& p_1, auto& p_2) -> bool {
+            return (p_1 == p_2);
         });
     }
 

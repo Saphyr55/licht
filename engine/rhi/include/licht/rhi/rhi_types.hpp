@@ -28,7 +28,7 @@ enum class RHIShaderStage {
     Compute
 };
 
-enum class RHICommandBufferUsage {
+enum class RHICommandBufferUsage : uint8 {
     None = 0,
     OneTimeSubmit = 1 << 0,
     RenderPassContinue = 1 << 1,
@@ -45,14 +45,14 @@ enum class RHIDescriptorSetType {
 
 inline RHICommandBufferUsage operator|(RHICommandBufferUsage lhs, RHICommandBufferUsage rhs) {
     return static_cast<RHICommandBufferUsage>(
-        static_cast<std::underlying_type<RHICommandBufferUsage>::type>(lhs) |
-        static_cast<std::underlying_type<RHICommandBufferUsage>::type>(rhs));
+        static_cast<uint8>(lhs) |
+        static_cast<uint8>(rhs));
 }
 
 inline RHICommandBufferUsage operator&(RHICommandBufferUsage lhs, RHICommandBufferUsage rhs) {
     return static_cast<RHICommandBufferUsage>(
-        static_cast<std::underlying_type<RHICommandBufferUsage>::type>(lhs) &
-        static_cast<std::underlying_type<RHICommandBufferUsage>::type>(rhs));
+        static_cast<uint8>(lhs) &
+        static_cast<uint8>(rhs));
 }
 
 inline RHICommandBufferUsage& operator|=(RHICommandBufferUsage& lhs, RHICommandBufferUsage rhs) {
@@ -66,7 +66,7 @@ inline RHICommandBufferUsage& operator&=(RHICommandBufferUsage& lhs, RHICommandB
 }
 
 inline bool rhi_command_buffer_usage_has_flag(RHICommandBufferUsage value, RHICommandBufferUsage flag) {
-    return (value & flag) != RHICommandBufferUsage::None;
+    return (value & flag) == flag;
 }
 
 enum class RHIQueueType {
@@ -92,11 +92,11 @@ enum class RHIBufferUsage : uint8 {
 };
 
 inline RHIBufferUsage operator|(RHIBufferUsage a, RHIBufferUsage b) {
-    return static_cast<RHIBufferUsage>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
+    return static_cast<RHIBufferUsage>(static_cast<uint8>(a) | static_cast<uint8>(b));
 }
 
 inline RHIBufferUsage operator&(RHIBufferUsage a, RHIBufferUsage b) {
-    return static_cast<RHIBufferUsage>(static_cast<uint8_t>(a) & static_cast<uint8_t>(b));
+    return static_cast<RHIBufferUsage>(static_cast<uint8>(a) & static_cast<uint8>(b));
 }
 
 inline RHIBufferUsage& operator|=(RHIBufferUsage& a, RHIBufferUsage b) {
@@ -110,7 +110,7 @@ inline RHIBufferUsage& operator&=(RHIBufferUsage& a, RHIBufferUsage b) {
 }
 
 inline bool rhi_buffer_usage_any(RHIBufferUsage usage) {
-    return static_cast<uint8_t>(usage) != 0;
+    return static_cast<uint8>(usage) != 0;
 }
 
 enum class RHIBufferMemoryUsage {

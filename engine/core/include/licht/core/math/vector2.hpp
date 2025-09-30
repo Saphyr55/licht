@@ -1,7 +1,7 @@
 #pragma once
 
 #include "licht/core/defines.hpp"
-#include "licht/core/math/common_math.hpp"
+#include "licht/core/math/math.hpp"
 
 namespace licht {
 

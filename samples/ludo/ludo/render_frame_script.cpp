@@ -1,28 +1,30 @@
 #include "render_frame_script.hpp"
-#include "licht/rhi/descriptor_set.hpp"
-#include "licht/rhi/rhi_fowards.hpp"
-#include "ludo_types.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/io/file_handle.hpp"
 #include "licht/core/io/file_system.hpp"
+#include "licht/core/math/math.hpp"
+#include "licht/core/math/matrix4.hpp"
 #include "licht/core/math/vector3.hpp"
+#include "licht/core/math/quaternion.hpp"
 #include "licht/core/modules/module_registry.hpp"
 #include "licht/core/platform/display.hpp"
 #include "licht/core/platform/window_handle.hpp"
 #include "licht/core/trace/trace.hpp"
-#include "licht/core/math/matrix4.hpp"
-#include "licht/core/math/common_math.hpp"
 #include "licht/rhi/buffer.hpp"
+#include "licht/rhi/command_queue.hpp"
+#include "licht/rhi/descriptor_set.hpp"
+#include "licht/rhi/rhi_fowards.hpp"
 #include "licht/rhi/rhi_module.hpp"
 #include "licht/rhi/rhi_types.hpp"
-#include "licht/rhi/command_queue.hpp"
+#include "ludo_types.hpp"
+#include "ludo_message_handler.hpp"
+#include "camera.hpp"
 
 #include <chrono>
 
 namespace licht {
 
-
-RenderFrameScript::RenderFrameScript()
+RenderFrameScript::RenderFrameScript(Camera* camera)
     : window_handle_(Display::InvalidWindowHandle)
     , device_(nullptr)
     , swapchain_(nullptr)
@@ -33,12 +35,14 @@ RenderFrameScript::RenderFrameScript()
     , graphics_command_allocator_(nullptr)
     , frame_context_()
     , pause_(false)
+    , camera_(camera)
     , window_resized_(false) {
 }
 
-RenderFrameScript::~RenderFrameScript() {}
-
 void RenderFrameScript::on_startup() {
+
+    RenderFrameScript* self = this;
+
     ModuleRegistry& registry = ModuleRegistry::get_instance();
     RHIModule* module = registry.get_module<RHIModule>(RHIModule::ModuleName);
 
@@ -58,10 +62,10 @@ void RenderFrameScript::on_startup() {
     // -- Vertices data --
     {
         positions_ = {
-            Vector3f(-0.5f, -0.5f, 0.0f),// Top Left
-            Vector3f(0.5f, -0.5f, 0.0f), // Top Right
-            Vector3f(0.5f, 0.5f, 0.0f),  // Bottom Right
-            Vector3f(-0.5f, 0.5f, 0.0f), // Bottom Left
+            Vector3f(-0.5f, -0.5f, 0.0f),  // Top Left
+            Vector3f(0.5f, -0.5f, 0.0f),   // Top Right
+            Vector3f(0.5f, 0.5f, 0.0f),    // Bottom Right
+            Vector3f(-0.5f, 0.5f, 0.0f),   // Bottom Left
         };
 
         colors_ = {
@@ -72,8 +76,7 @@ void RenderFrameScript::on_startup() {
         };
 
         indices_ = {
-            0, 1, 2, 2, 3, 0
-        };
+            0, 1, 2, 2, 3, 0};
     }
 
     // -- Swapchain --
@@ -81,7 +84,7 @@ void RenderFrameScript::on_startup() {
         WindowStatues window_statues = Display::get_default().query_window_statues(window_handle_);
         frame_context_.frame_height = static_cast<uint32>(window_statues.height);
         frame_context_.frame_width = static_cast<uint32>(window_statues.width);
-        swapchain_ = device_->create_swapchain(frame_context_.frame_width, frame_context_.frame_height);
+        swapchain_ = device_->create_swapchain(frame_context_.frame_width, frame_context_.frame_height, frame_context_.frame_count);
     }
 
     // -- Queues --
@@ -89,13 +92,13 @@ void RenderFrameScript::on_startup() {
         const Array<RHICommandQueueRef>& command_queues = device_->get_command_queues();
 
         RHICommandQueueRef* graphics_command_queue_ptr = command_queues.get_if([](RHICommandQueueRef command_queue) {
-            return command_queue->get_type() == RHIQueueType::Graphics; 
+            return command_queue->get_type() == RHIQueueType::Graphics;
         });
         LCHECK_MSG(graphics_command_queue_ptr, "Found no graphics command queue.");
         graphics_command_queue_ = *graphics_command_queue_ptr;
 
-        RHICommandQueueRef* graphics_present_command_queue_ptr = command_queues.get_if([](RHICommandQueueRef command_queue) { 
-            return command_queue->get_type() == RHIQueueType::Graphics && command_queue->is_present_mode(); 
+        RHICommandQueueRef* graphics_present_command_queue_ptr = command_queues.get_if([](RHICommandQueueRef command_queue) {
+            return command_queue->get_type() == RHIQueueType::Graphics && command_queue->is_present_mode();
         });
         LCHECK_MSG(graphics_present_command_queue_ptr, "Found no graphics command queue that support the present mode.");
         graphics_present_command_queue_ = *graphics_present_command_queue_ptr;
@@ -113,7 +116,7 @@ void RenderFrameScript::on_startup() {
     }
 
     // -- Graphics Pipeline --
-    {       
+    {
         // -- Bindings and attributes --
         RHIVertexBindingDescription position_input_binding_description = {};
         position_input_binding_description.binding = 0;
@@ -136,10 +139,10 @@ void RenderFrameScript::on_startup() {
         color_attribute_description.location = 1;
         color_attribute_description.format = RHIFormat::RGB32Float;
         color_attribute_description.offset = 0;
-        
+
         RHIPipelineVertexBindingInformation pipeline_vertex_binding_information = {};
-        pipeline_vertex_binding_information.bindings = { position_input_binding_description, color_input_binding_description };
-        pipeline_vertex_binding_information.attributes = { position_attribute_description, color_attribute_description };
+        pipeline_vertex_binding_information.bindings = {position_input_binding_description, color_input_binding_description};
+        pipeline_vertex_binding_information.attributes = {position_attribute_description, color_attribute_description};
 
         float32 width = static_cast<float32>(swapchain_->get_width());
         float32 height = static_cast<float32>(swapchain_->get_height());
@@ -198,7 +201,7 @@ void RenderFrameScript::on_startup() {
         pipeline_description.fragment_shader_info = fragment_stage_create_info;
         pipeline_description.vertex_binding_info = pipeline_vertex_binding_information;
         pipeline_description.viewport_info = viewport_info;
-        pipeline_description.bindings = {ubo_binding}; 
+        pipeline_description.bindings = {ubo_binding};
         graphics_pipeline_ = device_->create_graphics_pipeline(pipeline_description);
     }
 
@@ -225,7 +228,7 @@ void RenderFrameScript::on_startup() {
         position_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsage::Vertex, positions_));
         color_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsage::Vertex, colors_));
         index_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsage::Index, indices_));
-        
+
         uploader.upload();
     }
 
@@ -254,7 +257,7 @@ void RenderFrameScript::on_startup() {
         constexpr uint32 size = sizeof(UniformBufferObject);
 
         descriptor_pool_ = device_->create_descriptor_pool(graphics_pipeline_, RHIDescriptorSetInformation(image_count));
-    
+
         for (uint32 i = 0; i < image_count; i++) {
             RHIDescriptorSetRef descriptor_set = descriptor_pool_->get_descriptor_set(i);
             descriptor_set->update(uniform_buffers_[i], binding, offset, size);
@@ -265,7 +268,7 @@ void RenderFrameScript::on_startup() {
     {
         RHICommandAllocatorDescription graphics_command_allocator_desc = {};
         graphics_command_allocator_desc.count = frame_context_.frame_count;
-        graphics_command_allocator_desc.command_queue = graphics_command_queue_; 
+        graphics_command_allocator_desc.command_queue = graphics_command_queue_;
 
         graphics_command_allocator_ = device_->create_command_allocator(graphics_command_allocator_desc);
     }
@@ -294,7 +297,6 @@ void RenderFrameScript::on_tick(float32 delta_time) {
         return;
     }
 
-
     swapchain_->acquire_next_frame(frame_context_);
 
     if (frame_context_.out_of_date) {
@@ -306,11 +308,11 @@ void RenderFrameScript::on_tick(float32 delta_time) {
     RHICommandBufferHandle graphics_command_buffer = graphics_command_allocator_->open(frame_context_.current_frame);
     graphics_command_allocator_->reset_command_buffer(graphics_command_buffer);
 
-    float32 width = static_cast<float32>(swapchain_->get_width());
-    float32 height = static_cast<float32>(swapchain_->get_height());
-
     graphics_command_buffer->begin();
     {
+        float32 width = static_cast<float32>(swapchain_->get_width());
+        float32 height = static_cast<float32>(swapchain_->get_height());
+
         Rect2D render_pass_area = {};
         render_pass_area.x = 0.0f;
         render_pass_area.y = 0.0f;
@@ -321,6 +323,7 @@ void RenderFrameScript::on_tick(float32 delta_time) {
         render_pass_begin_info.render_pass = render_pass_;
         render_pass_begin_info.framebuffer = framebuffers_[frame_context_.frame_index];
         render_pass_begin_info.area = render_pass_area;
+        
         graphics_command_buffer->begin_render_pass(render_pass_begin_info);
         {
             graphics_command_buffer->bind_pipeline(graphics_pipeline_);
@@ -344,7 +347,7 @@ void RenderFrameScript::on_tick(float32 delta_time) {
             graphics_command_buffer->set_scissors(&scissor, 1);
 
             graphics_command_buffer->bind_vertex_buffers({position_buffer_, color_buffer_});
-            graphics_command_buffer->bind_index_buffer(index_buffer_);    
+            graphics_command_buffer->bind_index_buffer(index_buffer_);
 
             RHIDescriptorSetRef descriptor_set = descriptor_pool_->get_descriptor_set(frame_context_.current_frame);
             graphics_command_buffer->bind_descriptor_sets(graphics_pipeline_, {descriptor_set});
@@ -364,11 +367,11 @@ void RenderFrameScript::on_tick(float32 delta_time) {
     device_->reset_fence(frame_context_.in_flight_fences[frame_context_.current_frame]);
 
     update_uniform();
-    
-    graphics_command_queue_->submit({graphics_command_buffer}, 
-        {frame_context_.current_frame_available_semaphore()}, 
-        {frame_context_.current_render_finished_semaphore()}, 
-        frame_context_.current_in_flight_fence());
+
+    graphics_command_queue_->submit({graphics_command_buffer},
+                                    {frame_context_.current_frame_available_semaphore()},
+                                    {frame_context_.current_render_finished_semaphore()},
+                                    frame_context_.current_in_flight_fence());
 
     graphics_present_command_queue_->present(swapchain_, frame_context_);
 
@@ -384,16 +387,24 @@ void RenderFrameScript::on_tick(float32 delta_time) {
 }
 
 void RenderFrameScript::update_uniform() {
-    static auto startTime = std::chrono::high_resolution_clock::now();
+    namespace ch = std::chrono;
 
-    auto current_time = std::chrono::high_resolution_clock::now();
-    float32 time = std::chrono::duration<float32, std::chrono::seconds::period>(current_time - startTime).count();
-    
+    static ch::time_point start_time = ch::high_resolution_clock::now();
+
+    ch::time_point current_time = ch::high_resolution_clock::now();
+    float32 time = ch::duration<float32, ch::seconds::period>(current_time - start_time).count();
+
     float32 aspect_ratio = swapchain_->get_width() / static_cast<float32>(swapchain_->get_height());
+
     UniformBufferObject ubo;
-    ubo.model = Matrix4f::rotate(ubo.model, time * radians(90.0f), Vector3f(0.0f, 0.0f, 1.0f));
-    ubo.view = Matrix4f::look_at(Vector3f(2.0f, 2.0f, 2.0f), Vector3f(0.0f, 0.0f, 0.0f), Vector3f(0.0f, 0.0f, 1.0f));
-    ubo.proj = Matrix4f::perspective(radians(45.0f), aspect_ratio, 0.0f, 10.0f);
+
+    Quaternion rotation = Quaternion::from_axis_angle(Vector3f::forward(), time * Math::radians(90.0f));
+    ubo.model = Quaternion::rotation_matrix(rotation);
+
+    ubo.view = camera_->view;
+
+    ubo.proj = Matrix4f::perspective(Math::radians(75.0f), aspect_ratio, 0.0f, 10000.0f);
+
     ubo.proj[1][1] *= -1.0f;
 
     uniform_buffers_[frame_context_.current_frame]->update(&ubo, sizeof(UniformBufferObject), 0);
@@ -463,7 +474,7 @@ void RenderFrameScript::on_shutdown() {
     {
         device_->destroy_command_allocator(graphics_command_allocator_);
     }
-    
+
     // -- Framebuffers --
     {
         for (RHIFramebufferHandle framebuffer : framebuffers_) {
@@ -472,7 +483,7 @@ void RenderFrameScript::on_shutdown() {
         framebuffers_.clear();
         framebuffer_memory_allocator_.reset();
     }
-        
+
     device_->destroy_graphics_pipeline(graphics_pipeline_);
 
     device_->destroy_render_pass(render_pass_);

@@ -169,8 +169,8 @@ void RHIVulkanDevice::destroy_graphics_pipeline(RHIPipelineHandle pipeline) {
     graphics_pipeline->destroy();
 }
 
-RHISwapchainHandle RHIVulkanDevice::create_swapchain(uint32 width, uint32 height) {
-    RHIVulkanSwapchainRef swapchain = new_ref<RHIVulkanSwapchain>(context_, width, height);
+RHISwapchainHandle RHIVulkanDevice::create_swapchain(uint32 width, uint32 height, uint32 image_count) {
+    RHIVulkanSwapchainRef swapchain = new_ref<RHIVulkanSwapchain>(context_, width, height, image_count);
     swapchain->initialize();
     return swapchain;
 }

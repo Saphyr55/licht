@@ -1,6 +1,6 @@
 #ifdef _WIN32
 
-#include <Windows.h>
+#include "licht/core/platform/windows/windows.hpp"
 
 #include "licht/core/platform/platform_file_system.hpp"
 
