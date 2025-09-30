@@ -66,23 +66,13 @@ int32 ludo_application_launch(int32 argc, const char** argv) {
     // TODO: Must externalize the loop.
     g_is_running = true;
 
-    BufferedAllocator buffered_allocator;
-    buffered_allocator.initialize(1024 * 1024 * 10);  // 1 MB for each buffer
-    
     // Main loop
     while (g_is_running) {
-        // Swap the active and inactive buffers of the double-buffered allocator.
-        buffered_allocator.swap_buffers();
-
-        // Reset the active buffer.
-        buffered_allocator.reset();
-
         // Handle window and platform events
         display.handle_events(); 
 
         // Tick the render frame script with a fixed delta time (0.0f for now)
         render_frame_script.on_tick(0.0f);
-        
     }
 
     // Do not forget to stop it.

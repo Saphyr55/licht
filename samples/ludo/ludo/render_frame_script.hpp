@@ -3,11 +3,6 @@
 #include "licht/core/math/vector3.hpp"
 #include "licht/core/memory/linear_allocator.hpp"
 #include "licht/core/platform/window_handle.hpp"
-#include "licht/rhi/buffer.hpp"
-#include "licht/rhi/command_buffer.hpp"
-#include "licht/rhi/device.hpp"
-#include "licht/rhi/framebuffer.hpp"
-#include "licht/rhi/pipeline/pipeline.hpp"
 #include "licht/rhi/swapchain.hpp"
 #include "scritable_tick.hpp"
 
