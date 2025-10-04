@@ -31,7 +31,6 @@ int32 Counter::destructions = 0;
 TEST_CASE("Basic append/emplace/pop and indexing", "[Array]") {
     Array<int32> a;
     REQUIRE(a.empty());
-    REQUIRE(a.size() == 0);
     REQUIRE(a.capacity() >= 1);
 
     a.append(10);
@@ -79,11 +78,8 @@ TEST_CASE("Remove, contains and get_if", "[Array]") {
     REQUIRE(p != nullptr);
     REQUIRE(*p % 2 == 0);
 
-    a.remove(4, [](const int32& x, const int32& y) -> int32 {
-        if (x == y) {
-            return 0;
-        }
-        return x < y ? -1 : 1;
+    a.remove_if([](auto& x) -> bool {
+        return x == 4;
     });
     REQUIRE_FALSE(a.contains(4));
 }

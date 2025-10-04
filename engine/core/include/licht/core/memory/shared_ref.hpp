@@ -66,7 +66,6 @@ public:
         , reference_counter_(nullptr) {
         if (resource_) {
             reference_counter_ = new_default_reference_counter<ResourceType>(resource_);
-            reference_counter_->add_shared_reference();
         }
     }
 
@@ -84,7 +83,6 @@ public:
         : resource_(resource) {
         if (resource_) {
             reference_counter_ = new_default_reference_counter<DerivedType>(resource_);
-            reference_counter_->add_shared_reference();
         }
     }
 
@@ -93,7 +91,6 @@ public:
         : resource_(resource) {
         if (resource_) {
             reference_counter_ = new_reference_counter_with_deleter<ResourceType, DeleterType>(resource_, deleter);
-            reference_counter_->add_shared_reference();
         }
     }
 
@@ -103,7 +100,6 @@ public:
         : resource_(resource) {
         if (resource_) {
             reference_counter_ = new_reference_counter_with_deleter<DerivedType, DeleterType>(resource_, deleter);
-            reference_counter_->add_shared_reference();
         }
     }
 

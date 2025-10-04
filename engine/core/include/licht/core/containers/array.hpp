@@ -141,25 +141,25 @@ public:
         size_ = 0;
     }
 
-    void remove(const ElementType& value) {
-        remove(value, [](auto& p_1, auto& p_2) -> bool {
-            return (p_1 == p_2);
-        });
-    }
-
-    void remove(const ElementType& value, auto&& predicate) {
+    void remove_if(auto&& predicate) {
         size_type new_size = 0;
+
         for (size_type i = 0; i < size_; ++i) {
-            if (predicate(data_[i], value)) {
+            if (!predicate(data_[i])) {
                 if (new_size != i) {
-                    lplacement_new(data_ + new_size) ElementType(data_[i]);
+                    data_[new_size] = std::move(data_[i]);
                 }
                 ++new_size;
             } else {
                 data_[i].~ElementType();
             }
         }
+
         size_ = new_size;
+    }
+
+    void remove(const ElementType& value) {
+        remove_if([&value](const ElementType& elem) -> bool { return (elem == value); });
     }
 
     void resize(size_type size, const ElementType& default_element = ElementType()) {

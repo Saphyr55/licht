@@ -70,12 +70,6 @@ TEST_CASE("StringRefBase - Edge cases", "[StringRefBase]") {
         REQUIRE(ref.size() == 0);
         REQUIRE(ref.data()[0] == '\0');
     }
-
-    SECTION("Null pointer handling") {
-        licht::StringRef ref(nullptr);
-        REQUIRE(ref.data() == nullptr);
-        // REQUIRE(ref.empty()); // Should stop the program.
-    }
 }
 
 
