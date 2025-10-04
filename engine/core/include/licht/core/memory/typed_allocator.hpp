@@ -8,12 +8,12 @@
 namespace licht {
 
 template <typename ElementType,
-          CAlignedAllocator<void> AllocatorType,
+          CAlignedAllocator AllocatorType,
           MemoryOwnership ownership = MemoryOwnership::Owner>
 class TypedAllocator {
 public:
     template <typename OtherResourceType,
-              CAlignedAllocator<void> OtherAllocatorType = AllocatorType,
+              CAlignedAllocator OtherAllocatorType = AllocatorType,
               MemoryOwnership OtherOwnership = ownership>
     struct rebind {
         using other = TypedAllocator<OtherResourceType, OtherAllocatorType, OtherOwnership>;

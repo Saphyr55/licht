@@ -2,9 +2,9 @@
 
 #include "licht/core/core_exports.hpp"
 #include "licht/core/defines.hpp"
+#include "licht/core/memory/allocator.hpp"
 #include "licht/core/memory/memory.hpp"
 #include "licht/core/memory/typed_allocator.hpp"
-#include "licht/core/memory/allocator.hpp"
 
 namespace licht {
 
@@ -33,18 +33,18 @@ public:
         return buffer_ != nullptr;
     }
 
-public: 
-    explicit LinearAllocator(size_t size);
-    LinearAllocator(); // Default constructor creates an uninitialized allocator.
+public:
+    LinearAllocator(size_t size);
+    LinearAllocator();
     ~LinearAllocator();
 
 private:
+    uint8* buffer_;
     size_t size_;
     size_t offset_;
-    uint8* buffer_;
 };
 
-template<typename Type, MemoryOwnership ownership = MemoryOwnership::Owner>
+template <typename Type, MemoryOwnership ownership = MemoryOwnership::Owner>
 class TypedLinearAllocator : public TypedAllocator<Type, LinearAllocator, ownership> {
 public:
     using Base = TypedAllocator<Type, LinearAllocator, ownership>;

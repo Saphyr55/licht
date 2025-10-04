@@ -16,14 +16,12 @@ public:
 
     void destroy();
 
-    VkDescriptorSetLayout get_descriptor_set_layout() {
-        return descriptor_set_layout_;
-    }
+    VkDescriptorSetLayout get_descriptor_set_layout() { return descriptor_set_layout_; }
 
     VkPipeline& get_handle() { return pipeline_; };
 
     VkPipelineLayout& get_layout() { return pipeline_layout_; };
-    
+
 public:
     RHIVulkanPipeline(VulkanContext& context, const RHIPipelineDescription& description);
 
@@ -36,6 +34,5 @@ private:
 };
 
 using RHIVulkanPipelineRef = SharedRef<RHIVulkanPipeline>;
-
 
 }  //namespace licht

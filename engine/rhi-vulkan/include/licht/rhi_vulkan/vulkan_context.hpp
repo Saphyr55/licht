@@ -4,9 +4,10 @@
 #include "licht/core/function/function_ref.hpp"
 #include "licht/core/platform/dynamic_library.hpp"
 #include "licht/core/trace/trace.hpp"
-#include "licht/rhi/command_queue.hpp"
+#include "licht/rhi/rhi_fowards.hpp"
 #include "licht/rhi/rhi_types.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_render_surface.hpp"
+#include "licht/rhi_vulkan/vulkan_render_surface.hpp"
+#include "licht/rhi_vulkan/vulkan_loader.hpp"
 #include "licht/rhi_vulkan/vulkan_physical_device.hpp"
 
 #include <vulkan/vulkan_core.h>
@@ -21,8 +22,7 @@ namespace licht {
 
 static const Array<StringRef> g_physical_device_extensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
-class VulkanContext {
-public:
+struct VulkanContext {
     SharedRef<DynamicLibrary> library;
 
     VkInstance instance = VK_NULL_HANDLE;
@@ -145,4 +145,19 @@ inline RHIBufferUsage rhi_buffer_usage_get(VkBufferUsageFlags usage) {
 
     return flags;
 }
+
+inline uint32 vulkan_find_memory_type(VulkanContext& context, uint32 type_filter, VkMemoryPropertyFlags properties) {
+    VkPhysicalDeviceMemoryProperties memory_properties;
+    VulkanAPI::lvkGetPhysicalDeviceMemoryProperties(context.physical_device, &memory_properties);
+
+    for (uint32 i = 0; i < memory_properties.memoryTypeCount; i++) {
+        if (type_filter & (1 << i) && (memory_properties.memoryTypes[i].propertyFlags & properties) == properties) {
+            return i;
+        }
+    }
+
+    LCRASH("Failed to find suitable Vulkan memory type for requested properties.")
+    return 0;
+}
+
 }  //namespace licht

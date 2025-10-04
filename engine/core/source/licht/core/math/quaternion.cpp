@@ -4,7 +4,7 @@
 
 namespace licht {
 
-constexpr Quaternion Quaternion::from_axis_angle(Vector3f axis, float32 angle) {
+constexpr Quaternion Quaternion::from_axis_angle(const Vector3f& axis, float32 angle) {
     const float32 half_angle = 0.5f * angle;
     float32 half_angle_sin = Math::sin(half_angle);
     float32 half_angle_cos = Math::cos(half_angle);

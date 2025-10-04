@@ -39,11 +39,11 @@ public:
         return window_handle_;
     }
 
-    inline void set_device(RHIDeviceHandle device) {
+    inline void set_device(RHIDeviceRef device) {
         device_ = device;
     }
 
-    inline RHIDeviceHandle get_device() {
+    inline RHIDeviceRef get_device() {
         return device_;
     }
 
@@ -64,7 +64,7 @@ public:
 private:
     WindowHandle window_handle_;
     GraphicsAPI graphics_api_;
-    RHIDeviceHandle device_;
+    RHIDeviceRef device_;
 };
 
 LICHT_REGISTER_MODULE(RHIModule, RHIModule::ModuleName)

@@ -33,37 +33,33 @@ public:
     ~RenderFrameScript() = default;
 
 private:
-    using RHIFramebufferAllocator = TypedLinearAllocator<RHIFramebufferHandle, MemoryOwnership::NonOwner>;
-    using RHIFramebufferRegistry = Array<RHIFramebufferHandle, RHIFramebufferAllocator>;
-        
     Camera* camera_;
-    Signal<VirtualKey>::connection_t camera_move_connection_;
 
-    RHIBufferHandle position_buffer_;
+    RHIBufferRef position_buffer_;
     Array<Vector3f> positions_;
 
-    RHIBufferHandle color_buffer_;
+    RHIBufferRef color_buffer_;
     Array<Vector3f> colors_; 
         
-    RHIBufferHandle index_buffer_;
+    RHIBufferRef index_buffer_;
     Array<uint32> indices_;
 
-    Array<RHIBufferHandle> uniform_buffers_;
+    Array<RHIBufferRef> uniform_buffers_;
 
     WindowHandle window_handle_;
-    RHIDeviceHandle device_;
+    RHIDeviceRef device_;
     
-    RHISwapchainHandle swapchain_;
+    RHISwapchainRef swapchain_;
 
     RHICommandQueueRef graphics_command_queue_;
     RHICommandQueueRef graphics_present_command_queue_;
 
-    RHIRenderPassHandle render_pass_;
+    RHIRenderPassRef render_pass_;
     RHIDescriptorPoolRef descriptor_pool_;
-    RHIPipelineHandle graphics_pipeline_;
+    RHIPipelineRef graphics_pipeline_;
 
     LinearAllocator framebuffer_memory_allocator_;
-    RHIFramebufferRegistry framebuffers_;
+    Array<RHIFramebufferRef> framebuffers_;
 
     RHICommandAllocatorRef graphics_command_allocator_;
     RHIFrameContext frame_context_;

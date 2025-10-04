@@ -1,6 +1,7 @@
 #pragma once
 
 #include "licht/core/defines.hpp"
+#include "licht/core/memory/memory.hpp"
 
 namespace licht {
 
@@ -13,7 +14,7 @@ public:
 
     constexpr Option(const T& value)
         : is_some_(true) {
-        ::new (&storage_) T(value);
+        lplacement_new(&storage_) T(value);
     }
 
     constexpr Option()
@@ -22,7 +23,7 @@ public:
     constexpr Option(const Option& other)
         : is_some_(other.is_some_) {
         if (is_some_) {
-            ::new (&storage_) T(*other.data());
+            lplacement_new(&storage_) T(*other.data());
         }
     }
 
@@ -33,7 +34,7 @@ public:
             }
             is_some_ = other.is_some_;
             if (is_some_) {
-                ::new (&storage_) T(*other.data());
+                lplacement_new(&storage_) T(*other.data());
             }
         }
         return *this;

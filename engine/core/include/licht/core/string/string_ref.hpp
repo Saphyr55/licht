@@ -15,13 +15,16 @@ public:
     constexpr StringRefBase()
         : data_("") {}
 
-    constexpr StringRefBase(const CharType* str)
-        : data_(str) {
+    constexpr StringRefBase(const CharType* data)
+        : data_(data) {
+        LCHECK_MSG(data, "StringRefBase is not nullable.");
     }
 
-    constexpr StringRefBase(const String& str) 
+    constexpr StringRefBase(const String& str)
         requires std::same_as<CharType, char>
-        : data_(str.data()) {}
+        : data_(str.data()) {
+        LCHECK_MSG(str.data(), "StringRefBase is not nullable.");
+    }
 
     constexpr ~StringRefBase() = default;
 

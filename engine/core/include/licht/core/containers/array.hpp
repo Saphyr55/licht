@@ -1,16 +1,17 @@
 #pragma once
 
-#include "licht/core/algorithm/comparator.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/memory/concepts.hpp"
 #include "licht/core/memory/default_allocator.hpp"
+#include "licht/core/memory/memory.hpp"
 
 #include <algorithm>
 #include <cstddef>
+#include <type_traits>
 
 namespace licht {
 
-template <typename ElementType, CAllocator<ElementType> AllocatorType = TypedDefaultAllocator<ElementType>>
+template <typename ElementType, CTypedAllocator<ElementType> AllocatorType = TypedDefaultAllocator<ElementType>>
 class Array {
 public:
     using IteratorType = ElementType*;
@@ -82,7 +83,7 @@ public:
             reserve(capacity_ == 0 ? 1 : capacity_ * 2);
         }
 
-        new (data_ + size_) ElementType(element);
+        lplacement_new(data_ + size_) ElementType(element);
 
         ++size_;
     }
@@ -99,7 +100,7 @@ public:
         if (size_ >= capacity_) {
             reserve(capacity_ == 0 ? 1 : capacity_ * 2);
         }
-        new (data_ + size_) ElementType(std::forward<Args>(args)...);
+        lplacement_new(data_ + size_) ElementType(std::forward<Args>(args)...);
         ++size_;
     }
 
@@ -151,7 +152,7 @@ public:
         for (size_type i = 0; i < size_; ++i) {
             if (predicate(data_[i], value)) {
                 if (new_size != i) {
-                    new (data_ + new_size) ElementType(data_[i]);
+                    lplacement_new(data_ + new_size) ElementType(data_[i]);
                 }
                 ++new_size;
             } else {
@@ -168,11 +169,13 @@ public:
 
         if (size > size_) {
             for (size_type i = size_; i < size; ++i) {
-                new (data_ + i) ElementType(default_element);
+                lplacement_new(data_ + i) ElementType(default_element);
             }
         } else {
-            for (size_type i = size; i < size_; ++i) {
-                data_[i].~ElementType();
+            if constexpr (std::is_destructible_v<ElementType>) {
+                for (size_type i = size; i < size_; ++i) {
+                    data_[i].~ElementType();
+                }
             }
         }
 
@@ -202,7 +205,7 @@ public:
         return data_;
     }
 
-    inline constexpr  ElementType* data() {
+    inline constexpr ElementType* data() {
         return data_;
     }
 
@@ -268,7 +271,7 @@ public:
         data_ = allocator_allocate(capacity_);
         size_type i = 0;
         for (const ElementType& item : init) {
-            new (data_ + i++) ElementType(item);
+            lplacement_new(data_ + i++) ElementType(item);
         }
     }
 
@@ -357,7 +360,7 @@ private:
 
         data_ = allocator_allocate(capacity_);
         for (size_type i = 0; i < size_; i++) {
-            new (data_ + i) ElementType(source[i]);
+            lplacement_new(data_ + i) ElementType(source[i]);
         }
     }
 
@@ -367,11 +370,13 @@ private:
         size_type elements_to_move = (size_ < new_capacity) ? size_ : new_capacity;
 
         for (size_type i = 0; i < elements_to_move; i++) {
-            new (new_data + i) ElementType(std::move(data_[i]));
+            lplacement_new(new_data + i) ElementType(std::move(data_[i]));
         }
 
-        for (size_type i = 0; i < size_; i++) {
-            data_[i].~ElementType();
+        if (std::is_destructible_v<ElementType>) {
+            for (size_type i = 0; i < size_; i++) {
+                data_[i].~ElementType();
+            }
         }
 
         if (data_) {

@@ -21,19 +21,19 @@ public:
 
     virtual void end_render_pass() override;
 
-    virtual void bind_pipeline(RHIPipelineHandle pipeline) override;
+    virtual void bind_pipeline(RHIPipelineRef pipeline) override;
     
-    virtual void bind_descriptor_sets(RHIPipelineHandle pipeline, const Array<RHIDescriptorSetRef>& descriptor_sets) override;
+    virtual void bind_descriptor_sets(RHIPipelineRef pipeline, const Array<RHIDescriptorSetRef>& descriptor_sets) override;
 
-    virtual void bind_vertex_buffers(const Array<RHIBufferHandle>& buffers) override;
+    virtual void bind_vertex_buffers(const Array<RHIBufferRef>& buffers) override;
 
-    virtual void bind_index_buffer(RHIBufferHandle buffer) override;
+    virtual void bind_index_buffer(RHIBufferRef buffer) override;
 
     virtual void set_scissors(const Rect2D* scissors, uint32 count) override;
 
     virtual void set_viewports(const Viewport* viewports, uint32 count) override;
 
-    virtual void copy_buffer(RHIBufferHandle source, RHIBufferHandle destination, const RHIBufferCopyCommand& command) override;
+    virtual void copy_buffer(RHIBufferRef source, RHIBufferRef destination, const RHIBufferCopyCommand& command) override;
 
     virtual void draw(const RHIDrawCommand& command) override;
     virtual void draw(const RHIDrawIndexedCommand& command) override;
@@ -56,9 +56,9 @@ using RHIVulkanCommandBufferRef = SharedRef<RHIVulkanCommandBuffer>;
 
 class RHIVulkanCommandAllocator : public RHICommandAllocator {
 public:
-    virtual RHICommandBufferHandle open(uint32 index = 0) override;
+    virtual RHICommandBufferRef open(uint32 index = 0) override;
 
-    virtual void reset_command_buffer(RHICommandBufferHandle command_buffer) override;
+    virtual void reset_command_buffer(RHICommandBufferRef command_buffer) override;
 
 public:
     VkCommandPool& get_command_pool();

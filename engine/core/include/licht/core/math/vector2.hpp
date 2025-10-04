@@ -5,7 +5,7 @@
 
 namespace licht {
 
-template <Real R>
+template <Real R = float32>
 struct Vector2 {
     R x = 0;
     R y = 0;

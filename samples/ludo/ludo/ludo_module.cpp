@@ -61,7 +61,8 @@ int32 ludo_application_launch(int32 argc, const char** argv) {
     });
 
     RenderFrameScript render_frame_script(&camera);
-
+    render_frame_script.on_startup();
+    
     // By creating a DisplayMessageHandler, you can intercept the platform and window events.
     SharedRef<DemoMessageHandler> demo_message_handler = new_ref<DemoMessageHandler>();
     display.set_message_handler(demo_message_handler);

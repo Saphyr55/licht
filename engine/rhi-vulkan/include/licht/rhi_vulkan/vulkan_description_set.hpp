@@ -11,7 +11,7 @@ namespace licht {
 
 class RHIVulkanDescriptorSet : public RHIDescriptorSet {
 public:
-    virtual void update(RHIBufferHandle buffer, size_t binding, size_t offset, size_t range) override;
+    virtual void update(RHIBufferRef buffer, size_t binding, size_t offset, size_t range) override;
 
     inline VkDescriptorSet get_handle() {
         return descriptor_set_;

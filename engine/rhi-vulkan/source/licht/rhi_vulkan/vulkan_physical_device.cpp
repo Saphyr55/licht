@@ -1,7 +1,7 @@
 
 #include "licht/core/trace/trace.hpp"
 
-#include "licht/rhi_vulkan/rhi_vulkan_render_surface.hpp"
+#include "licht/rhi_vulkan/vulkan_render_surface.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
 

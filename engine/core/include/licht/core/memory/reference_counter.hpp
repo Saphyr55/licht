@@ -1,12 +1,12 @@
 #pragma once
 
 #include <atomic>
-#include <memory>
 
 #include "licht/core/core_exports.hpp"
 #include "licht/core/defines.hpp"
+#include "licht/core/memory/default_allocator.hpp"
 #include "licht/core/memory/deleter.hpp"
-#include "memory.hpp"
+#include "licht/core/memory/memory.hpp"
 
 namespace licht {
 
@@ -29,18 +29,10 @@ public:
     }
 
     void add_shared_reference() {
-        if (std::addressof(shared_reference_count_) == nullptr) {
-            return;
-        }
-
         shared_reference_count_.fetch_add(1, std::memory_order_relaxed);
     }
 
     void release_shared_reference() {
-        if (std::addressof(shared_reference_count_) == nullptr) {
-            return;
-        }
-
         int32 prev_count = shared_reference_count_.fetch_sub(1, std::memory_order_relaxed);
 
         if (prev_count == 1) {
@@ -48,8 +40,7 @@ public:
             std::atomic_thread_fence(std::memory_order_acquire);
 
             destroy_resource();
-
-            delete this;
+            ldelete(DefaultAllocator::get_instance(), this);
         }
     }
 
@@ -58,18 +49,18 @@ protected:
 };
 
 template <typename ResourceType, typename DeleterType>
-class ReferenceCounterWithDeleter : private DeleterHolder<DeleterType>,
+class ReferenceCounterWithDeleter : private DeleterDelegate<DeleterType>,
                                     public ReferenceCounter {
 public:
     virtual void destroy_resource() override {
         if (resource_) {
-            this->invoke_deleter(resource_);
+            this->invoke(resource_);
             resource_ = nullptr;
         }
     }
 
     ReferenceCounterWithDeleter(ResourceType* resource, const DeleterType& deleter)
-        : DeleterHolder<DeleterType>(deleter)
+        : DeleterDelegate<DeleterType>(deleter)
         , resource_(resource) {
         LCHECK(resource_);
     }
@@ -78,14 +69,14 @@ public:
     ReferenceCounterWithDeleter& operator=(const ReferenceCounterWithDeleter&) = delete;
 
     ReferenceCounterWithDeleter(ReferenceCounterWithDeleter&& other) noexcept
-        : DeleterHolder<DeleterType>(std::move(other))
+        : DeleterDelegate<DeleterType>(std::move(other))
         , resource_(std::exchange(other.resource_, nullptr)) {}
 
     ReferenceCounterWithDeleter& operator=(ReferenceCounterWithDeleter&& other) noexcept {
         if (this != &other) {
             destroy_resource();
 
-            DeleterHolder<DeleterType>::operator=(std::move(other));
+            DeleterDelegate<DeleterType>::operator=(std::move(other));
             resource_ = std::exchange(other.resource_, nullptr);
         }
         return *this;
@@ -97,13 +88,14 @@ private:
 
 template <typename ResourceType, typename DeleterType>
 inline ReferenceCounter* new_reference_counter_with_deleter(ResourceType* resource, const DeleterType& deleter) noexcept {
-    using RefCounterWithDeleter = ReferenceCounterWithDeleter<ResourceType, DeleterType>;
-    return new (MemoryCategory::General) RefCounterWithDeleter(resource, deleter);
+    using RefCounter = ReferenceCounterWithDeleter<ResourceType, DeleterType>;
+    return lnew<RefCounter>(DefaultAllocator::get_instance(), resource, deleter);
 }
 
 template <typename ResourceType>
 inline ReferenceCounter* new_default_reference_counter(ResourceType* resource) noexcept {
-    return new_reference_counter_with_deleter<ResourceType, DefaultDeleter<ResourceType>>(resource, DefaultDeleter<ResourceType>());
+    using DeleterType = DefaultDeleter<ResourceType>;
+    return new_reference_counter_with_deleter(resource, DeleterType(DefaultAllocator::get_instance()));
 }
 
 }  // namespace licht

@@ -49,7 +49,7 @@ struct HashMapElement {
 
 template <typename KeyType,
           typename ValueType,
-          CAllocator<HashMapElement<KeyType, ValueType>> AllocatorType = TypedDefaultAllocator<HashMapElement<KeyType, ValueType>>,
+          CTypedAllocator<HashMapElement<KeyType, ValueType>> AllocatorType = TypedDefaultAllocator<HashMapElement<KeyType, ValueType>>,
           typename HasherType = Hasher>
 class HashMap {
 public:

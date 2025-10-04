@@ -1,4 +1,4 @@
-#include "licht/rhi_vulkan/rhi_vulkan_render_pass.hpp"
+#include "licht/rhi_vulkan/vulkan_render_pass.hpp"
 #include "licht/core/containers/array.hpp"
 #include "licht/rhi/render_pass.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"

@@ -6,11 +6,11 @@
 #include "licht/core/trace/trace.hpp"
 #include "licht/core/platform/dynamic_library.hpp"
 #include "licht/rhi/rhi_types.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_render_surface.hpp"
+#include "licht/rhi_vulkan/vulkan_render_surface.hpp"
 #include "licht/rhi_vulkan/vulkan_physical_device.hpp"
 #include "licht/rhi_vulkan/vulkan_shader_module.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_command_queue.hpp"
+#include "licht/rhi_vulkan/vulkan_command_queue.hpp"
 
 #include <vulkan/vulkan_core.h>
 

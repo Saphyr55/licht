@@ -30,7 +30,7 @@ struct RHIPipelineDescription {
     RHIPipelineViewportStateInformation viewport_info;
     RHIPipelineVertexBindingInformation vertex_binding_info;
     Array<RHIDescriptorSetLayoutBinding> bindings;
-    RHIRenderPassHandle render_pass;
+    RHIRenderPassRef render_pass;
 };
 
 class RHIPipeline {

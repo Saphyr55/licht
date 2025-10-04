@@ -20,19 +20,21 @@ struct Rect2D {
     float32 height = 0.0f;
 };
 
+enum class RHITextureUsage : uint8 {
+    ColorAttachment = 1 << 0,
+    DepthStencil = 1 << 1,
+    Sampled = 1 << 2,
+    TransferSrc = 1 << 3,
+    TransferDst = 1 << 4
+};
+LICHT_ENUM_FLAGS(RHITextureUsage)
+
 enum class RHIShaderStage {
     Vertex,
     Fragment,
     Geometry,
     Tesselation,
     Compute
-};
-
-enum class RHICommandBufferUsage : uint8 {
-    None = 0,
-    OneTimeSubmit = 1 << 0,
-    RenderPassContinue = 1 << 1,
-    SimultaneousUse = 1 << 2,
 };
 
 enum class RHIDescriptorSetType {
@@ -42,32 +44,6 @@ enum class RHIDescriptorSetType {
     StorageImage,
     CombinedImageSampler
 };
-
-inline RHICommandBufferUsage operator|(RHICommandBufferUsage lhs, RHICommandBufferUsage rhs) {
-    return static_cast<RHICommandBufferUsage>(
-        static_cast<uint8>(lhs) |
-        static_cast<uint8>(rhs));
-}
-
-inline RHICommandBufferUsage operator&(RHICommandBufferUsage lhs, RHICommandBufferUsage rhs) {
-    return static_cast<RHICommandBufferUsage>(
-        static_cast<uint8>(lhs) &
-        static_cast<uint8>(rhs));
-}
-
-inline RHICommandBufferUsage& operator|=(RHICommandBufferUsage& lhs, RHICommandBufferUsage rhs) {
-    lhs = lhs | rhs;
-    return lhs;
-}
-
-inline RHICommandBufferUsage& operator&=(RHICommandBufferUsage& lhs, RHICommandBufferUsage rhs) {
-    lhs = lhs & rhs;
-    return lhs;
-}
-
-inline bool rhi_command_buffer_usage_has_flag(RHICommandBufferUsage value, RHICommandBufferUsage flag) {
-    return (value & flag) == flag;
-}
 
 enum class RHIQueueType {
     Unknown,
@@ -81,6 +57,14 @@ enum class RHIVertexInputRate {
     Instance,
 };
 
+enum class RHICommandBufferUsage : uint8 {
+    None = 0,
+    OneTimeSubmit = 1 << 0,
+    RenderPassContinue = 1 << 1,
+    SimultaneousUse = 1 << 2,
+};
+LICHT_ENUM_FLAGS(RHICommandBufferUsage)
+
 enum class RHIBufferUsage : uint8 {
     None = 0,
     Vertex = 1 << 0,
@@ -90,28 +74,17 @@ enum class RHIBufferUsage : uint8 {
     TransferSrc = 1 << 4,
     TransferDst = 1 << 5
 };
+LICHT_ENUM_FLAGS(RHIBufferUsage)
 
-inline RHIBufferUsage operator|(RHIBufferUsage a, RHIBufferUsage b) {
-    return static_cast<RHIBufferUsage>(static_cast<uint8>(a) | static_cast<uint8>(b));
-}
-
-inline RHIBufferUsage operator&(RHIBufferUsage a, RHIBufferUsage b) {
-    return static_cast<RHIBufferUsage>(static_cast<uint8>(a) & static_cast<uint8>(b));
-}
-
-inline RHIBufferUsage& operator|=(RHIBufferUsage& a, RHIBufferUsage b) {
-    a = a | b;
-    return a;
-}
-
-inline RHIBufferUsage& operator&=(RHIBufferUsage& a, RHIBufferUsage b) {
-    a = a & b;
-    return a;
-}
-
-inline bool rhi_buffer_usage_any(RHIBufferUsage usage) {
-    return static_cast<uint8>(usage) != 0;
-}
+enum class TextureUsageFlags : uint8 {
+    ColorAttachment = 1 << 0,
+    DepthStencilAttachment = 1 << 1,
+    Sampled = 1 << 2,
+    Storage = 1 << 3,
+    TransferSrc = 1 << 4,
+    TransferDst = 1 << 5
+};
+LICHT_ENUM_FLAGS(TextureUsageFlags)
 
 enum class RHIBufferMemoryUsage {
     Device,
@@ -184,5 +157,13 @@ enum class RHIFormat {
     ASTC_4x4,
     ASTC_8x8,
 };
+
+inline bool rhi_command_buffer_usage_has_flag(RHICommandBufferUsage value, RHICommandBufferUsage flag) {
+    return (value & flag) == flag;
+}
+
+inline bool rhi_buffer_usage_any(RHIBufferUsage usage) {
+    return static_cast<uint8>(usage) != 0;
+}
 
 }  //namespace licht

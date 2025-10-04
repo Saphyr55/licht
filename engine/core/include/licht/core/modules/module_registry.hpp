@@ -3,10 +3,11 @@
 #include "licht/core/containers/array.hpp"
 #include "licht/core/containers/hash_map.hpp"
 #include "licht/core/function/function_ref.hpp"
+#include "licht/core/memory/default_allocator.hpp"
+#include "licht/core/memory/linear_allocator.hpp"
 #include "licht/core/memory/memory.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/modules/module.hpp"
-#include "licht/core/modules/module_manifest.hpp"
 #include "licht/core/platform/dynamic_library.hpp"
 #include "licht/core/string/string_ref.hpp"
 
@@ -56,16 +57,15 @@ class ModuleRegistrant {
 public:
     ModuleRegistrant(StringRef unique_name) {
         ModuleRegistry::get_instance().register_module(unique_name, []() -> Module* {
-            return Memory::new_resource<ModuleType>();
+            return new ModuleType();
         });
     }
 };
-
 }  //namespace licht
 
 #define LICHT_REGISTER_MODULE_WITH_CUSTOM_VARIABLE(ModuleType, ModuleName, VariableName) \
     namespace {                                                                          \
-    static const auto (VariableName) = []() {                                            \
+    static const auto(VariableName) = []() {                                             \
         return ::licht::ModuleRegistrant<ModuleType>(ModuleName);                        \
     }();                                                                                 \
     }

@@ -1,52 +1,34 @@
 #pragma once
 
 #include <cstdint>
-#include <utility>
+#include <type_traits>
 
 #include "licht/core/core_exports.hpp"
 #include "licht/core/defines.hpp"
+#include "licht/core/memory/allocator.hpp"
+#include "licht/core/memory/concepts.hpp"
+
+#define lplacement_new(Memory) ::new (Memory)
 
 namespace licht {
 
-enum class MemoryAcess : uint8 {
+enum class MemoryAccess : uint8 {
     Read = 1 << 0,
     Write = 1 << 1,
 };
+LICHT_ENUM_FLAGS(MemoryAccess)
 
 enum class MemoryOwnership {
     Owner,
     NonOwner
 };
 
-enum class MemoryCategory {
-    General
-};
-
 }  //namespace licht
-
-LICHT_CORE_API void* operator new(size_t size, licht::MemoryCategory category) noexcept;
-LICHT_CORE_API void* operator new[](size_t size, licht::MemoryCategory category) noexcept;
-
-LICHT_CORE_API void operator delete(void* resource, licht::MemoryCategory category) noexcept;
-LICHT_CORE_API void operator delete[](void* resource, licht::MemoryCategory category) noexcept;
-
-LICHT_CORE_API void operator delete(void* resource, size_t size, licht::MemoryCategory category) noexcept;
-LICHT_CORE_API void operator delete[](void* resource, size_t size, licht::MemoryCategory category) noexcept;
 
 namespace licht {
 
 class Memory {
 public:
-    template <typename ResourceType>
-    static ResourceType* new_resource(auto... args) noexcept {
-        return ::new (MemoryCategory::General) ResourceType(std::forward<decltype(args)>(args)...);
-    }
-
-    template <typename ResourceType>
-    static void delete_resource(ResourceType* resource) noexcept {
-        ::delete resource;
-    }
-
     /**
      * @brief Aligns the given address to the specified alignment.
      *
@@ -94,8 +76,8 @@ public:
      * @param size The size of the memory block to allocate, in bytes.
      * @return A pointer to the allocated memory block.
      */
-    LICHT_CORE_API static uint8* allocate(size_t size, MemoryCategory category = MemoryCategory::General) noexcept;
-    LICHT_CORE_API static uint8* allocate(size_t size, size_t alignment, MemoryCategory category = MemoryCategory::General) noexcept;
+    LICHT_CORE_API static uint8* allocate(size_t size) noexcept;
+    LICHT_CORE_API static uint8* allocate(size_t size, size_t alignment) noexcept;
 
     /**
      * @brief Frees a previously allocated block of memory.
@@ -131,8 +113,8 @@ public:
                                      size_t size);
 
     LICHT_CORE_API static void* move(void* destination,
-                                          const void* source,
-                                          size_t size);
+                                     const void* source,
+                                     size_t size);
 
     LICHT_CORE_API static int compare(const void* buffer1, const void* buffer2, size_t size);
 
@@ -144,6 +126,46 @@ public:
 
     Memory& operator=(Memory&&) = delete;
     Memory& operator=(const Memory&&) = delete;
+
+private:
+    static Allocator* s_system_allocator_;
 };
 
 }  // namespace licht
+
+inline void* lalign_malloc(size_t size, size_t alignment) noexcept {
+    return licht::Memory::allocate(size, alignment);
+}
+
+inline void* lmalloc(size_t size) noexcept {
+    return licht::Memory::allocate(size);
+}
+
+inline void lalign_free(void* block, size_t size, size_t alignment) noexcept {
+    licht::Memory::free(block, size, alignment);
+}
+
+inline void lfree(void* block, size_t size) noexcept {
+    licht::Memory::free(block, size);
+}
+
+template <typename T, typename... Args>
+inline T* lnew(licht::CAlignedAllocator auto& allocator, Args&&... args) noexcept {
+    void* memory = allocator.allocate(sizeof(T), alignof(T));
+    if (!memory) {
+        return nullptr;
+    }
+    lplacement_new(memory) T(std::forward<Args>(args)...);
+    return static_cast<T*>(memory);
+}
+
+template <typename T>
+inline void ldelete(licht::CAlignedAllocator auto& allocator, T* ptr) noexcept {
+    LCHECK(ptr)
+
+    if constexpr (std::is_destructible_v<T>) {
+        ptr->~T();
+    }
+
+    allocator.deallocate(ptr, sizeof(T), alignof(T));
+}

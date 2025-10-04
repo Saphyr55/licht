@@ -33,6 +33,9 @@ public:
 
     virtual void* get_native_window_handle(WindowHandle window) override;
 
+    SDLDisplay() = default;
+    ~SDLDisplay() = default;
+
 private:
     SharedRef<DisplayMessageHandler> message_handler_;
     HashMap<WindowHandle, SDL_Window*> main_window_map_;

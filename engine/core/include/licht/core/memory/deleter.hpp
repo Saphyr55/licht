@@ -1,38 +1,50 @@
 #pragma once
 
-#include <memory>
-
+#include "concepts.hpp"
+#include "licht/core/defines.hpp"
+#include "licht/core/memory/default_allocator.hpp"
 #include "licht/core/memory/memory.hpp"
 
 namespace licht {
 
 template <typename DeleterType>
-class DeleterHolder {
+class DeleterDelegate {
 public:
     template <typename ResourceType>
-    void invoke_deleter(ResourceType* resource) noexcept {
+    void invoke(ResourceType* resource) noexcept {
         deleter_(resource);
     }
 
-    explicit DeleterHolder(const DeleterType& deleter)
+    explicit DeleterDelegate(const DeleterType& deleter)
         : deleter_(deleter) {}
 
 private:
     DeleterType deleter_;
 };
 
-template <typename ResourceType>
-class DefaultDeleter {
+template <typename ResourceType, CAlignedAllocator AllocatorType>
+class Deleter {
 public:
-    void operator()(ResourceType* resource) noexcept { destroy(resource); }
-
-    void destroy(ResourceType* resource) noexcept {
-        if (resource) {
-            Memory::delete_resource(resource);
-        }
+    void operator()(ResourceType* resource) noexcept { 
+        destroy(resource); 
     }
 
-    virtual ~DefaultDeleter() = default;
+    void destroy(ResourceType* resource) noexcept {
+        LCHECK(resource);
+        ldelete(allocator_, resource);
+    }
+
+    Deleter(AllocatorType& allocator)
+        : allocator_(allocator) {
+    }
+
+    virtual ~Deleter() = default;
+
+private:
+    AllocatorType& allocator_;
 };
+
+template <typename ResourceType>
+using DefaultDeleter = Deleter<ResourceType, DefaultAllocator>;
 
 }  // namespace licht

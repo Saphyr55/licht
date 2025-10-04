@@ -20,20 +20,20 @@ class RHIDescriptorPool;
 class RHICommandAllocator;
 class RHIPipeline;
 
-using RHIBufferHandle = SharedRef<RHIBuffer>;
-using RHICommandBufferHandle = SharedRef<RHICommandBuffer>;
 using RHICommandAllocatorRef = SharedRef<RHICommandAllocator>;
-using RHISemaphoreHandle = SharedRef<RHISemaphore>;
-using RHISwapchainHandle = SharedRef<RHISwapchain>;
-using RHITextureHandle = SharedRef<RHITexture>;
-using RHITextureViewHandle = SharedRef<RHITextureView>;
-using RHIDeviceHandle = SharedRef<RHIDevice>;
-using RHIFenceHandle = SharedRef<RHIFence>;
 using RHICommandQueueRef = SharedRef<RHICommandQueue>;
-using RHIFramebufferHandle = SharedRef<RHIFramebuffer>;
-using RHIRenderPassHandle = SharedRef<RHIRenderPass>;
 using RHIDescriptorSetRef = SharedRef<RHIDescriptorSet>;
 using RHIDescriptorPoolRef = SharedRef<RHIDescriptorPool>;
-using RHIPipelineHandle = SharedRef<RHIPipeline>;
+using RHIBufferRef = SharedRef<RHIBuffer>;
+using RHICommandBufferRef = SharedRef<RHICommandBuffer>;
+using RHISemaphoreRef = SharedRef<RHISemaphore>;
+using RHISwapchainRef = SharedRef<RHISwapchain>;
+using RHITextureRef = SharedRef<RHITexture>;
+using RHITextureViewRef = SharedRef<RHITextureView>;
+using RHIDeviceRef = SharedRef<RHIDevice>;
+using RHIFenceRef = SharedRef<RHIFence>;
+using RHIFramebufferRef = SharedRef<RHIFramebuffer>;
+using RHIRenderPassRef = SharedRef<RHIRenderPass>;
+using RHIPipelineRef = SharedRef<RHIPipeline>;
 
 }

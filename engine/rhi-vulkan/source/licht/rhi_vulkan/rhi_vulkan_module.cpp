@@ -3,7 +3,7 @@
 #include "licht/core/modules/module_registry.hpp"
 #include "licht/core/platform/display.hpp"
 #include "licht/rhi/rhi_module.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_device.hpp"
+#include "licht/rhi_vulkan/vulkan_device.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 
 #include <vulkan/vulkan_core.h>

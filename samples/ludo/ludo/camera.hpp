@@ -54,7 +54,7 @@ public:
         front.z = Math::sin(rad_yaw) * Math::cos(rad_pitch);
 
         right = Vector3f::normalize(Vector3f::cross(front, world_up));
-        up = Vector3f::normalize(Vector3f::cross(right, front));
+        up = Vector3f::normalize(Vector3f::cross(front, right));
 
         update_view();
     }

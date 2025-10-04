@@ -1,14 +1,14 @@
-#include "licht/rhi_vulkan/rhi_vulkan_pipeline.hpp"
+#include "licht/rhi_vulkan/vulkan_pipeline.hpp"
 
 #include "licht/core/defines.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/memory/shared_ref_cast.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/pipeline/compiled_shader.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_render_pass.hpp"
+#include "licht/rhi_vulkan/vulkan_render_pass.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_description_set.hpp"
+#include "licht/rhi_vulkan/vulkan_description_set.hpp"
 
 #include <vulkan/vulkan_core.h>
 

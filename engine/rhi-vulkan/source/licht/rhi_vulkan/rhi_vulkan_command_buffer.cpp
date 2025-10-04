@@ -1,16 +1,16 @@
-#include "licht/rhi_vulkan/rhi_vulkan_command_buffer.hpp"
+#include "licht/rhi_vulkan/vulkan_command_buffer.hpp"
 #include "licht/core/containers/array.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/memory/shared_ref_cast.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/rhi_types.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_buffer.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_framebuffer.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_pipeline.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_render_pass.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_command_queue.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_description_set.hpp"
+#include "licht/rhi_vulkan/vulkan_buffer.hpp"
+#include "licht/rhi_vulkan/vulkan_framebuffer.hpp"
+#include "licht/rhi_vulkan/vulkan_pipeline.hpp"
+#include "licht/rhi_vulkan/vulkan_render_pass.hpp"
+#include "licht/rhi_vulkan/vulkan_command_queue.hpp"
+#include "licht/rhi_vulkan/vulkan_description_set.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
 
@@ -45,12 +45,12 @@ void RHIVulkanCommandBuffer::end() {
     LICHT_VULKAN_CHECK(VulkanAPI::lvkEndCommandBuffer(command_buffer_));
 }
 
-void RHIVulkanCommandBuffer::bind_pipeline(RHIPipelineHandle pipeline) {
+void RHIVulkanCommandBuffer::bind_pipeline(RHIPipelineRef pipeline) {
     RHIVulkanPipelineRef vulkan_graphics_pipeline = static_ref_cast<RHIVulkanPipeline>(pipeline);
     VulkanAPI::lvkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, vulkan_graphics_pipeline->get_handle());
 }
 
-void RHIVulkanCommandBuffer::bind_descriptor_sets(RHIPipelineHandle pipeline, const Array<RHIDescriptorSetRef>& descriptor_sets) {
+void RHIVulkanCommandBuffer::bind_descriptor_sets(RHIPipelineRef pipeline, const Array<RHIDescriptorSetRef>& descriptor_sets) {
     static constexpr auto mapping_desc_set = [](const RHIDescriptorSetRef& descriptor_set) -> VkDescriptorSet {
         RHIVulkanDescriptorSetRef vk_descriptor_set = static_ref_cast<RHIVulkanDescriptorSet>(descriptor_set);
         return vk_descriptor_set->get_handle();
@@ -63,18 +63,18 @@ void RHIVulkanCommandBuffer::bind_descriptor_sets(RHIPipelineHandle pipeline, co
         vk_pipeline->get_layout(), 0, vk_descriptor_sets.size(), vk_descriptor_sets.data(), 0, nullptr);
 }
 
-void RHIVulkanCommandBuffer::bind_vertex_buffers(const Array<RHIBufferHandle>& buffers) {
+void RHIVulkanCommandBuffer::bind_vertex_buffers(const Array<RHIBufferRef>& buffers) {
     Array<VkDeviceSize> offsets;
     offsets.resize(buffers.size(), 0);
 
-    Array<VkBuffer> vk_buffers = buffers.map<VkBuffer>([](RHIBufferHandle buffer_handle) -> VkBuffer {
+    Array<VkBuffer> vk_buffers = buffers.map<VkBuffer>([](RHIBufferRef buffer_handle) -> VkBuffer {
         return static_ref_cast<RHIVulkanBuffer>(buffer_handle)->get_handle(); 
     });
     
     VulkanAPI::lvkCmdBindVertexBuffers(command_buffer_, 0, buffers.size(), vk_buffers.data(), offsets.data());
 }
 
-void RHIVulkanCommandBuffer::bind_index_buffer(RHIBufferHandle buffer) {
+void RHIVulkanCommandBuffer::bind_index_buffer(RHIBufferRef buffer) {
     VkBuffer vkbuffer = static_ref_cast<RHIVulkanBuffer>(buffer)->get_handle();
     // TODO: Make the type configurable
     VulkanAPI::lvkCmdBindIndexBuffer(command_buffer_, vkbuffer, 0, VK_INDEX_TYPE_UINT32);
@@ -106,7 +106,7 @@ void RHIVulkanCommandBuffer::set_viewports(const Viewport* viewports, uint32 cou
     VulkanAPI::lvkCmdSetViewport(command_buffer_, 0, count, vk_viewports.data());
 }
 
-void RHIVulkanCommandBuffer::copy_buffer(RHIBufferHandle source, RHIBufferHandle destination, const RHIBufferCopyCommand& command) {
+void RHIVulkanCommandBuffer::copy_buffer(RHIBufferRef source, RHIBufferRef destination, const RHIBufferCopyCommand& command) {
     
     RHIVulkanBufferRef vksource = static_ref_cast<RHIVulkanBuffer>(source);
     RHIVulkanBufferRef vkdestination = static_ref_cast<RHIVulkanBuffer>(destination);
@@ -149,12 +149,12 @@ void RHIVulkanCommandBuffer::draw(const RHIDrawIndexedCommand& command) {
     VulkanAPI::lvkCmdDrawIndexed(command_buffer_, command.index_count, command.instance_count, command.first_index, command.vertex_offset, command.first_instance);
 }
 
-RHICommandBufferHandle RHIVulkanCommandAllocator::open(uint32 index) {
+RHICommandBufferRef RHIVulkanCommandAllocator::open(uint32 index) {
     VkCommandBuffer command_buffer = command_buffers_[index];
     return new_ref<RHIVulkanCommandBuffer>(command_buffer);
 }
 
-void RHIVulkanCommandAllocator::reset_command_buffer(RHICommandBufferHandle command_buffer) {
+void RHIVulkanCommandAllocator::reset_command_buffer(RHICommandBufferRef command_buffer) {
     RHIVulkanCommandBufferRef vk_command_buffer = static_ref_cast<RHIVulkanCommandBuffer>(command_buffer);
     VulkanAPI::lvkResetCommandBuffer(vk_command_buffer->get_handle(), 0);
 }

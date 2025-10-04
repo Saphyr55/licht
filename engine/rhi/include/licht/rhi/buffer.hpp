@@ -4,9 +4,11 @@
 #include "licht/core/containers/array.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/rhi/resource.hpp"
-#include "licht/rhi/rhi_types.hpp"
-#include "licht/rhi/rhi_fowards.hpp"
 #include "licht/rhi/rhi_exports.hpp"
+#include "licht/rhi/rhi_fowards.hpp"
+#include "licht/rhi/rhi_types.hpp"
+#include "licht/rhi/texture.hpp"
+
 
 namespace licht {
 
@@ -78,7 +80,7 @@ struct RHIBufferDescription {
     RHIBufferUsage usage = RHIBufferUsage::Vertex;
 
     /**
-     * @brief 
+     * @brief
      */
     RHIBufferMemoryUsage memory_usage = RHIBufferMemoryUsage::Host;
 
@@ -95,7 +97,7 @@ struct RHIBufferDescription {
 };
 
 /**
- * @brief Abstract base class representing a buffer resource in the RHI (Rendering Hardware Interface).
+ * @brief Abstract base class representing a buffer resource in the RHI.
  *
  * RHIBuffer provides an interface for buffer objects, allowing querying of usage, access mode, size,
  * and supporting operations such as binding, mapping, unmapping, and updating buffer data.
@@ -110,7 +112,7 @@ public:
 
     /**
      * @brief Gets the access mode of the buffer.
-     * @return The access mode as an RHIAccessMode enum.
+     * @return The access mode enum.
      */
     virtual RHIAccessMode get_access_mode() = 0;
 
@@ -154,14 +156,13 @@ public:
 
 struct LICHT_RHI_API RHIStagingBufferContext {
     RHIBufferUsage usage;
-    size_t size;  // Size in bytes;
-    const void* data;   // Data to transfer to the device.
+    size_t size;       // Size in bytes;
+    const void* data;  // Data to transfer to the device.
 
     RHIStagingBufferContext(RHIBufferUsage in_usage, size_t in_size, void* in_data)
         : usage(in_usage)
         , size(in_size)
-        , data(in_data)
-        { }
+        , data(in_data) {}
 
     template <typename T>
     RHIStagingBufferContext(RHIBufferUsage usage, const Array<T>& data)
@@ -175,23 +176,36 @@ struct LICHT_RHI_API RHIStagingBufferContext {
 
 class LICHT_RHI_API RHIDeviceMemoryUploader {
 public:
-    RHIBufferHandle send_buffer(const RHIStagingBufferContext& context);
+    RHIBufferRef send_buffer(const RHIStagingBufferContext& context);
+
+    RHITextureRef send_texture(const RHIStagingBufferContext& context, const RHITextureDescription& description);
 
     void upload();
 
-    RHIDeviceMemoryUploader(RHIDeviceHandle device, size_t capacity = 8)
+    RHIDeviceMemoryUploader(RHIDeviceRef device, size_t capacity = 8)
         : device_(device)
         , buffer_entries_(capacity) {}
 
 private:
+    RHIBufferDescription create_staging_buffer_description(const RHIStagingBufferContext& context);
+    RHIBufferDescription create_buffer_description(const RHIStagingBufferContext& context);
+
+private:
     struct BufferEntry {
-        RHIBufferHandle staging;
-        RHIBufferHandle main;
+        RHIBufferRef staging;
+        RHIBufferRef main;
         size_t size;
     };
 
-    RHIDeviceHandle device_;
+    struct TextureEntry {
+        RHIBufferRef staging;
+        RHITextureRef main;
+        size_t size;
+    };
+
+    RHIDeviceRef device_;
     Array<BufferEntry> buffer_entries_;
+    Array<TextureEntry> texture_entries_;
 };
 
 }  //namespace licht

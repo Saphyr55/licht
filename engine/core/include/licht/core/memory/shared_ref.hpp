@@ -1,8 +1,8 @@
 #pragma once
 
 #include <concepts>
-#include <memory>
 
+#include "licht/core/memory/default_allocator.hpp"
 #include "licht/core/memory/deleter.hpp"
 #include "licht/core/memory/reference_counter.hpp"
 
@@ -225,7 +225,7 @@ private:
 
 template <typename ResourceType, typename... Args>
 constexpr inline SharedRef<ResourceType> new_ref(Args&&... args) noexcept {
-    return SharedRef<ResourceType>(new ResourceType(std::forward<Args>(args)...));
+    return SharedRef<ResourceType>(lnew<ResourceType>(DefaultAllocator::get_instance(), args...));
 }
 
 template <typename ResourceType>

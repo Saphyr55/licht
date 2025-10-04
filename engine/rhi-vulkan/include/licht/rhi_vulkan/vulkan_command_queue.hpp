@@ -10,12 +10,12 @@ namespace licht {
 
 class RHIVulkanCommandQueue : public RHICommandQueue {
 public:
-    virtual void submit(const Array<RHICommandBufferHandle>& command_buffers,
-                        const Array<RHISemaphoreHandle>& wait_semaphores,
-                        const Array<RHISemaphoreHandle>& signal_semaphores,
-                        const RHIFenceHandle fence) override;
+    virtual void submit(const Array<RHICommandBufferRef>& command_buffers,
+                        const Array<RHISemaphoreRef>& wait_semaphores,
+                        const Array<RHISemaphoreRef>& signal_semaphores,
+                        const RHIFenceRef fence) override;
         
-    virtual void present(RHISwapchainHandle swapchain, RHIFrameContext& context) override;
+    virtual void present(RHISwapchainRef swapchain, RHIFrameContext& context) override;
 
     virtual void wait_idle() override;
 

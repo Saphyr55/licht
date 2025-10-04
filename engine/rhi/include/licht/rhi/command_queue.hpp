@@ -17,17 +17,17 @@ namespace licht {
  */
 class RHICommandQueue {
 public:
-    virtual void submit(const Array<RHICommandBufferHandle>& command_buffers,
-                        const Array<RHISemaphoreHandle>& wait_semaphores,
-                        const Array<RHISemaphoreHandle>& signal_semaphores,
-                        const RHIFenceHandle fence) = 0;
+    virtual void submit(const Array<RHICommandBufferRef>& command_buffers,
+                        const Array<RHISemaphoreRef>& wait_semaphores,
+                        const Array<RHISemaphoreRef>& signal_semaphores,
+                        const RHIFenceRef fence) = 0;
 
     /**
      * @brief Present the current image to a swapchain.
      * @param swapchain Swapchain handle to present into.
      * @param context Frame context used for synchronization and per-frame resources.
      */
-    virtual void present(RHISwapchainHandle swapchain, RHIFrameContext& context) = 0;
+    virtual void present(RHISwapchainRef swapchain, RHIFrameContext& context) = 0;
 
     /**
      * @brief Get the type of this queue.

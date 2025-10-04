@@ -8,10 +8,10 @@ namespace licht {
 
 class RHIFrameContext {
 public:
-    Array<RHISemaphoreHandle> frame_available_semaphores;
-    Array<RHISemaphoreHandle> render_finished_semaphores;
-    Array<RHIFenceHandle> in_flight_fences;
-    Array<RHIFenceHandle*> frame_in_flight_fences;
+    Array<RHISemaphoreRef> frame_available_semaphores;
+    Array<RHISemaphoreRef> render_finished_semaphores;
+    Array<RHIFenceRef> in_flight_fences;
+    Array<RHIFenceRef*> frame_in_flight_fences;
 
     uint32 frame_width;
     uint32 frame_height;
@@ -25,11 +25,11 @@ public:
     bool out_of_date = false;
 
 public:
-    RHISemaphoreHandle current_frame_available_semaphore();
+    RHISemaphoreRef current_frame_available_semaphore();
 
-    RHISemaphoreHandle current_render_finished_semaphore();
+    RHISemaphoreRef current_render_finished_semaphore();
 
-    RHIFenceHandle current_in_flight_fence();    
+    RHIFenceRef current_in_flight_fence();    
 
     inline void next_frame() {
         current_frame = (current_frame + 1) % frame_count;
@@ -49,19 +49,19 @@ public:
 
     virtual RHIFormat get_format() = 0;
 
-    virtual const Array<RHITextureViewHandle>& get_texture_views() = 0;
+    virtual const Array<RHITextureViewRef>& get_texture_views() = 0;
 };
 
 
-inline RHISemaphoreHandle RHIFrameContext::current_frame_available_semaphore() {
+inline RHISemaphoreRef RHIFrameContext::current_frame_available_semaphore() {
     return frame_available_semaphores[current_frame]; 
 }
 
-inline RHISemaphoreHandle RHIFrameContext::current_render_finished_semaphore() {
+inline RHISemaphoreRef RHIFrameContext::current_render_finished_semaphore() {
     return frame_available_semaphores[current_frame];
 }
 
-inline RHIFenceHandle RHIFrameContext::current_in_flight_fence() {
+inline RHIFenceRef RHIFrameContext::current_in_flight_fence() {
     return in_flight_fences[current_frame];
 }
 

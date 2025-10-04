@@ -1,11 +1,11 @@
-#include "licht/rhi_vulkan/rhi_vulkan_swapchain.hpp"
+#include "licht/rhi_vulkan/vulkan_swapchain.hpp"
 #include "licht/core/math/math.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/memory/shared_ref_cast.hpp"
 #include "licht/rhi/texture.hpp"
-#include "licht/rhi_vulkan/rhi_sync.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_render_surface.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_texture.hpp"
+#include "licht/rhi_vulkan/vulkan_sync.hpp"
+#include "licht/rhi_vulkan/vulkan_render_surface.hpp"
+#include "licht/rhi_vulkan/vulkan_texture.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
 #include "vulkan/vulkan_core.h"
@@ -151,7 +151,8 @@ void RHIVulkanSwapchain::initialize() {
     format_ = surface_format.format;
 
     for (uint32 i = 0; i < image_count; i++) {
-        RHIVulkanTextureViewRef texture_view = new_ref<RHIVulkanTextureView>();
+        VkImageView image_view;
+        RHIVulkanTextureViewRef texture_view = new_ref<RHIVulkanTextureView>(image_view);
         VkImage image = images_[i];
 
         VkImageViewCreateInfo image_view_create_info = {};
@@ -178,7 +179,7 @@ void RHIVulkanSwapchain::initialize() {
 }
 
 void RHIVulkanSwapchain::destroy() {
-    for (RHITextureViewHandle texture_view : texture_views_) {
+    for (RHITextureViewRef texture_view : texture_views_) {
         RHIVulkanTextureViewRef vk_texture_view = static_ref_cast<RHIVulkanTextureView>(texture_view);
         VulkanAPI::lvkDestroyImageView(context_.device, vk_texture_view->get_handle(), context_.allocator);
     }

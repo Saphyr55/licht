@@ -1,11 +1,11 @@
-#include "licht/rhi_vulkan/rhi_vulkan_framebuffer.hpp"
+#include "licht/rhi_vulkan/vulkan_framebuffer.hpp"
 
 #include "licht/core/containers/array.hpp"
 #include "licht/core/memory/shared_ref_cast.hpp"
 #include "licht/rhi/framebuffer.hpp"
 #include "licht/rhi/texture.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_render_pass.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_texture.hpp"
+#include "licht/rhi_vulkan/vulkan_render_pass.hpp"
+#include "licht/rhi_vulkan/vulkan_texture.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
 
 namespace licht {
@@ -30,7 +30,7 @@ void RHIVulkanFramebuffer::initialize() {
     RHIVulkanRenderPassRef render_pass = static_ref_cast<RHIVulkanRenderPass>(description_.render_pass);
 
     Array<VkImageView> attachments(description_.attachments.size());
-    for (RHITextureViewHandle texture_view : description_.attachments) {
+    for (RHITextureViewRef texture_view : description_.attachments) {
         RHIVulkanTextureViewRef vulkan_texture_view = static_ref_cast<RHIVulkanTextureView>(texture_view);
         attachments.append(vulkan_texture_view->get_handle());
     }

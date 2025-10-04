@@ -1,5 +1,5 @@
 
-#include "licht/rhi_vulkan/rhi_vulkan_buffer.hpp"
+#include "licht/rhi_vulkan/vulkan_buffer.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/memory/memory.hpp"
 #include "licht/rhi/buffer.hpp"
@@ -9,20 +9,6 @@
 #include <vulkan/vulkan_core.h>
 
 namespace licht {
-
-static uint32 find_memory_type(VulkanContext& context, uint32 type_filter, VkMemoryPropertyFlags properties) {
-    VkPhysicalDeviceMemoryProperties memory_properties;
-    VulkanAPI::lvkGetPhysicalDeviceMemoryProperties(context.physical_device, &memory_properties);
-
-    for (uint32 i = 0; i < memory_properties.memoryTypeCount; i++) {
-        if (type_filter & (1 << i) && (memory_properties.memoryTypes[i].propertyFlags & properties) == properties) {
-            return i;
-        }
-    }
-
-    LCRASH("Failed to find suitable Vulkan memory type for requested properties.")
-    return 0;
-}
 
 RHIVulkanBuffer::RHIVulkanBuffer(VulkanContext& context, RHIBufferDescription description)
     : context_(context)
@@ -79,7 +65,7 @@ void RHIVulkanBuffer::initialize() {
     memory_allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     memory_allocate_info.pNext = VK_NULL_HANDLE;
     memory_allocate_info.allocationSize = memory_requirements.size;
-    memory_allocate_info.memoryTypeIndex = find_memory_type(context_, memory_requirements.memoryTypeBits, properties);
+    memory_allocate_info.memoryTypeIndex = vulkan_find_memory_type(context_, memory_requirements.memoryTypeBits, properties);
 
     LICHT_VULKAN_CHECK(VulkanAPI::lvkAllocateMemory(context_.device, &memory_allocate_info, context_.allocator, &memory_))
 

@@ -5,7 +5,7 @@
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/rhi/rhi_types.hpp"
 #include "licht/rhi/swapchain.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_render_surface.hpp"
+#include "licht/rhi_vulkan/vulkan_render_surface.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -27,7 +27,7 @@ public:
 
     virtual RHIFormat get_format() override;
 
-    virtual const Array<RHITextureViewHandle>& get_texture_views() override {
+    virtual const Array<RHITextureViewRef>& get_texture_views() override {
         return texture_views_;
     }
 
@@ -63,7 +63,7 @@ private:
     VkFormat format_;
     VkExtent2D extent_;
     Array<VkImage> images_;
-    Array<RHITextureViewHandle> texture_views_;
+    Array<RHITextureViewRef> texture_views_;
     VkSwapchainKHR handle_ = VK_NULL_HANDLE;
     uint32 image_count_;
 };

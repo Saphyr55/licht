@@ -1,14 +1,14 @@
-#include "licht/rhi_vulkan/rhi_vulkan_description_set.hpp"
+#include "licht/rhi_vulkan/vulkan_description_set.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
-#include "licht/rhi_vulkan/rhi_vulkan_buffer.hpp"
+#include "licht/rhi_vulkan/vulkan_buffer.hpp"
 #include "licht/core/memory/shared_ref_cast.hpp"
 
 
 namespace licht {
 
-void RHIVulkanDescriptorSet::update(RHIBufferHandle buffer, size_t binding, size_t offset, size_t range) {
+void RHIVulkanDescriptorSet::update(RHIBufferRef buffer, size_t binding, size_t offset, size_t range) {
     RHIVulkanBufferRef vkbuffer = static_ref_cast<RHIVulkanBuffer>(buffer);
 
     VkDescriptorBufferInfo buffer_info = {};

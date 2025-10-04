@@ -5,13 +5,12 @@
 namespace licht {
 
 void* LinearAllocator::allocate(const size_t size, size_t alignment) {
-    
     size_t space = size_ - offset_;
     uint8* block = buffer_ + offset_;
     uint8* aligned_block = Memory::align(block, alignment);
 
     if (!aligned_block || aligned_block + size > buffer_ + size_) {
-         // Not enough space.
+        // Not enough space.
         return nullptr;
     }
 
@@ -30,7 +29,7 @@ void LinearAllocator::initialize(size_t size) {
     if (buffer_) {
         destroy();
     }
-    buffer_ = static_cast<uint8*>(Memory::allocate(size_));
+    buffer_ = Memory::allocate(size_);
     if (buffer_) {
         Memory::write(buffer_, 0, size_);
     }
@@ -52,9 +51,7 @@ void LinearAllocator::reset() {
 }
 
 LinearAllocator::LinearAllocator(size_t size)
-    : size_(32)
-    , offset_(0)
-    , buffer_(nullptr) {
+    : LinearAllocator() {
     initialize(size);
 }
 

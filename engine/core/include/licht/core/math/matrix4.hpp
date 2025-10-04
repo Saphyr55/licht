@@ -7,7 +7,7 @@
 
 namespace licht {
 
-template <Real R>
+template <Real R = float32>
 struct Matrix4 {
     using Mat = Matrix4<R>;
     using Vec = Vector4<R>;

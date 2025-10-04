@@ -1,6 +1,6 @@
 #pragma once
 
-#include "licht/rhi_vulkan/rhi_vulkan_render_surface.hpp"
+#include "licht/rhi_vulkan/vulkan_render_surface.hpp"
 
 namespace licht {
 

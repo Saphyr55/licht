@@ -43,6 +43,8 @@ public:
     }
 
     StringBase& append(const CharType* str) {
+        LCHECK_MSG(str, "Appempt to append a c-string null in a String.");
+
         size_t len = string_length(str);
         if (buffer_.size() > 0) {
             buffer_.pop();  // Remove null terminator.
@@ -106,9 +108,10 @@ public:
         buffer_.append(CharType('\0'));
     }
 
-    StringBase(const CharType* str)
+    StringBase(const CharType* c_str)
         : buffer_() {
-        append(str);
+        LCHECK_MSG(c_str, "Appempt to append a c-string null in a String.");
+        append(c_str);
     }
 
     StringBase(const StringBase& other)
@@ -121,8 +124,9 @@ public:
         return *this;
     }
 
-    StringBase& operator+=(const CharType* cstr) {
-        return append(cstr);
+    StringBase& operator+=(const CharType* c_str) {
+        LCHECK_MSG(c_str, "Appempt to append a c-string null in a String.");
+        return append(c_str);
     }
 
     StringBase& operator+=(const StringBase& str) {
@@ -165,8 +169,7 @@ public:
     }
 
     WString(const wchar_t* str)
-        : StringBase<wchar_t>() {
-        append(str);
+        : StringBase<wchar_t>(str) {
     }
 
     WString(const WString& other)
@@ -204,7 +207,6 @@ public:
         return *this;
     }
 };
-
 
 }  //namespace licht
 

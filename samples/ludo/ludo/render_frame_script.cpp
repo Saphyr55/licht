@@ -30,8 +30,7 @@ RenderFrameScript::RenderFrameScript(Camera* camera)
     , swapchain_(nullptr)
     , render_pass_(nullptr)
     , graphics_pipeline_(nullptr)
-    , framebuffer_memory_allocator_(1024 /* 1 kB */)
-    , framebuffers_(4, RHIFramebufferAllocator(framebuffer_memory_allocator_))
+    , framebuffers_(4)
     , graphics_command_allocator_(nullptr)
     , frame_context_()
     , pause_(false)
@@ -208,7 +207,7 @@ void RenderFrameScript::on_startup() {
     // -- Framebuffers --
     {
         framebuffers_.reserve(swapchain_->get_texture_views().size());
-        for (RHITextureViewHandle texture : swapchain_->get_texture_views()) {
+        for (RHITextureViewRef texture : swapchain_->get_texture_views()) {
             RHIFramebufferDescription description = {};
             description.height = swapchain_->get_height();
             description.width = swapchain_->get_width();
@@ -216,7 +215,7 @@ void RenderFrameScript::on_startup() {
             description.attachments = {texture};
             description.layers = 1;
 
-            RHIFramebufferHandle framebuffer = device_->create_framebuffer(render_pass_, description);
+            RHIFramebufferRef framebuffer = device_->create_framebuffer(render_pass_, description);
             framebuffers_.append(framebuffer);
         }
     }
@@ -228,7 +227,7 @@ void RenderFrameScript::on_startup() {
         position_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsage::Vertex, positions_));
         color_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsage::Vertex, colors_));
         index_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsage::Index, indices_));
-
+        
         uploader.upload();
     }
 
@@ -244,7 +243,7 @@ void RenderFrameScript::on_startup() {
             uniform_buffer_description.memory_usage = RHIBufferMemoryUsage::Host;
             uniform_buffer_description.size = sizeof(UniformBufferObject);
 
-            RHIBufferHandle uniform_buffer = device_->create_buffer(uniform_buffer_description);
+            RHIBufferRef uniform_buffer = device_->create_buffer(uniform_buffer_description);
             uniform_buffers_.append(uniform_buffer);
         }
     }
@@ -305,7 +304,7 @@ void RenderFrameScript::on_tick(float32 delta_time) {
     }
     LCHECK(frame_context_.success);
 
-    RHICommandBufferHandle graphics_command_buffer = graphics_command_allocator_->open(frame_context_.current_frame);
+    RHICommandBufferRef graphics_command_buffer = graphics_command_allocator_->open(frame_context_.current_frame);
     graphics_command_allocator_->reset_command_buffer(graphics_command_buffer);
 
     graphics_command_buffer->begin();
@@ -414,7 +413,7 @@ void RenderFrameScript::reset() {
     device_->wait_idle();
 
     // Destroy all existing framebuffers
-    for (RHIFramebufferHandle framebuffer : framebuffers_) {
+    for (RHIFramebufferRef framebuffer : framebuffers_) {
         device_->destroy_framebuffer(framebuffer);
     }
     framebuffers_.clear();
@@ -425,7 +424,7 @@ void RenderFrameScript::reset() {
 
     // Create new framebuffers
     framebuffers_.reserve(swapchain_->get_texture_views().size());
-    for (RHITextureViewHandle texture : swapchain_->get_texture_views()) {
+    for (RHITextureViewRef texture : swapchain_->get_texture_views()) {
         RHIFramebufferDescription description = {};
         description.height = swapchain_->get_height();
         description.width = swapchain_->get_width();
@@ -433,7 +432,7 @@ void RenderFrameScript::reset() {
         description.attachments = {texture};
         description.layers = 1;
 
-        RHIFramebufferHandle framebuffer = device_->create_framebuffer(render_pass_, description);
+        RHIFramebufferRef framebuffer = device_->create_framebuffer(render_pass_, description);
         framebuffers_.append(framebuffer);
     }
 }
@@ -477,7 +476,7 @@ void RenderFrameScript::on_shutdown() {
 
     // -- Framebuffers --
     {
-        for (RHIFramebufferHandle framebuffer : framebuffers_) {
+        for (RHIFramebufferRef framebuffer : framebuffers_) {
             device_->destroy_framebuffer(framebuffer);
         }
         framebuffers_.clear();
