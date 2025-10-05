@@ -9,9 +9,9 @@ namespace licht {
 
 struct VulkanContext;
 
-class RHIVulkanRenderSurface : public RHIRenderSurface {
+class VulkanRenderSurface : public RHIRenderSurface {
 public:
-    static SharedRef<RHIVulkanRenderSurface> create(VulkanContext& context, void* window_handle);
+    static SharedRef<VulkanRenderSurface> create(VulkanContext& context, void* window_handle);
 
     virtual void* get_platform_window() override {
         return window_handle_;
@@ -26,7 +26,7 @@ public:
     }
 
 protected:
-    RHIVulkanRenderSurface(VkInstance instance, VkAllocationCallbacks* allocator, void* window_handle) 
+    VulkanRenderSurface(VkInstance instance, VkAllocationCallbacks* allocator, void* window_handle) 
         : instance_(instance)
         , allocator_(allocator)
         , window_handle_(window_handle)
@@ -40,6 +40,6 @@ protected:
     void* window_handle_;
 };
 
-using RHIVulkanRenderSurfaceRef = SharedRef<RHIVulkanRenderSurface>;
+using RHIVulkanRenderSurfaceRef = SharedRef<VulkanRenderSurface>;
 
 }

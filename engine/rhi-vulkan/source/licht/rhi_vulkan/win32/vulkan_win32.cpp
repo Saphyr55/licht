@@ -16,12 +16,12 @@
 
 namespace licht {
 
-SharedRef<RHIVulkanRenderSurface> RHIVulkanRenderSurface::create(VulkanContext& context, void* window_handle) {
+SharedRef<VulkanRenderSurface> VulkanRenderSurface::create(VulkanContext& context, void* window_handle) {
     return new_ref<RHIVulkanWindowsSurface>(context, window_handle);
 }
 
 RHIVulkanWindowsSurface::RHIVulkanWindowsSurface(VulkanContext& context, void* p_window_handle)
- : RHIVulkanRenderSurface(context.instance, context.allocator, p_window_handle) {
+ : VulkanRenderSurface(context.instance, context.allocator, p_window_handle) {
 }
 
 void RHIVulkanWindowsSurface::initialize() {

@@ -77,18 +77,18 @@ struct RHIBufferDescription {
     /**
      * @brief Specifies the usage type of the buffer (e.g., Vertex, Index, etc.).
      */
-    RHIBufferUsage usage = RHIBufferUsage::Vertex;
+    RHIBufferUsageFlags usage = RHIBufferUsageFlags::Vertex;
 
     /**
      * @brief
      */
-    RHIBufferMemoryUsage memory_usage = RHIBufferMemoryUsage::Host;
+    RHIMemoryUsage memory_usage = RHIMemoryUsage::Host;
 
     /**
      * @brief Defines the access mode for the buffer (e.g., Private, Read, Write).
      */
 
-    RHIAccessMode access_mode = RHIAccessMode::Private;
+    RHISharingMode sharing_mode = RHISharingMode::Private;
 
     /**
      * @brief The size of the buffer in bytes.
@@ -108,13 +108,13 @@ public:
      * @brief Gets the usage type of the buffer.
      * @return The usage type as an RHIBufferUsage enum.
      */
-    virtual RHIBufferUsage get_usage() = 0;
+    virtual RHIBufferUsageFlags get_usage() = 0;
 
     /**
-     * @brief Gets the access mode of the buffer.
+     * @brief Gets the sharing mode of the buffer.
      * @return The access mode enum.
      */
-    virtual RHIAccessMode get_access_mode() = 0;
+    virtual RHISharingMode get_sharing_mode() = 0;
 
     /**
      * @brief Gets the size of the buffer in bytes.
@@ -155,17 +155,17 @@ public:
 };
 
 struct LICHT_RHI_API RHIStagingBufferContext {
-    RHIBufferUsage usage;
+    RHIBufferUsageFlags usage;
     size_t size;       // Size in bytes;
     const void* data;  // Data to transfer to the device.
 
-    RHIStagingBufferContext(RHIBufferUsage in_usage, size_t in_size, void* in_data)
+    RHIStagingBufferContext(RHIBufferUsageFlags in_usage, size_t in_size, void* in_data)
         : usage(in_usage)
         , size(in_size)
         , data(in_data) {}
 
     template <typename T>
-    RHIStagingBufferContext(RHIBufferUsage usage, const Array<T>& data)
+    RHIStagingBufferContext(RHIBufferUsageFlags usage, const Array<T>& data)
         : usage(usage)
         , size(data.size() * sizeof(T))
         , data(data.data()) {
@@ -178,7 +178,7 @@ class LICHT_RHI_API RHIDeviceMemoryUploader {
 public:
     RHIBuffer* send_buffer(const RHIStagingBufferContext& context);
 
-    RHITexture* send_texture(const RHIStagingBufferContext& context, const RHITextureDescription& description);
+    RHITexture* send_texture(const RHIStagingBufferContext& context, RHITextureDescription& description);
 
     void upload();
 
@@ -193,13 +193,13 @@ private:
 private:
     struct BufferEntry {
         RHIBuffer* staging;
-        RHIBuffer* main;
+        RHIBuffer* buffer;
         size_t size;
     };
 
     struct TextureEntry {
         RHIBuffer* staging;
-        RHITexture* main;
+        RHITexture* texture;
         size_t size;
     };
 

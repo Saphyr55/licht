@@ -16,6 +16,7 @@ struct RHIRenderPassDescription {
 
 class RHIRenderPass {
 public:
+    virtual ~RHIRenderPass() = default;
 };
 
 

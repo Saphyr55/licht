@@ -5,17 +5,17 @@
 
 namespace licht {
 
-class CompiledShader {
+class SPIRVShader {
 public:
     inline Array<uint8> get_bytes() { return code_; }
 
 public:
-    CompiledShader() = default;
+    SPIRVShader() = default;
     
-    CompiledShader(const Array<uint8>& code)
+    SPIRVShader(const Array<uint8>& code)
         : code_(code) {}
 
-    ~CompiledShader() = default;
+    ~SPIRVShader() = default;
 
 private:
     Array<uint8> code_;

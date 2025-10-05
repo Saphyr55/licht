@@ -12,9 +12,9 @@
 
 namespace licht {
 
-class RHIVulkanCommandBuffer : public RHICommandBuffer {
+class VulkanCommandBuffer : public RHICommandBuffer {
 public:
-    virtual void begin(RHICommandBufferUsage usage = RHICommandBufferUsage::None) override;
+    virtual void begin(RHICommandBufferUsageFlags usage = RHICommandBufferUsageFlags::None) override;
 
     virtual void end() override;
 
@@ -24,7 +24,7 @@ public:
 
     virtual void bind_pipeline(RHIPipeline* pipeline) override;
     
-    virtual void bind_descriptor_sets(RHIPipeline* pipeline, const Array<RHIDescriptorSet*>& descriptor_sets) override;
+    virtual void bind_descriptor_sets(RHIPipeline* pipeline, const Array<RHIShaderResource*>& descriptor_sets) override;
 
     virtual void bind_vertex_buffers(const Array<RHIBuffer*>& buffers) override;
 
@@ -34,9 +34,14 @@ public:
 
     virtual void set_viewports(const Viewport* viewports, uint32 count) override;
 
-    virtual void copy_buffer(RHIBuffer* source, RHIBuffer* destination, const RHIBufferCopyCommand& command) override;
+    virtual void transition_texture(const RHITextureBarrier& barrier) override;
+
+    virtual void copy_buffer_to_texture(const RHICopyBufferToTextureCommand& command) override;
+
+    virtual void copy_buffer(const RHICopyBufferCommand& command) override;
 
     virtual void draw(const RHIDrawCommand& command) override;
+
     virtual void draw(const RHIDrawIndexedCommand& command) override;
 
     inline VkCommandBuffer& get_handle() {
@@ -44,16 +49,16 @@ public:
     }
 
 public:
-    RHIVulkanCommandBuffer(VkCommandBuffer command_buffer)
+    VulkanCommandBuffer(VkCommandBuffer command_buffer)
         : command_buffer_(command_buffer) {
     }
-    ~RHIVulkanCommandBuffer() = default;
+    ~VulkanCommandBuffer() = default;
 
 private:
     VkCommandBuffer command_buffer_;
 };
 
-using RHIVulkanCommandBufferRef = SharedRef<RHIVulkanCommandBuffer>;
+using RHIVulkanCommandBufferRef = SharedRef<VulkanCommandBuffer>;
 
 class RHIVulkanCommandAllocator : public RHICommandAllocator {
 public:
@@ -78,7 +83,7 @@ public:
     
 private:
     VkCommandPool command_pool_;
-    Array<RHIVulkanCommandBuffer*> upper_command_buffers_;
+    Array<VulkanCommandBuffer*> upper_command_buffers_;
     Array<VkCommandBuffer> command_buffers_;
     RHIQueueType queue_type_;
     uint32 queue_family_index_ = 0;

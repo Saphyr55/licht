@@ -4,7 +4,7 @@
 
 namespace licht {
 
-class RHIVulkanWindowsSurface : public RHIVulkanRenderSurface {
+class RHIVulkanWindowsSurface : public VulkanRenderSurface {
 public:
     virtual void initialize() override;
 

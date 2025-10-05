@@ -10,41 +10,31 @@
 
 namespace licht {
 
-RHIVulkanBuffer::RHIVulkanBuffer(VulkanContext& context, RHIBufferDescription description)
+VulkanBuffer::VulkanBuffer(VulkanContext& context, RHIBufferDescription description)
     : context_(context)
     , description_(description)
     , memory_(VK_NULL_HANDLE)
     , buffer_(VK_NULL_HANDLE) {
 }
 
-VkMemoryRequirements RHIVulkanBuffer::get_memory_requirements() {
+VkMemoryRequirements VulkanBuffer::get_memory_requirements() {
     VkMemoryRequirements memory_requirements;
     VulkanAPI::lvkGetBufferMemoryRequirements(context_.device, buffer_, &memory_requirements);
     return memory_requirements;
 }
 
-VkMemoryPropertyFlags RHIVulkanBuffer::get_memory_property_flags() {
-    VkMemoryPropertyFlags properties = 0;
-    if (description_.memory_usage == RHIBufferMemoryUsage::Device) {
-        properties |= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    } else if (description_.memory_usage == RHIBufferMemoryUsage::Host) {
-        properties |= (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    }
-    return properties;
-}
-
-Array<uint32> RHIVulkanBuffer::get_queue_family_indices() {
+Array<uint32> VulkanBuffer::get_queue_family_indices() {
     Array<uint32> indices;
-    if (description_.access_mode == RHIAccessMode::Shared) {
-        if ((description_.usage & RHIBufferUsage::TransferDst) == RHIBufferUsage::TransferDst ||
-            (description_.usage & RHIBufferUsage::TransferSrc) == RHIBufferUsage::TransferSrc) {
+    if (description_.sharing_mode == RHISharingMode::Shared) {
+        if ((description_.usage & RHIBufferUsageFlags::TransferDst) == RHIBufferUsageFlags::TransferDst ||
+            (description_.usage & RHIBufferUsageFlags::TransferSrc) == RHIBufferUsageFlags::TransferSrc) {
             indices = vulkan_query_queue_family_indices(context_);
         }
     }
     return indices;
 }
 
-void RHIVulkanBuffer::initialize() {
+void VulkanBuffer::initialize() {
 
     Array<uint32> indices = get_queue_family_indices();
 
@@ -55,11 +45,11 @@ void RHIVulkanBuffer::initialize() {
     buffer_create_info.pQueueFamilyIndices = indices.data();
     buffer_create_info.size = description_.size;
     buffer_create_info.usage = vulkan_buffer_usage_get(description_.usage);
-    buffer_create_info.sharingMode = vulkan_sharing_mode_get(description_.access_mode);
+    buffer_create_info.sharingMode = vulkan_sharing_mode_get(description_.sharing_mode);
     LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateBuffer(context_.device, &buffer_create_info, context_.allocator, &buffer_))
 
     VkMemoryRequirements memory_requirements = get_memory_requirements();
-    VkMemoryPropertyFlags properties = get_memory_property_flags();
+    VkMemoryPropertyFlags properties = vulkan_memory_usage_get(description_.memory_usage);
 
     VkMemoryAllocateInfo memory_allocate_info = {};
     memory_allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -72,26 +62,26 @@ void RHIVulkanBuffer::initialize() {
     bind();
 }
 
-void RHIVulkanBuffer::destroy() {
+void VulkanBuffer::destroy() {
     VulkanAPI::lvkDestroyBuffer(context_.device, buffer_, context_.allocator);
     VulkanAPI::lvkFreeMemory(context_.device, memory_, context_.allocator);
 }
 
-void RHIVulkanBuffer::bind() {
+void VulkanBuffer::bind() {
     LICHT_VULKAN_CHECK(VulkanAPI::lvkBindBufferMemory(context_.device, buffer_, memory_, 0));
 }
 
-void* RHIVulkanBuffer::map(size_t offset, size_t size) {
+void* VulkanBuffer::map(size_t offset, size_t size) {
     void* data = nullptr;
     LICHT_VULKAN_CHECK(VulkanAPI::lvkMapMemory(context_.device, memory_, offset, size, 0, &data));
     return data;
 }
 
-void RHIVulkanBuffer::unmap() {
+void VulkanBuffer::unmap() {
     VulkanAPI::lvkUnmapMemory(context_.device, memory_);
 }
 
-void RHIVulkanBuffer::update(const void* source, size_t size, size_t offset) {
+void VulkanBuffer::update(const void* source, size_t size, size_t offset) {
     void* destination = map(offset, size);
     if (destination) {
         Memory::copy(destination, source, size);
@@ -99,19 +89,19 @@ void RHIVulkanBuffer::update(const void* source, size_t size, size_t offset) {
     }
 }
 
-RHIAccessMode RHIVulkanBuffer::get_access_mode() {
-    return description_.access_mode;
+RHISharingMode VulkanBuffer::get_sharing_mode() {
+    return description_.sharing_mode;
 }
 
-size_t RHIVulkanBuffer::get_size() {
+size_t VulkanBuffer::get_size() {
     return description_.size;
 }
 
-RHIBufferUsage RHIVulkanBuffer::get_usage() {
+RHIBufferUsageFlags VulkanBuffer::get_usage() {
     return description_.usage;
 }
 
-VkBuffer RHIVulkanBuffer::get_handle() {
+VkBuffer VulkanBuffer::get_handle() {
     return buffer_;
 }
 

@@ -4,11 +4,8 @@
 #include "licht/core/modules/module_registry.hpp"
 #include "licht/core/platform/window_handle.hpp"
 #include "licht/rhi_vulkan/rhi_vulkan_exports.hpp"
-#include "licht/rhi_vulkan/vulkan_context.hpp"
 
 namespace licht {
-
-struct VulkanContext;
 
 class LICHT_RHI_VULKAN_API RHIVulkanModule : public Module {
 public:
@@ -30,7 +27,6 @@ public:
 
 private:
     WindowHandle window_handle_;
-    VulkanContext context_;
 };
 
 LICHT_REGISTER_MODULE(RHIVulkanModule, "licht.rhi.vulkan")

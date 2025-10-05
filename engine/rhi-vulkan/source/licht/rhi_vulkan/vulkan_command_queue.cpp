@@ -12,19 +12,19 @@
 
 namespace licht {
 
-RHIVulkanCommandQueue::RHIVulkanCommandQueue(VulkanContext& context, VkQueue queue, RHIQueueType type, uint32 queue_family_index, bool is_present_mode_supported)
+VulkanCommandQueue::VulkanCommandQueue(VulkanContext& context, VkQueue queue, RHIQueueType type, uint32 queue_family_index, bool is_present_mode_supported)
     : context_(context), queue_(queue), type_(type), queue_family_index_(queue_family_index), is_present_mode_supported_(is_present_mode_supported) {
 }
 
-bool RHIVulkanCommandQueue::is_present_mode() {
+bool VulkanCommandQueue::is_present_mode() {
     return is_present_mode_supported_;
 }
 
-void RHIVulkanCommandQueue::wait_idle() {
+void VulkanCommandQueue::wait_idle() {
     LICHT_VULKAN_CHECK(VulkanAPI::lvkQueueWaitIdle(queue_));
 }
 
-void RHIVulkanCommandQueue::submit(const Array<RHICommandBuffer*>& command_buffers, 
+void VulkanCommandQueue::submit(const Array<RHICommandBuffer*>& command_buffers, 
                                    const Array<RHISemaphore*>& wait_semaphores,
                                    const Array<RHISemaphore*>& signal_semaphores,
                                    const RHIFence* fence) {
@@ -34,7 +34,7 @@ void RHIVulkanCommandQueue::submit(const Array<RHICommandBuffer*>& command_buffe
     // Command buffers
     Array<VkCommandBuffer> vk_command_buffers(command_buffers.size());
     for (RHICommandBuffer*& cmd : command_buffers) {
-        RHIVulkanCommandBuffer* vk_cmd_ref = static_cast<RHIVulkanCommandBuffer*>(cmd);
+        VulkanCommandBuffer* vk_cmd_ref = static_cast<VulkanCommandBuffer*>(cmd);
         vk_command_buffers.append(vk_cmd_ref->get_handle());
     }
 
@@ -74,8 +74,8 @@ void RHIVulkanCommandQueue::submit(const Array<RHICommandBuffer*>& command_buffe
     LICHT_VULKAN_CHECK(VulkanAPI::lvkQueueSubmit(queue_, 1, &submit_info, vkfence));
 }
 
-void RHIVulkanCommandQueue::present(RHISwapchain* swapchain, RHIFrameContext& frame_context) {
-    RHIVulkanSwapchain* vk_swapchain = static_cast<RHIVulkanSwapchain*>(swapchain);
+void VulkanCommandQueue::present(RHISwapchain* swapchain, RHIFrameContext& frame_context) {
+    VulkanSwapchain* vk_swapchain = static_cast<VulkanSwapchain*>(swapchain);
     RHIVulkanSemaphore* vk_sem_ref = static_cast<RHIVulkanSemaphore*>(frame_context.current_render_finished_semaphore());
     VkSemaphore vksemaphore = vk_sem_ref->get_handle();
 

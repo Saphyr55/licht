@@ -70,20 +70,20 @@ using float64 = double;
 #define LICHT_CONCAT_INNER(a, b) a##b
 #define LCONCAT(a, b) LICHT_CONCAT_INNER(a, b)
 
-#define LICHT_ENUM_FLAGS_CUSTOM_DERIVED(ClassName, IntType)                               \
-    inline ClassName operator|(ClassName a, ClassName b) {                                \
-        return static_cast<ClassName>(static_cast<IntType>(a) | static_cast<IntType>(b)); \
-    }                                                                                     \
-    inline ClassName operator&(ClassName a, ClassName b) {                                \
-        return static_cast<ClassName>(static_cast<IntType>(a) & static_cast<IntType>(b)); \
-    }                                                                                     \
-    inline ClassName& operator|=(ClassName& a, ClassName b) {                             \
-        a = a | b;                                                                        \
-        return a;                                                                         \
-    }                                                                                     \
-    inline ClassName& operator&=(ClassName& a, ClassName b) {                             \
-        a = a & b;                                                                        \
-        return a;                                                                         \
+#define LICHT_ENUM_FLAGS_CUSTOM_DERIVED(EnumClassName, IntType)                               \
+    inline EnumClassName operator|(EnumClassName a, EnumClassName b) {                        \
+        return static_cast<EnumClassName>(static_cast<IntType>(a) | static_cast<IntType>(b)); \
+    }                                                                                         \
+    inline EnumClassName operator&(EnumClassName a, EnumClassName b) {                        \
+        return static_cast<EnumClassName>(static_cast<IntType>(a) & static_cast<IntType>(b)); \
+    }                                                                                         \
+    inline EnumClassName& operator|=(EnumClassName& a, EnumClassName b) {                     \
+        a = a | b;                                                                            \
+        return a;                                                                             \
+    }                                                                                         \
+    inline EnumClassName& operator&=(EnumClassName& a, EnumClassName b) {                     \
+        a = a & b;                                                                            \
+        return a;                                                                             \
     }
 
-#define LICHT_ENUM_FLAGS(ClassName) LICHT_ENUM_FLAGS_CUSTOM_DERIVED(ClassName, uint32)
+#define LICHT_ENUM_FLAGS(EnumClassName) LICHT_ENUM_FLAGS_CUSTOM_DERIVED(EnumClassName, uint32)

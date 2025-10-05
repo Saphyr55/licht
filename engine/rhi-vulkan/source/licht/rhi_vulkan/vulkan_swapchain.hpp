@@ -17,7 +17,7 @@ struct VulkanSwapchainSupportDetails {
     Array<VkPresentModeKHR> present_modes;
 };
 
-class RHIVulkanSwapchain : public RHISwapchain {
+class VulkanSwapchain : public RHISwapchain {
 public:
     virtual void acquire_next_frame(RHIFrameContext& context) override;
 
@@ -53,7 +53,7 @@ public:
     }
 
 public:
-    RHIVulkanSwapchain(VulkanContext& context, uint32 width, uint32 height, uint32 image_count);
+    VulkanSwapchain(VulkanContext& context, uint32 width, uint32 height, uint32 image_count);
 
 private:
     VulkanSwapchainSupportDetails query_support_details();
@@ -68,6 +68,6 @@ private:
     uint32 image_count_ = 3;
 };
 
-using RHIVulkanSwapchainRef = SharedRef<RHIVulkanSwapchain>;
+using RHIVulkanSwapchainRef = SharedRef<VulkanSwapchain>;
 
 }  //namespace licht

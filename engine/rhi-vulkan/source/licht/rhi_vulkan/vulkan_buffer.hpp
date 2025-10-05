@@ -10,11 +10,11 @@
 
 namespace licht {
 
-class RHIVulkanBuffer : public RHIBuffer {
+class VulkanBuffer : public RHIBuffer {
 public:
-    virtual RHIBufferUsage get_usage() override;
+    virtual RHIBufferUsageFlags get_usage() override;
 
-    virtual RHIAccessMode get_access_mode() override;
+    virtual RHISharingMode get_sharing_mode() override;
     
     virtual size_t get_size() override;
 
@@ -27,9 +27,7 @@ public:
     virtual void update(const void* data, size_t size, size_t offset = 0) override;
 
     VkMemoryRequirements get_memory_requirements();
-    
-    VkMemoryPropertyFlags get_memory_property_flags();
-    
+        
     Array<uint32> get_queue_family_indices();
     
     void initialize();
@@ -39,8 +37,8 @@ public:
     VkBuffer get_handle();
 
 public:
-    RHIVulkanBuffer(VulkanContext& context, RHIBufferDescription description);
-    ~RHIVulkanBuffer() = default;
+    VulkanBuffer(VulkanContext& context, RHIBufferDescription description);
+    ~VulkanBuffer() = default;
 
 private:
     VulkanContext& context_;
@@ -48,7 +46,5 @@ private:
     VkDeviceMemory memory_;
     VkBuffer buffer_;
 };
-
-using RHIVulkanBufferRef = SharedRef<RHIVulkanBuffer>;
 
 }  //namespace licht

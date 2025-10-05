@@ -8,13 +8,9 @@
 
 namespace licht {
 
-VkRenderPass& RHIVulkanRenderPass::get_handle() {
-    return render_pass_;
-}
-
-void vulkan_render_pass_init(VulkanContext& context, VkRenderPass* render_pass, const RHIRenderPassDescription& description) {
-    Array<VkAttachmentDescription> attachments(description.attachment_decriptions.size());
-    for (const RHIAttachmentDescription& attachment_description : description.attachment_decriptions) {
+void VulkanRenderPass::initialize() {
+    Array<VkAttachmentDescription> attachments(description_.attachment_decriptions.size());
+    for (const RHIAttachmentDescription& attachment_description : description_.attachment_decriptions) {
         VkAttachmentDescription color_attachment_description = {};
         color_attachment_description.format = vulkan_format_get(attachment_description.format);
         color_attachment_description.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -53,11 +49,11 @@ void vulkan_render_pass_init(VulkanContext& context, VkRenderPass* render_pass, 
     render_pass_info_create_info.dependencyCount = 1;
     render_pass_info_create_info.pDependencies = &subpass_dependency;
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateRenderPass(context.device, &render_pass_info_create_info, context.allocator, render_pass))
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateRenderPass(context_.device, &render_pass_info_create_info, context_.allocator, &render_pass_))
 }
 
-void vulkan_render_pass_destroy(VulkanContext& context, VkRenderPass render_pass) {
-    VulkanAPI::lvkDestroyRenderPass(context.device, render_pass, context.allocator);
+void VulkanRenderPass::destroy() {
+    VulkanAPI::lvkDestroyRenderPass(context_.device, render_pass_, context_.allocator);
 }
 
 }  //namespace licht

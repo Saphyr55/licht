@@ -4,7 +4,7 @@
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/memory/shared_ref_cast.hpp"
 #include "licht/rhi/buffer.hpp"
-#include "licht/rhi/pipeline/compiled_shader.hpp"
+#include "licht/rhi/compiled_shader.hpp"
 #include "licht/rhi_vulkan/vulkan_render_pass.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
@@ -31,16 +31,16 @@ static constexpr auto vk_attribute_map = [](const RHIVertexAttributeDescription&
     return vulkan_description;
 };
 
-RHIVulkanPipeline::RHIVulkanPipeline(VulkanContext& context, const RHIPipelineDescription& description)
+VulkanPipeline::VulkanPipeline(VulkanContext& context, const RHIPipelineDescription& description)
     : context_(context)
     , description_(description) {
 }
 
-void RHIVulkanPipeline::initialize() {
-    CompiledShader* vertex_compiled_shader = description_.vertex_shader_info.shader;
+void VulkanPipeline::initialize() {
+    SPIRVShader* vertex_compiled_shader = description_.vertex_shader_info.shader;
     VulkanShaderModule vertex_shader_module(vertex_compiled_shader->get_bytes());
 
-    CompiledShader* fragment_compiled_shader = description_.fragment_shader_info.shader;
+    SPIRVShader* fragment_compiled_shader = description_.fragment_shader_info.shader;
     VulkanShaderModule fragment_shader_module(fragment_compiled_shader->get_bytes());
 
     VkPipelineInputAssemblyStateCreateInfo pipeline_input_assembly_state_create_info{};
@@ -155,7 +155,7 @@ void RHIVulkanPipeline::initialize() {
     pipeline_color_blend_state_create_info.blendConstants[2] = 0.0f;  // Optional
     pipeline_color_blend_state_create_info.blendConstants[3] = 0.0f;  // Optional
 
-    auto desc_set_mapping = [](const RHIDescriptorSetLayoutBinding& binding) {
+    auto desc_set_mapping = [](const RHIShaderResourceBinding& binding) {
         VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; // TODO: Convert description information
         VkDescriptorSetLayoutBinding layout_binding = {};
         layout_binding.binding = binding.binding;
@@ -184,7 +184,7 @@ void RHIVulkanPipeline::initialize() {
 
     LICHT_VULKAN_CHECK(VulkanAPI::lvkCreatePipelineLayout(context_.device, &pipeline_layout_create_info, context_.allocator, &pipeline_layout_));
 
-    RHIVulkanRenderPass* render_pass = static_cast<RHIVulkanRenderPass*>(description_.render_pass);
+    VulkanRenderPass* render_pass = static_cast<VulkanRenderPass*>(description_.render_pass);
 
     VkGraphicsPipelineCreateInfo graphics_pipeline_create_info = {};
     graphics_pipeline_create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -210,7 +210,7 @@ void RHIVulkanPipeline::initialize() {
     fragment_shader_module.destroy(context_);
 }
 
-void RHIVulkanPipeline::destroy() {
+void VulkanPipeline::destroy() {
     VulkanAPI::lvkDestroyPipeline(context_.device, pipeline_, context_.allocator);
     VulkanAPI::lvkDestroyPipelineLayout(context_.device, pipeline_layout_, context_.allocator);
     VulkanAPI::lvkDestroyDescriptorSetLayout(context_.device, descriptor_set_layout_, context_.allocator);

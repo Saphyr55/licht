@@ -8,28 +8,30 @@ namespace licht {
 
 RHIBufferDescription RHIDeviceMemoryUploader::create_staging_buffer_description(const RHIStagingBufferContext& context) {
     RHIBufferDescription staging_buffer_description = {};
-    staging_buffer_description.access_mode = RHIAccessMode::Shared;
-    staging_buffer_description.usage = RHIBufferUsage::TransferSrc;
-    staging_buffer_description.memory_usage = RHIBufferMemoryUsage::Host;
+    staging_buffer_description.sharing_mode = RHISharingMode::Shared;
+    staging_buffer_description.usage = RHIBufferUsageFlags::TransferSrc;
+    staging_buffer_description.memory_usage = RHIMemoryUsage::Host;
     staging_buffer_description.size = context.size;
     return staging_buffer_description;
 }
 
 RHIBufferDescription RHIDeviceMemoryUploader::create_buffer_description(const RHIStagingBufferContext& context) {
     RHIBufferDescription buffer_description = {};
-    buffer_description.access_mode = RHIAccessMode::Shared;
-    buffer_description.usage = context.usage | RHIBufferUsage::TransferDst;
-    buffer_description.memory_usage = RHIBufferMemoryUsage::Device;
+    buffer_description.sharing_mode = RHISharingMode::Shared;
+    buffer_description.usage = context.usage | RHIBufferUsageFlags::TransferDst;
+    buffer_description.memory_usage = RHIMemoryUsage::Device;
     buffer_description.size = context.size;
     return buffer_description;
 }
 
-RHITexture* RHIDeviceMemoryUploader::send_texture(const RHIStagingBufferContext& context, const RHITextureDescription& description) {
+RHITexture* RHIDeviceMemoryUploader::send_texture(const RHIStagingBufferContext& context, RHITextureDescription& description) {
     RHIBufferDescription staging_buffer_description = create_staging_buffer_description(context);
     RHIBuffer* staging_buffer = device_->create_buffer(staging_buffer_description);
 
     staging_buffer->update(context.data, context.size);
 
+    description.usage = description.usage | RHITextureUsageFlags::TransferDst;
+    description.memory_usage = RHIMemoryUsage::Device;
     RHITexture* texture = device_->create_texture(description);
 
     texture_entries_.append(TextureEntry(staging_buffer, texture, context.size));
@@ -42,7 +44,7 @@ RHIBuffer* RHIDeviceMemoryUploader::send_buffer(const RHIStagingBufferContext& c
     RHIBuffer* staging_buffer = device_->create_buffer(staging_buffer_description);
 
     staging_buffer->update(context.data, context.size);
-
+    
     RHIBufferDescription buffer_description = create_buffer_description(context);
     RHIBuffer* buffer = device_->create_buffer(buffer_description);
 
@@ -75,9 +77,33 @@ void RHIDeviceMemoryUploader::upload() {
     transfer_cmd->begin();
     {
         for (auto& [staging_buffer, buffer, size] : buffer_entries_) {
-            RHIBufferCopyCommand buffer_copy_command = {};
+            RHICopyBufferCommand buffer_copy_command = {};
+            buffer_copy_command.source = staging_buffer;
+            buffer_copy_command.destination = buffer;
             buffer_copy_command.size = size;
-            transfer_cmd->copy_buffer(staging_buffer, buffer, buffer_copy_command);
+            transfer_cmd->copy_buffer(buffer_copy_command);
+        }
+
+        for (auto& entry : texture_entries_) {
+            RHITexture* texture = entry.texture;
+                
+            RHITextureBarrier barrier_to_copy = {};
+            barrier_to_copy.texture = texture;
+            barrier_to_copy.old_layout = RHITextureLayout::Undefined;
+            barrier_to_copy.new_layout = RHITextureLayout::TransferDst;
+            transfer_cmd->transition_texture(barrier_to_copy);
+
+            RHICopyBufferToTextureCommand copy_cmd = {};
+            copy_cmd.source = entry.staging;
+            copy_cmd.destination = texture;
+            transfer_cmd->copy_buffer_to_texture(copy_cmd);
+
+            RHITextureBarrier barrier_to_final = {};
+            barrier_to_final.texture = texture;
+            barrier_to_final.old_layout = RHITextureLayout::TransferDst;
+            barrier_to_final.new_layout = RHITextureLayout::ShaderReadOnly;
+
+            transfer_cmd->transition_texture(barrier_to_final);
         }
     }
     transfer_cmd->end();

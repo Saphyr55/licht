@@ -1,14 +1,14 @@
 #pragma once
 
 #include "licht/core/memory/shared_ref.hpp"
-#include "licht/rhi/texture.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
+#include "licht/rhi/texture.hpp"
 
 #include <vulkan/vulkan_core.h>
 
 namespace licht {
 
-class RHIVulkanTexture : public RHITexture {
+class VulkanTexture : public RHITexture {
 public:
     VkMemoryRequirements get_memory_requirements();
 
@@ -18,41 +18,43 @@ public:
 
     virtual void bind() override;
 
+    virtual const RHITextureDescription& get_description() const override {
+        return description_;
+    }
+
     VkImage& get_handle() {
         return handle_;
     }
 
+    const VkImage& get_handle() const {
+        return handle_;
+    }
+
 public:
-    RHIVulkanTexture(VulkanContext& context,
-                     const RHITextureDescription& description,
-                     VkImageType type,
-                     VkImageUsageFlags usage,
-                     VkSharingMode sharing_mode,
-                     const Array<uint32>& queue_family_indices)
+    VulkanTexture(VulkanContext& context,
+                  const RHITextureDescription& description,
+                  VkImageType type,
+                  const Array<uint32>& queue_family_indices)
         : context_(context)
         , description_(description)
         , type_(type)
-        , usage_(usage)
-        , sharing_mode_(sharing_mode)
         , queue_family_indices_(queue_family_indices)
         , handle_(VK_NULL_HANDLE)
         , memory_(VK_NULL_HANDLE) {
     }
 
-    ~RHIVulkanTexture() = default;
+    ~VulkanTexture() = default;
 
 private:
     VulkanContext& context_;
     RHITextureDescription description_;
     VkImageType type_;
-    VkImageUsageFlags usage_;
-    VkSharingMode sharing_mode_;
     VkDeviceMemory memory_;
     VkImage handle_;
     Array<uint32> queue_family_indices_;
 };
 
-class RHIVulkanTextureView : public RHITextureView {
+class VulkanTextureView : public RHITextureView {
 public:
     VkImageView& get_handle() {
         return handle_;
@@ -63,17 +65,14 @@ public:
     void destroy();
 
 public:
-    RHIVulkanTextureView()
+    VulkanTextureView()
         : handle_(VK_NULL_HANDLE) {
     }
 
-    ~RHIVulkanTextureView() = default;
+    ~VulkanTextureView() = default;
 
 private:
     VkImageView handle_;
 };
-
-using RHIVulkanTextureViewRef = SharedRef<RHIVulkanTextureView>;
-using RHIVulkanTextureRef = SharedRef<RHIVulkanTexture>;
 
 }  //namespace licht

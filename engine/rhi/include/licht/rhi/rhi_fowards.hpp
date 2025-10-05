@@ -15,8 +15,8 @@ class RHIFence;
 class RHICommandQueue;
 class RHIFramebuffer;
 class RHIRenderPass;
-class RHIDescriptorSet;
-class RHIDescriptorPool;
+class RHIShaderResource;
+class RHIShaderResourcePool;
 class RHICommandAllocator;
 class RHIPipeline;
 

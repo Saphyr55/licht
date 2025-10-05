@@ -116,7 +116,7 @@ void vulkan_context_initialize(VulkanContext& context, void* native_window) {
 
         vulkan_debug_messenger_init(context);
 
-        context.surface = RHIVulkanRenderSurface::create(context, native_window);
+        context.surface = VulkanRenderSurface::create(context, native_window);
         context.surface->initialize();
 
         LCHECK(context.surface->get_handle());
@@ -131,7 +131,7 @@ void vulkan_context_initialize(VulkanContext& context, void* native_window) {
             VkQueue queue = vulkan_query_queue(context, i, 0);
             RHIQueueType type = vulkan_queue_type(context, i);
             bool is_present_mode = vulkan_queue_present_support(context, i);
-            context.command_queues[i] = new_ref<RHIVulkanCommandQueue>(context, queue, type, i, is_present_mode);
+            context.command_queues[i] = new_ref<VulkanCommandQueue>(context, queue, type, i, is_present_mode);
         }
     }
 }
@@ -501,22 +501,22 @@ VkFormat vulkan_format_get(RHIFormat format) {
     }
 }
 
-RHIAccessMode rhi_access_mode_get(VkSharingMode mode) {
+RHISharingMode rhi_access_mode_get(VkSharingMode mode) {
     switch (mode) {
         case VK_SHARING_MODE_EXCLUSIVE:
-            return RHIAccessMode::Private;
+            return RHISharingMode::Private;
         case VK_SHARING_MODE_CONCURRENT:
-            return RHIAccessMode::Shared;
+            return RHISharingMode::Shared;
         default:
-            return RHIAccessMode::Private;
+            return RHISharingMode::Private;
     }
 }
 
-VkSharingMode vulkan_sharing_mode_get(RHIAccessMode mode) {
+VkSharingMode vulkan_sharing_mode_get(RHISharingMode mode) {
     switch (mode) {
-        case RHIAccessMode::Private:
+        case RHISharingMode::Private:
             return VK_SHARING_MODE_EXCLUSIVE;
-        case RHIAccessMode::Shared:
+        case RHISharingMode::Shared:
             return VK_SHARING_MODE_CONCURRENT;
         default:
             return VK_SHARING_MODE_EXCLUSIVE;

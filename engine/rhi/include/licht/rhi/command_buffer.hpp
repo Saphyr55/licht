@@ -5,6 +5,7 @@
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/rhi/rhi_types.hpp"
 #include "licht/rhi/rhi_fowards.hpp"
+#include "licht/rhi/texture.hpp"
 
 namespace licht {
 
@@ -31,19 +32,36 @@ struct RHIDrawIndexedCommand : RHICommand {
     uint32 first_instance = 0;
 };
 
-struct RHIBufferCopyCommand : RHICommand {
+struct RHICopyBufferCommand : RHICommand {
+    RHIBuffer* source;
+    RHIBuffer* destination;
     size_t source_offset = 0;
     size_t destination_offset = 0;
     size_t size = 0;
+};
+
+struct RHICopyBufferToTextureCommand : RHICommand {
+    RHIBuffer* source;
+    RHITexture* destination;
+    uint64_t buffer_offset = 0;
+    uint32_t mip_level = 0;
+    uint32_t base_array_layer = 0;
+    uint32_t layer_count = 1;
+    int32_t dest_x_offset = 0;
+    int32_t dest_y_offset = 0;
+    int32_t dest_z_offset = 0;
+    uint32_t copy_width = 0;
+    uint32_t copy_height = 0;
+    uint32_t copy_depth = 1;
 };
 
 /**
  * @brief Information required to begin a render pass.
  */
 struct RHIRenderPassBeginInfo {
-    RHIRenderPass* render_pass; ///< Handle to the render pass object.
-    RHIFramebuffer* framebuffer; ///< Target framebuffer for the render pass.
-    Rect2D area; ///< Render area (typically width, height, x, y).
+    RHIRenderPass* render_pass = nullptr;   ///< Handle to the render pass object.
+    RHIFramebuffer* framebuffer = nullptr;  ///< Target framebuffer for the render pass.
+    Rect2D area = {};                ///< Render area (typically width, height, x, y).
 };
 
 /**
@@ -54,7 +72,7 @@ public:
     /**
      * @brief Begin recording commands into this command buffer.
      */
-    virtual void begin(RHICommandBufferUsage usage = RHICommandBufferUsage::None) = 0;
+    virtual void begin(RHICommandBufferUsageFlags usage = RHICommandBufferUsageFlags::None) = 0;
 
     /**
      * @brief End recording commands into this command buffer.
@@ -78,7 +96,7 @@ public:
      */
     virtual void bind_pipeline(RHIPipeline* pipeline) = 0;
 
-    virtual void bind_descriptor_sets(RHIPipeline* pipeline, const Array<RHIDescriptorSet*>& descriptor_sets) = 0;
+    virtual void bind_descriptor_sets(RHIPipeline* pipeline, const Array<RHIShaderResource*>& descriptor_sets) = 0;
 
     /**
      * @brief Bind vertex buffers for rendering.
@@ -102,7 +120,10 @@ public:
      */
     virtual void set_viewports(const Viewport* viewports, uint32 count) = 0;
 
-    virtual void copy_buffer(RHIBuffer* source, RHIBuffer* destination, const RHIBufferCopyCommand& command) = 0;
+    virtual void transition_texture(const RHITextureBarrier& barrier) = 0;
+
+    virtual void copy_buffer(const RHICopyBufferCommand& command) = 0;
+    virtual void copy_buffer_to_texture(const RHICopyBufferToTextureCommand& command) = 0;
 
     /**
      * @brief Register a draw command.

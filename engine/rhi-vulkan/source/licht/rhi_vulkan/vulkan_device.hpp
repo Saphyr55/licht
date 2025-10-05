@@ -1,10 +1,8 @@
 #pragma once
 
 #include "licht/core/memory/heap_allocator.hpp"
-#include "licht/core/memory/linear_allocator.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/command_buffer.hpp"
-#include "licht/rhi/command_queue.hpp"
 #include "licht/rhi/device.hpp"
 #include "licht/rhi/fence.hpp"
 #include "licht/rhi/framebuffer.hpp"
@@ -12,22 +10,24 @@
 #include "licht/rhi/swapchain.hpp"
 #include "licht/rhi/texture.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
-#include "licht/rhi_vulkan/vulkan_swapchain.hpp"
 
 namespace licht {
 
-class RHIVulkanDevice : public RHIDevice {
+class VulkanDevice : public RHIDevice {
 public:
     virtual void wait_idle() override;
 
     virtual void wait_fence(RHIFence* fence) override;
     virtual void reset_fence(RHIFence* fence) override;
 
-    virtual RHIDescriptorPool* create_descriptor_pool(RHIPipeline* pipeline, const RHIDescriptorSetInformation& information) override;
-    virtual void destroy_descriptor_pool(RHIDescriptorPool* descriptor_set_layout) override;
+    virtual RHIShaderResourcePool* create_shader_resource_pool(RHIPipeline* pipeline, size_t resource_count) override;
+    virtual void destroy_shader_resource_pool(RHIShaderResourcePool* descriptor_set_layout) override;
 
     virtual RHICommandAllocator* create_command_allocator(const RHICommandAllocatorDescription& description) override;
     virtual void destroy_command_allocator(RHICommandAllocator* command_allocator) override;
+
+    virtual RHIBuffer* create_buffer(RHIBufferDescription description) override;
+    virtual void destroy_buffer(RHIBuffer* buffer) override;
 
     virtual RHITexture* create_texture(const RHITextureDescription& description) override;
     virtual void destroy_texture(RHITexture* texture) override;
@@ -40,9 +40,6 @@ public:
 
     virtual RHIPipeline* create_graphics_pipeline(const RHIPipelineDescription& description) override;
     virtual void destroy_graphics_pipeline(RHIPipeline* pipeline) override;
-
-    virtual RHIBuffer* create_buffer(RHIBufferDescription description) override;
-    virtual void destroy_buffer(RHIBuffer* buffer) override;
 
     virtual RHISwapchain* create_swapchain(uint32 width, uint32 height, uint32 image_count) override;
     virtual void recreate_swapchain(RHISwapchain* swapchain, uint32 width, uint32 height) override;
@@ -60,7 +57,7 @@ public:
     virtual Array<RHICommandQueueRef> get_command_queues() override;
 
 public:
-    RHIVulkanDevice(VulkanContext& context);
+    VulkanDevice();
 
 private:
     HeapAllocator& allocator_;

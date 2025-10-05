@@ -12,7 +12,7 @@
 #include "licht/core/trace/trace.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/command_queue.hpp"
-#include "licht/rhi/descriptor_set.hpp"
+#include "licht/rhi/shader_resource.hpp"
 #include "licht/rhi/rhi_fowards.hpp"
 #include "licht/rhi/rhi_module.hpp"
 #include "licht/rhi/rhi_types.hpp"
@@ -153,25 +153,13 @@ void RenderFrameScript::on_startup() {
         FileHandleResult vertex_file_open_error = file_system.open_read("shaders/main.vert.spv");
         LCHECK(vertex_file_open_error.has_value())
         SharedRef<FileHandle> vertex_file_handle = vertex_file_open_error.value();
-        CompiledShader vertex_shader(vertex_file_handle->read_all_bytes());
+        SPIRVShader vertex_shader(vertex_file_handle->read_all_bytes());
 
         FileHandleResult fragment_file_open_error = file_system.open_read("shaders/main.frag.spv");
         LCHECK(fragment_file_open_error.has_value())
         SharedRef<FileHandle> fragment_file_handle = fragment_file_open_error.value();
-        CompiledShader fragment_shader(fragment_file_handle->read_all_bytes());
+        SPIRVShader fragment_shader(fragment_file_handle->read_all_bytes());
 
-        // -- Graphics Pipeline Shaders --
-        RHIPipelineShaderStageCreateInfo vertex_stage_create_info;
-        vertex_stage_create_info.name = "main";
-        vertex_stage_create_info.shader = &vertex_shader;
-        vertex_stage_create_info.type = RHIShaderStage::Vertex;
-
-        RHIPipelineShaderStageCreateInfo fragment_stage_create_info;
-        fragment_stage_create_info.name = "main";
-        fragment_stage_create_info.shader = &fragment_shader;
-        fragment_stage_create_info.type = RHIShaderStage::Fragment;
-
-        // -- Graphics Pipeline --
         Viewport viewport = {};
         viewport.x = 0.0f;
         viewport.y = 0.0f;
@@ -190,11 +178,23 @@ void RenderFrameScript::on_startup() {
         viewport_info.viewport = viewport;
         viewport_info.scissor = scissor;
 
-        RHIDescriptorSetLayoutBinding ubo_binding = {};
+        RHIShaderResourceBinding ubo_binding = {};
         ubo_binding.binding = 0;
         ubo_binding.count = 1;
-        ubo_binding.type = RHIDescriptorSetType::Uniform;
+        ubo_binding.type = RHIShaderResourceBindingType::Uniform;
 
+        // -- Graphics Pipeline Shaders --
+        RHIPipelineShaderStageCreateInfo vertex_stage_create_info;
+        vertex_stage_create_info.name = "main";
+        vertex_stage_create_info.shader = &vertex_shader;
+        vertex_stage_create_info.type = RHIShaderStage::Vertex;
+
+        RHIPipelineShaderStageCreateInfo fragment_stage_create_info;
+        fragment_stage_create_info.name = "main";
+        fragment_stage_create_info.shader = &fragment_shader;
+        fragment_stage_create_info.type = RHIShaderStage::Fragment;
+
+        // -- Graphics Pipeline --
         RHIPipelineDescription pipeline_description;
         pipeline_description.render_pass = render_pass_;
         pipeline_description.vertex_shader_info = vertex_stage_create_info;
@@ -225,9 +225,9 @@ void RenderFrameScript::on_startup() {
     {
         RHIDeviceMemoryUploader uploader(device_, 3);
 
-        position_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsage::Vertex, positions_));
-        color_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsage::Vertex, colors_));
-        index_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsage::Index, indices_));
+        position_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsageFlags::Vertex, positions_));
+        color_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsageFlags::Vertex, colors_));
+        index_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsageFlags::Index, indices_));
         
         uploader.upload();
     }
@@ -239,9 +239,9 @@ void RenderFrameScript::on_startup() {
         uniform_buffers_.reserve(image_count);
         for (uint32 i = 0; i < image_count; i++) {
             RHIBufferDescription uniform_buffer_description = {};
-            uniform_buffer_description.access_mode = RHIAccessMode::Private;
-            uniform_buffer_description.usage = RHIBufferUsage::Uniform;
-            uniform_buffer_description.memory_usage = RHIBufferMemoryUsage::Host;
+            uniform_buffer_description.sharing_mode = RHISharingMode::Private;
+            uniform_buffer_description.usage = RHIBufferUsageFlags::Uniform;
+            uniform_buffer_description.memory_usage = RHIMemoryUsage::Host;
             uniform_buffer_description.size = sizeof(UniformBufferObject);
 
             RHIBuffer* uniform_buffer = device_->create_buffer(uniform_buffer_description);
@@ -252,14 +252,15 @@ void RenderFrameScript::on_startup() {
     // -- Descriptor set layouts --
     {
         const uint32 image_count = swapchain_->get_texture_views().size();
+
         constexpr uint32 binding = 0;
         constexpr uint32 offset = 0;
         constexpr uint32 size = sizeof(UniformBufferObject);
 
-        descriptor_pool_ = device_->create_descriptor_pool(graphics_pipeline_, RHIDescriptorSetInformation(image_count));
+        shader_resource_pool_ = device_->create_shader_resource_pool(graphics_pipeline_, image_count);
 
         for (uint32 i = 0; i < image_count; i++) {
-            RHIDescriptorSet* descriptor_set = descriptor_pool_->get_descriptor_set(i);
+            RHIShaderResource* descriptor_set = shader_resource_pool_->get_shader_resource(i);
             descriptor_set->update(uniform_buffers_[i], binding, offset, size);
         }
     }
@@ -351,7 +352,7 @@ void RenderFrameScript::on_tick(float32 delta_time) {
             graphics_command_buffer->bind_vertex_buffers({position_buffer_, color_buffer_});
             graphics_command_buffer->bind_index_buffer(index_buffer_);
 
-            RHIDescriptorSet* descriptor_set = descriptor_pool_->get_descriptor_set(frame_context_.current_frame);
+            RHIShaderResource* descriptor_set = shader_resource_pool_->get_shader_resource(frame_context_.current_frame);
             graphics_command_buffer->bind_descriptor_sets(graphics_pipeline_, {descriptor_set});
 
             RHIDrawIndexedCommand draw_indexed_command = {};
@@ -363,8 +364,9 @@ void RenderFrameScript::on_tick(float32 delta_time) {
         graphics_command_buffer->end_render_pass();
     }
     graphics_command_buffer->end();
-
-    frame_context_.frame_in_flight_fences[frame_context_.frame_index] = &frame_context_.in_flight_fences[frame_context_.current_frame];
+    
+    frame_context_.frame_in_flight_fences[frame_context_.frame_index] =
+        &frame_context_.in_flight_fences[frame_context_.current_frame];
 
     device_->reset_fence(frame_context_.in_flight_fences[frame_context_.current_frame]);
 
@@ -467,7 +469,7 @@ void RenderFrameScript::on_shutdown() {
             device_->destroy_buffer(uniform_buffers_[i]);
         }
         uniform_buffers_.clear();
-        device_->destroy_descriptor_pool(descriptor_pool_);
+        device_->destroy_shader_resource_pool(shader_resource_pool_);
     }
 
     // -- Allocators

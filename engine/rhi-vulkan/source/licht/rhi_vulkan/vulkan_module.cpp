@@ -11,8 +11,7 @@
 namespace licht {
 
 RHIVulkanModule::RHIVulkanModule() 
-    : window_handle_(Display::InvalidWindowHandle)
-    , context_() {
+    : window_handle_(Display::InvalidWindowHandle) {
 }
 
 void RHIVulkanModule::on_load() { 
@@ -26,14 +25,14 @@ void RHIVulkanModule::on_startup() {
     RHIModule* module = registry.get_module<RHIModule>(RHIModule::ModuleName);
     
     window_handle_ = module->get_window_handle();
-    module->set_device(new_ref<RHIVulkanDevice>(context_));
+    module->set_device(new_ref<VulkanDevice>());
     
     void* native_window = Display::get_default().get_native_window_handle(window_handle_);
-    vulkan_context_initialize(context_, native_window);
+    vulkan_context_initialize( vulkan_context_get(), native_window);
 }
 
 void RHIVulkanModule::on_shutdown() { 
-    vulkan_context_destroy(context_);
+    vulkan_context_destroy(vulkan_context_get());
     LLOG_INFO("[RHIVulkanModule]", "Shuting down RHI Vulkan Module...");
 }
 

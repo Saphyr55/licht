@@ -33,7 +33,7 @@
 
 namespace licht {
 
-void RHIVulkanDevice::wait_fence(RHIFence* fence) {
+void VulkanDevice::wait_fence(RHIFence* fence) {
     if (fence->is_signaled()) {
         return;
     }
@@ -53,7 +53,7 @@ void RHIVulkanDevice::wait_fence(RHIFence* fence) {
     }
 }
 
-void RHIVulkanDevice::reset_fence(RHIFence* fence) {
+void VulkanDevice::reset_fence(RHIFence* fence) {
     if (!fence->is_signaled()) {
         return;
     }
@@ -64,33 +64,33 @@ void RHIVulkanDevice::reset_fence(RHIFence* fence) {
     rhi_vk_fence->set_signaled(false);
 }
 
-RHIDescriptorPool* RHIVulkanDevice::create_descriptor_pool(RHIPipeline* pipeline, const RHIDescriptorSetInformation& information) {
-    RHIVulkanPipeline* vkpileline = static_cast<RHIVulkanPipeline*>(pipeline);
-    RHIVulkanDescriptorPool* vk_descriptor_pool = lnew(allocator_, RHIVulkanDescriptorPool(context_, vkpileline->get_descriptor_set_layout(), information));
+RHIShaderResourcePool* VulkanDevice::create_shader_resource_pool(RHIPipeline* pipeline, size_t count) {
+    VulkanPipeline* vkpileline = static_cast<VulkanPipeline*>(pipeline);
+    VulkanDescriptorPool* vk_descriptor_pool = lnew(allocator_, VulkanDescriptorPool(context_, vkpileline->get_descriptor_set_layout(), count));
     vk_descriptor_pool->initialize();
     return vk_descriptor_pool;
 }
 
-void RHIVulkanDevice::destroy_descriptor_pool(RHIDescriptorPool* desc) {
+void VulkanDevice::destroy_shader_resource_pool(RHIShaderResourcePool* desc) {
     LCHECK(desc)
     
-    RHIVulkanDescriptorPool* vkdesc = static_cast<RHIVulkanDescriptorPool*>(desc);
+    VulkanDescriptorPool* vkdesc = static_cast<VulkanDescriptorPool*>(desc);
     vkdesc->destroy();
     ldelete(allocator_, vkdesc);
 }
 
-void RHIVulkanDevice::wait_idle() {
+void VulkanDevice::wait_idle() {
     LICHT_VULKAN_CHECK(VulkanAPI::lvkDeviceWaitIdle(context_.device));
 }
 
-RHICommandAllocator* RHIVulkanDevice::create_command_allocator(const RHICommandAllocatorDescription& description) {
+RHICommandAllocator* VulkanDevice::create_command_allocator(const RHICommandAllocatorDescription& description) {
     RHIVulkanCommandAllocator* vulkan_command_allocator = lnew(allocator_, RHIVulkanCommandAllocator(context_, description));
     vulkan_command_allocator->initialize_command_pool();
     vulkan_command_allocator->allocate_command_buffers();
     return vulkan_command_allocator;
 }
 
-void RHIVulkanDevice::destroy_command_allocator(RHICommandAllocator* command_allocator) {
+void VulkanDevice::destroy_command_allocator(RHICommandAllocator* command_allocator) {
     LCHECK(command_allocator)
 
     RHIVulkanCommandAllocator* vulkan_command_allocator = static_cast<RHIVulkanCommandAllocator*>(command_allocator);
@@ -98,41 +98,45 @@ void RHIVulkanDevice::destroy_command_allocator(RHICommandAllocator* command_all
     ldelete(allocator_, vulkan_command_allocator);
 }
 
-RHITexture* RHIVulkanDevice::create_texture(const RHITextureDescription& description) {
-    RHIVulkanTexture* vk_texture = lnew(allocator_,
-                                        RHIVulkanTexture(context_, description,
-                                                         VK_IMAGE_TYPE_2D,  // Configurable
-                                                         VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT, {}, {}));
-    vk_texture->initialize();
-    return vk_texture;
-}
-
-void RHIVulkanDevice::destroy_texture(RHITexture* texture) {
-    LCHECK(texture)
-
-    RHIVulkanTexture* vktexture = static_cast<RHIVulkanTexture*>(texture);
-    vktexture->destroy();
-    ldelete(allocator_, vktexture);
-}
-
-RHIBuffer* RHIVulkanDevice::create_buffer(RHIBufferDescription description) {
-    RHIVulkanBuffer* buffer = lnew(allocator_, RHIVulkanBuffer(context_, description));
+RHIBuffer* VulkanDevice::create_buffer(RHIBufferDescription description) {
+    VulkanBuffer* buffer = lnew(allocator_, VulkanBuffer(context_, description));
     buffer->initialize();
     return buffer;
 }
 
-void RHIVulkanDevice::destroy_buffer(RHIBuffer* buffer) {
+void VulkanDevice::destroy_buffer(RHIBuffer* buffer) {
     LCHECK(buffer)
 
-    RHIVulkanBuffer* vkbuffer = static_cast<RHIVulkanBuffer*>(buffer);
+    VulkanBuffer* vkbuffer = static_cast<VulkanBuffer*>(buffer);
     vkbuffer->destroy();
+
     ldelete(allocator_, vkbuffer);
 }
 
-RHITextureView* RHIVulkanDevice::create_texture_view(const RHITextureViewDescription& description) {
-    RHIVulkanTextureView* texture_view = lnew(allocator_, RHIVulkanTextureView());
+RHITexture* VulkanDevice::create_texture(const RHITextureDescription& description) {
+    VulkanTexture* vk_texture = lnew(allocator_, VulkanTexture(
+        context_, 
+        description,
+        VK_IMAGE_TYPE_2D, 
+        {}));
 
-    RHIVulkanTexture* texture = static_cast<RHIVulkanTexture*>(description.texture);
+    vk_texture->initialize();
+    return vk_texture;
+}
+
+void VulkanDevice::destroy_texture(RHITexture* texture) {
+    LCHECK(texture)
+
+    VulkanTexture* vktexture = static_cast<VulkanTexture*>(texture);
+    vktexture->destroy();
+    
+    ldelete(allocator_, vktexture);
+}
+
+RHITextureView* VulkanDevice::create_texture_view(const RHITextureViewDescription& description) {
+    VulkanTextureView* texture_view = lnew(allocator_, VulkanTextureView());
+
+    VulkanTexture* texture = static_cast<VulkanTexture*>(description.texture);
 
     VkImageViewCreateInfo image_view_create_info = {};
     image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -154,75 +158,79 @@ RHITextureView* RHIVulkanDevice::create_texture_view(const RHITextureViewDescrip
     return texture_view;
 }
 
-void RHIVulkanDevice::destroy_texture_view(RHITextureView* texture_view) {
+void VulkanDevice::destroy_texture_view(RHITextureView* texture_view) {
     LCHECK(texture_view)
 
-    RHIVulkanTextureView* vk_texture_view = static_cast<RHIVulkanTextureView*>(texture_view);
+    VulkanTextureView* vk_texture_view = static_cast<VulkanTextureView*>(texture_view);
     VulkanAPI::lvkDestroyImageView(context_.device, vk_texture_view->get_handle(), context_.allocator);
+
     ldelete(allocator_, vk_texture_view);
 }
 
-RHIRenderPass* RHIVulkanDevice::create_render_pass(const RHIRenderPassDescription& description) {
-    RHIVulkanRenderPass* render_pass = lnew(allocator_, RHIVulkanRenderPass(context_));
-    vulkan_render_pass_init(context_, &render_pass->get_handle(), description);
+RHIRenderPass* VulkanDevice::create_render_pass(const RHIRenderPassDescription& description) {
+    VulkanRenderPass* render_pass = lnew(allocator_, VulkanRenderPass(context_, description));
+    render_pass->initialize();
     return render_pass;
 }
 
-void RHIVulkanDevice::destroy_render_pass(RHIRenderPass* render_pass) {
+void VulkanDevice::destroy_render_pass(RHIRenderPass* render_pass) {
     LCHECK(render_pass)
 
-    RHIVulkanRenderPass* vulkan_render_pass = static_cast<RHIVulkanRenderPass*>(render_pass);
-    vulkan_render_pass_destroy(context_, vulkan_render_pass->get_handle());
+    VulkanRenderPass* vulkan_render_pass = static_cast<VulkanRenderPass*>(render_pass);
+    vulkan_render_pass->destroy();
+
     ldelete(allocator_, vulkan_render_pass);
 }
 
-RHIPipeline* RHIVulkanDevice::create_graphics_pipeline(const RHIPipelineDescription& description) {
-    RHIVulkanPipeline* graphics_pipeline = lnew(allocator_, RHIVulkanPipeline(context_, description));
+RHIPipeline* VulkanDevice::create_graphics_pipeline(const RHIPipelineDescription& description) {
+    VulkanPipeline* graphics_pipeline = lnew(allocator_, VulkanPipeline(context_, description));
     graphics_pipeline->initialize();
     return graphics_pipeline;
 }
 
-void RHIVulkanDevice::destroy_graphics_pipeline(RHIPipeline* pipeline) {
-    RHIVulkanPipeline* graphics_pipeline = static_cast<RHIVulkanPipeline*>(pipeline);
+void VulkanDevice::destroy_graphics_pipeline(RHIPipeline* pipeline) {
+    VulkanPipeline* graphics_pipeline = static_cast<VulkanPipeline*>(pipeline);
     graphics_pipeline->destroy();
     ldelete(allocator_, graphics_pipeline);
 }
 
-RHISwapchain* RHIVulkanDevice::create_swapchain(uint32 width, uint32 height, uint32 image_count) {
-    RHIVulkanSwapchain* swapchain = lnew(allocator_, RHIVulkanSwapchain(context_, width, height, image_count));
+RHISwapchain* VulkanDevice::create_swapchain(uint32 width, uint32 height, uint32 image_count) {
+    VulkanSwapchain* swapchain = lnew(allocator_, VulkanSwapchain(context_, width, height, image_count));
     swapchain->initialize();
     return swapchain;
 }
 
-void RHIVulkanDevice::recreate_swapchain(RHISwapchain* swapchain, uint32 width, uint32 height) {
-    RHIVulkanSwapchain* vulkan_swapchain = static_cast<RHIVulkanSwapchain*>(swapchain);
+void VulkanDevice::recreate_swapchain(RHISwapchain* swapchain, uint32 width, uint32 height) {
+    VulkanSwapchain* vulkan_swapchain = static_cast<VulkanSwapchain*>(swapchain);
     vulkan_swapchain->set_extent({width, height});
     vulkan_swapchain->destroy();
     vulkan_swapchain->initialize();
 }
 
-void RHIVulkanDevice::destroy_swapchain(RHISwapchain* swapchain) {
+void VulkanDevice::destroy_swapchain(RHISwapchain* swapchain) {
     LCHECK(swapchain);
-    RHIVulkanSwapchain* vulkan_swapchain = static_cast<RHIVulkanSwapchain*>(swapchain);
+
+    VulkanSwapchain* vulkan_swapchain = static_cast<VulkanSwapchain*>(swapchain);
     vulkan_swapchain->destroy();
+
     ldelete(allocator_, vulkan_swapchain);
 }
 
-RHIFramebuffer* RHIVulkanDevice::create_framebuffer(const RHIFramebufferDescription& description) {
-    RHIVulkanFramebuffer* framebuffer = lnew(allocator_, RHIVulkanFramebuffer(context_, description));
+RHIFramebuffer* VulkanDevice::create_framebuffer(const RHIFramebufferDescription& description) {
+    VulkanFramebuffer* framebuffer = lnew(allocator_, VulkanFramebuffer(context_, description));
     framebuffer->initialize();
     return framebuffer;
 }
 
-void RHIVulkanDevice::destroy_framebuffer(RHIFramebuffer* framebuffer) {
+void VulkanDevice::destroy_framebuffer(RHIFramebuffer* framebuffer) {
     LCHECK(framebuffer);
 
-    RHIVulkanFramebuffer* vulkan_framebuffer = static_cast<RHIVulkanFramebuffer*>(framebuffer);
+    VulkanFramebuffer* vulkan_framebuffer = static_cast<VulkanFramebuffer*>(framebuffer);
     vulkan_framebuffer->destroy();
     ldelete(allocator_, vulkan_framebuffer);
 }
 
-RHISemaphore* RHIVulkanDevice::create_semaphore() {
+RHISemaphore* VulkanDevice::create_semaphore() {
     RHIVulkanSemaphore* semaphore = lnew(allocator_, RHIVulkanSemaphore());
 
     VkSemaphoreCreateInfo semaphore_create_info = {};
@@ -233,7 +241,7 @@ RHISemaphore* RHIVulkanDevice::create_semaphore() {
     return semaphore;
 }
 
-void RHIVulkanDevice::destroy_semaphore(RHISemaphore* semaphore) {
+void VulkanDevice::destroy_semaphore(RHISemaphore* semaphore) {
     LCHECK(semaphore);
 
     RHIVulkanSemaphore* vk_semaphore = static_cast<RHIVulkanSemaphore*>(semaphore);
@@ -242,7 +250,7 @@ void RHIVulkanDevice::destroy_semaphore(RHISemaphore* semaphore) {
     ldelete(allocator_, vk_semaphore);
 }
 
-RHIFence* RHIVulkanDevice::create_fence() {
+RHIFence* VulkanDevice::create_fence() {
     VkFence fence;
     VkFenceCreateInfo fence_create_info = {};
     fence_create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -254,7 +262,7 @@ RHIFence* RHIVulkanDevice::create_fence() {
     return lnew(allocator_, RHIVulkanFence(fence, true));
 }
 
-void RHIVulkanDevice::destroy_fence(RHIFence* fence) {
+void VulkanDevice::destroy_fence(RHIFence* fence) {
     LCHECK(fence);
 
     RHIVulkanFence* vk_fence = static_cast<RHIVulkanFence*>(fence);
@@ -263,12 +271,12 @@ void RHIVulkanDevice::destroy_fence(RHIFence* fence) {
     ldelete(allocator_, vk_fence);
 }
 
-Array<RHICommandQueueRef> RHIVulkanDevice::get_command_queues() {
+Array<RHICommandQueueRef> VulkanDevice::get_command_queues() {
     return context_.command_queues;
 }
 
-RHIVulkanDevice::RHIVulkanDevice(VulkanContext& context)
-    : context_(context)
+VulkanDevice::VulkanDevice()
+    : context_(vulkan_context_get())
     , allocator_(DefaultAllocator::get_instance()) {
 }
 

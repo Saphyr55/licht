@@ -2,15 +2,15 @@
 
 #include "licht/core/string/string_ref.hpp"
 #include "licht/rhi/buffer.hpp"
-#include "licht/rhi/descriptor_set.hpp"
-#include "licht/rhi/pipeline/compiled_shader.hpp"
+#include "licht/rhi/shader_resource.hpp"
+#include "licht/rhi/compiled_shader.hpp"
 #include "licht/rhi/rhi_types.hpp"
 
 namespace licht {
 
 struct RHIPipelineShaderStageCreateInfo {
     StringRef name;
-    CompiledShader* shader;
+    SPIRVShader* shader;
     RHIShaderStage type;
 };
 
@@ -29,7 +29,7 @@ struct RHIPipelineDescription {
     RHIPipelineShaderStageCreateInfo fragment_shader_info;
     RHIPipelineViewportStateInformation viewport_info;
     RHIPipelineVertexBindingInformation vertex_binding_info;
-    Array<RHIDescriptorSetLayoutBinding> bindings;
+    Array<RHIShaderResourceBinding> bindings;
     RHIRenderPass* render_pass;
 };
 

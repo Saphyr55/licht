@@ -10,28 +10,32 @@
 
 namespace licht {
 
-RHIVulkanFramebuffer::RHIVulkanFramebuffer(VulkanContext& context, const RHIFramebufferDescription& description)
+VulkanFramebuffer::VulkanFramebuffer(VulkanContext& context, const RHIFramebufferDescription& description)
     : description_(description)
     , context_(context)
     , handle_(VK_NULL_HANDLE) {
 }
 
-RHIVulkanFramebuffer::~RHIVulkanFramebuffer() {
+VulkanFramebuffer::~VulkanFramebuffer() {
     if (handle_) {
         destroy();
     }
 }
 
-VkFramebuffer& RHIVulkanFramebuffer::get_handle() {
+VkFramebuffer& VulkanFramebuffer::get_handle() {
     return handle_;
 }
 
-void RHIVulkanFramebuffer::initialize() {
-    RHIVulkanRenderPass* render_pass = static_cast<RHIVulkanRenderPass*>(description_.render_pass);
+const VkFramebuffer& VulkanFramebuffer::get_handle() const {
+    return handle_;
+}
+
+void VulkanFramebuffer::initialize() {
+    VulkanRenderPass* render_pass = static_cast<VulkanRenderPass*>(description_.render_pass);
 
     Array<VkImageView> attachments(description_.attachments.size());
     for (RHITextureView* texture_view : description_.attachments) {
-        RHIVulkanTextureView* vulkan_texture_view = static_cast<RHIVulkanTextureView*>(texture_view);
+        VulkanTextureView* vulkan_texture_view = static_cast<VulkanTextureView*>(texture_view);
         attachments.append(vulkan_texture_view->get_handle());
     }
 
@@ -47,7 +51,7 @@ void RHIVulkanFramebuffer::initialize() {
     LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateFramebuffer(context_.device, &framebuffer_create_info, context_.allocator, &handle_));
 }
 
-void RHIVulkanFramebuffer::destroy() {
+void VulkanFramebuffer::destroy() {
     VulkanAPI::lvkDestroyFramebuffer(context_.device, handle_, context_.allocator);
     handle_ = VK_NULL_HANDLE;
 }

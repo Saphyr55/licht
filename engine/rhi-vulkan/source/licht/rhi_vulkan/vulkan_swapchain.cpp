@@ -55,18 +55,18 @@ VkSurfaceFormatKHR vulkan_choose_swasurface_format(const Array<VkSurfaceFormatKH
     return available_surface_formats[0];
 }
 
-RHIVulkanSwapchain::RHIVulkanSwapchain(VulkanContext& context, uint32 width, uint32 height, uint32 image_count)
+VulkanSwapchain::VulkanSwapchain(VulkanContext& context, uint32 width, uint32 height, uint32 image_count)
     : context_(context)
     , extent_({width, height})
     , format_(VK_FORMAT_B8G8R8A8_SRGB)
     , image_count_(image_count) {
 }
 
-RHIFormat RHIVulkanSwapchain::get_format() {
+RHIFormat VulkanSwapchain::get_format() {
     return rhi_format_get(format_);
 }
 
-VulkanSwapchainSupportDetails RHIVulkanSwapchain::query_support_details() {
+VulkanSwapchainSupportDetails VulkanSwapchain::query_support_details() {
     VulkanSwapchainSupportDetails swapchain_support_details = {};
 
     VkPhysicalDevice physical_device = context_.physical_device;
@@ -93,7 +93,7 @@ VulkanSwapchainSupportDetails RHIVulkanSwapchain::query_support_details() {
     return swapchain_support_details;
 }
 
-void RHIVulkanSwapchain::initialize() {
+void VulkanSwapchain::initialize() {
     VulkanSwapchainSupportDetails swapchain_support_details = query_support_details();
 
     bool swapchain_adequate = !swapchain_support_details.surface_formats.empty() && !swapchain_support_details.present_modes.empty();
@@ -153,7 +153,7 @@ void RHIVulkanSwapchain::initialize() {
 
     for (uint32 i = 0; i < image_count; i++) {
         VkImage image = images_[i];
-        RHIVulkanTextureView* texture_view = lnew(DefaultAllocator::get_instance(), RHIVulkanTextureView());
+        VulkanTextureView* texture_view = lnew(DefaultAllocator::get_instance(), VulkanTextureView());
 
         VkImageViewCreateInfo image_view_create_info = {};
         image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -178,9 +178,9 @@ void RHIVulkanSwapchain::initialize() {
     LCHECK(texture_views_.size() == images_.size());
 }
 
-void RHIVulkanSwapchain::destroy() {
+void VulkanSwapchain::destroy() {
     for (RHITextureView* texture_view : texture_views_) {
-        RHIVulkanTextureView* vk_texture_view = static_cast<RHIVulkanTextureView*>(texture_view);
+        VulkanTextureView* vk_texture_view = static_cast<VulkanTextureView*>(texture_view);
         VulkanAPI::lvkDestroyImageView(context_.device, vk_texture_view->get_handle(), context_.allocator);
     }
 
@@ -188,7 +188,7 @@ void RHIVulkanSwapchain::destroy() {
     VulkanAPI::lvkDestroySwapchainKHR(context_.device, handle_, context_.allocator);
 }
 
-void RHIVulkanSwapchain::acquire_next_frame(RHIFrameContext& context) {
+void VulkanSwapchain::acquire_next_frame(RHIFrameContext& context) {
     RHIVulkanSemaphore* frame_available_semaphore = static_cast<RHIVulkanSemaphore*>(context.current_frame_available_semaphore());
 
     VkResult acquire_next_image_result = VulkanAPI::lvkAcquireNextImageKHR(context_.device, handle_, UINT64_MAX, frame_available_semaphore->get_handle(), VK_NULL_HANDLE, &context.frame_index);
@@ -213,11 +213,11 @@ void RHIVulkanSwapchain::acquire_next_frame(RHIFrameContext& context) {
     }
 }
 
-uint32 RHIVulkanSwapchain::get_width() {
+uint32 VulkanSwapchain::get_width() {
     return extent_.width;
 }
 
-uint32 RHIVulkanSwapchain::get_height() {
+uint32 VulkanSwapchain::get_height() {
     return extent_.height;
 }
 

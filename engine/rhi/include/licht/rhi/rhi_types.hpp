@@ -20,14 +20,15 @@ struct Rect2D {
     float32 height = 0.0f;
 };
 
-enum class RHITextureUsage : uint8 {
-    ColorAttachment = 1 << 0,
-    DepthStencil = 1 << 1,
-    Sampled = 1 << 2,
-    TransferSrc = 1 << 3,
-    TransferDst = 1 << 4
+enum class RHITextureLayout : uint8 {
+    Undefined,
+    TransferDst,
+    TransferSrc,
+    ShaderReadOnly,
+    ColorAttachment,
+    DepthStencilAttachment,
+    General
 };
-LICHT_ENUM_FLAGS(RHITextureUsage)
 
 enum class RHIShaderStage {
     Vertex,
@@ -37,12 +38,11 @@ enum class RHIShaderStage {
     Compute
 };
 
-enum class RHIDescriptorSetType {
+enum class RHIShaderResourceBindingType {
     Uniform,
     Sampler,
     StorageBuffer,
-    StorageImage,
-    CombinedImageSampler
+    StorageImage
 };
 
 enum class RHIQueueType {
@@ -57,15 +57,15 @@ enum class RHIVertexInputRate {
     Instance,
 };
 
-enum class RHICommandBufferUsage : uint8 {
+enum class RHICommandBufferUsageFlags : uint8 {
     None = 0,
     OneTimeSubmit = 1 << 0,
     RenderPassContinue = 1 << 1,
     SimultaneousUse = 1 << 2,
 };
-LICHT_ENUM_FLAGS(RHICommandBufferUsage)
+LICHT_ENUM_FLAGS(RHICommandBufferUsageFlags)
 
-enum class RHIBufferUsage : uint8 {
+enum class RHIBufferUsageFlags : uint8 {
     None = 0,
     Vertex = 1 << 0,
     Index = 1 << 1,
@@ -74,9 +74,9 @@ enum class RHIBufferUsage : uint8 {
     TransferSrc = 1 << 4,
     TransferDst = 1 << 5
 };
-LICHT_ENUM_FLAGS(RHIBufferUsage)
+LICHT_ENUM_FLAGS(RHIBufferUsageFlags)
 
-enum class TextureUsageFlags : uint8 {
+enum class RHITextureUsageFlags : uint8 {
     ColorAttachment = 1 << 0,
     DepthStencilAttachment = 1 << 1,
     Sampled = 1 << 2,
@@ -84,14 +84,14 @@ enum class TextureUsageFlags : uint8 {
     TransferSrc = 1 << 4,
     TransferDst = 1 << 5
 };
-LICHT_ENUM_FLAGS(TextureUsageFlags)
+LICHT_ENUM_FLAGS(RHITextureUsageFlags)
 
-enum class RHIBufferMemoryUsage {
+enum class RHIMemoryUsage {
     Device,
     Host,
 };
 
-enum class RHIAccessMode {
+enum class RHISharingMode {
     Private,
     Shared
 };
@@ -158,11 +158,11 @@ enum class RHIFormat {
     ASTC_8x8,
 };
 
-inline bool rhi_command_buffer_usage_has_flag(RHICommandBufferUsage value, RHICommandBufferUsage flag) {
+inline bool rhi_command_buffer_usage_has_flag(RHICommandBufferUsageFlags value, RHICommandBufferUsageFlags flag) {
     return (value & flag) == flag;
 }
 
-inline bool rhi_buffer_usage_any(RHIBufferUsage usage) {
+inline bool rhi_buffer_usage_any(RHIBufferUsageFlags usage) {
     return static_cast<uint8>(usage) != 0;
 }
 

@@ -1,4 +1,3 @@
-
 target("licht.rhi.vulkan", function()
     set_kind("shared")
     set_group("engine")
@@ -6,11 +5,16 @@ target("licht.rhi.vulkan", function()
     add_deps("licht.core", "licht.rhi")
 
     target_files_default({
+        public = true
+    })
+
+    add_headerfiles("source/**.hpp")
+    add_includedirs("source", {
         public = false
     })
 
     add_packages("vulkan-headers", {
-        public = true
+        public = false
     })
 
     add_defines("LICHT_RHI_VULKAN_EXPORTS")

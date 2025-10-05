@@ -17,7 +17,7 @@ public:
 
 public:
     RHIResourceHandle()
-        : name_("")
+        : name_()
         , identifier_(s_invalid_identifier) {}
 
     RHIResourceHandle(StringRef name, uint64 identifier)

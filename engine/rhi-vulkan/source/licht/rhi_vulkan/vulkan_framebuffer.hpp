@@ -8,17 +8,19 @@
 
 namespace licht {
 
-class RHIVulkanFramebuffer : public RHIFramebuffer {
+class VulkanFramebuffer : public RHIFramebuffer {
 public:
     VkFramebuffer& get_handle();
+
+    const VkFramebuffer& get_handle() const;
 
     void initialize();
 
     void destroy();
 
 public:
-    RHIVulkanFramebuffer(VulkanContext& context, const RHIFramebufferDescription& description);
-    virtual ~RHIVulkanFramebuffer() override;
+    VulkanFramebuffer(VulkanContext& context, const RHIFramebufferDescription& description);
+    virtual ~VulkanFramebuffer() override;
 
 private:
     RHIFramebufferDescription description_;
@@ -26,7 +28,7 @@ private:
     VulkanContext& context_;
 };
 
-using RHIVulkanFramebufferRef = SharedRef<RHIVulkanFramebuffer>;
+using RHIVulkanFramebufferRef = SharedRef<VulkanFramebuffer>;
 
 
 }  //namespace licht

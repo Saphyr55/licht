@@ -3,14 +3,14 @@
 #include <vulkan/vulkan_core.h>
 
 #include "licht/core/memory/shared_ref.hpp"
-#include "licht/rhi/pipeline/pipeline.hpp"
+#include "licht/rhi/pipeline.hpp"
 #include "licht/rhi_vulkan/vulkan_shader_module.hpp"
 
 namespace licht {
 
 struct VulkanContext;
 
-class RHIVulkanPipeline : public RHIPipeline {
+class VulkanPipeline : public RHIPipeline {
 public:
     void initialize();
 
@@ -23,7 +23,7 @@ public:
     VkPipelineLayout& get_layout() { return pipeline_layout_; };
 
 public:
-    RHIVulkanPipeline(VulkanContext& context, const RHIPipelineDescription& description);
+    VulkanPipeline(VulkanContext& context, const RHIPipelineDescription& description);
 
 private:
     VulkanContext& context_;
@@ -33,6 +33,6 @@ private:
     VkDescriptorSetLayout descriptor_set_layout_;
 };
 
-using RHIVulkanPipelineRef = SharedRef<RHIVulkanPipeline>;
+using RHIVulkanPipelineRef = SharedRef<VulkanPipeline>;
 
 }  //namespace licht

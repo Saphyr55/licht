@@ -8,8 +8,8 @@
 
 namespace licht {
 
-void RHIVulkanDescriptorSet::update(RHIBuffer* buffer, size_t binding, size_t offset, size_t range) {
-    RHIVulkanBuffer* vkbuffer = static_cast<RHIVulkanBuffer*>(buffer);
+void VulkanDescriptorSet::update(RHIBuffer* buffer, size_t binding, size_t offset, size_t range) {
+    VulkanBuffer* vkbuffer = static_cast<VulkanBuffer*>(buffer);
 
     VkDescriptorBufferInfo buffer_info = {};
     buffer_info.buffer = vkbuffer->get_handle();
@@ -32,63 +32,65 @@ void RHIVulkanDescriptorSet::update(RHIBuffer* buffer, size_t binding, size_t of
     VulkanAPI::lvkUpdateDescriptorSets(context_.device, 1, &descriptor_write, 0, nullptr);
 }
 
-RHIDescriptorSet* RHIVulkanDescriptorPool::get_descriptor_set(uint32 index) {
+RHIShaderResource* VulkanDescriptorPool::get_shader_resource(uint32 index) {
     return &descriptor_sets_[index];
 }
 
-void RHIVulkanDescriptorPool::initialize() {
+void VulkanDescriptorPool::initialize() {
 
-    uint32 image_count = information_.image_count;
+    uint32 count = descriptor_sets_.capacity();
 
     VkDescriptorPoolSize descriptor_pool_size = {};
     descriptor_pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptor_pool_size.descriptorCount =image_count;
+    descriptor_pool_size.descriptorCount = count;
 
     VkDescriptorPoolCreateInfo descriptor_pool_create_info = {};
     descriptor_pool_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     descriptor_pool_create_info.poolSizeCount = 1;
     descriptor_pool_create_info.pPoolSizes = &descriptor_pool_size;
-    descriptor_pool_create_info.maxSets = image_count;
+    descriptor_pool_create_info.maxSets = count;
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateDescriptorPool(context_.device, &descriptor_pool_create_info, context_.allocator, &descriptor_pool_))
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateDescriptorPool(
+        context_.device,
+        &descriptor_pool_create_info,
+        context_.allocator,
+        &descriptor_pool_));
 
     Array<VkDescriptorSetLayout> layouts;
-    layouts.resize(image_count, layout_);
+    layouts.resize(count, layout_);
 
     VkDescriptorSetAllocateInfo descriptor_set_allocation_info = {};
     descriptor_set_allocation_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     descriptor_set_allocation_info.descriptorPool = descriptor_pool_;
-    descriptor_set_allocation_info.descriptorSetCount = image_count;
+    descriptor_set_allocation_info.descriptorSetCount = count;
     descriptor_set_allocation_info.pSetLayouts = layouts.data();
     
     Array<VkDescriptorSet> vk_descriptor_sets;
-    vk_descriptor_sets.resize(image_count);
+    vk_descriptor_sets.resize(count);
     
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkAllocateDescriptorSets(context_.device, &descriptor_set_allocation_info, vk_descriptor_sets.data()))
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkAllocateDescriptorSets(
+        context_.device,
+        &descriptor_set_allocation_info,
+        vk_descriptor_sets.data()));
 
-    descriptor_sets_.reserve(image_count);
-    for (uint32 i = 0; i < image_count; i++) {
-        descriptor_sets_.append(RHIVulkanDescriptorSet(context_, vk_descriptor_sets[i]));
-    }
-
-}
-
-void RHIVulkanDescriptorPool::destroy() {
-    if (descriptor_pool_ != VK_NULL_HANDLE) {
-        VulkanAPI::lvkDestroyDescriptorPool(context_.device, descriptor_pool_, context_.allocator);
-        descriptor_pool_ = VK_NULL_HANDLE;
+    for (uint32 i = 0; i < count; i++) {
+        descriptor_sets_.append(VulkanDescriptorSet(context_, vk_descriptor_sets[i]));
     }
 }
 
-RHIVulkanDescriptorPool::RHIVulkanDescriptorPool(VulkanContext& context, VkDescriptorSetLayout layout, const RHIDescriptorSetInformation& information)
+void VulkanDescriptorPool::destroy() {
+    VulkanAPI::lvkDestroyDescriptorPool(context_.device, descriptor_pool_, context_.allocator);
+    descriptor_pool_ = VK_NULL_HANDLE;
+}
+
+VulkanDescriptorPool::VulkanDescriptorPool(VulkanContext& context, VkDescriptorSetLayout layout, size_t count)
     : context_(context)
     , layout_(layout)
-    , information_(information)
-    , descriptor_sets_(information.image_count)
+    , descriptor_sets_(count)
     , descriptor_pool_(VK_NULL_HANDLE) {
 }
 
-RHIVulkanDescriptorPool::~RHIVulkanDescriptorPool() {
+VulkanDescriptorPool::~VulkanDescriptorPool() {
 }
 
 }  //namespace licht

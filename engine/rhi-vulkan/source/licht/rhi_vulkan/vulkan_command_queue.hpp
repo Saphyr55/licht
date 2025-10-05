@@ -8,7 +8,7 @@
 
 namespace licht {
 
-class RHIVulkanCommandQueue : public RHICommandQueue {
+class VulkanCommandQueue : public RHICommandQueue {
 public:
     virtual void submit(const Array<RHICommandBuffer*>& command_buffers,
                         const Array<RHISemaphore*>& wait_semaphores,
@@ -35,7 +35,7 @@ public:
 
 
 public:
-    RHIVulkanCommandQueue(VulkanContext& context, 
+    VulkanCommandQueue(VulkanContext& context, 
                           VkQueue queue, 
                           RHIQueueType type, 
                           uint32 queue_family_index, 

@@ -56,7 +56,7 @@ private:
     RHICommandQueueRef graphics_present_command_queue_;
 
     RHIRenderPass* render_pass_;
-    RHIDescriptorPool* descriptor_pool_;
+    RHIShaderResourcePool* shader_resource_pool_;
     RHIPipeline* graphics_pipeline_;
 
     LinearAllocator framebuffer_memory_allocator_;

@@ -3,7 +3,7 @@
 #include "licht/core/defines.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/framebuffer.hpp"
-#include "licht/rhi/pipeline/pipeline.hpp"
+#include "licht/rhi/pipeline.hpp"
 #include "licht/rhi/rhi_fowards.hpp"
 #include "licht/rhi/texture.hpp"
 #include "licht/rhi/render_pass.hpp"
@@ -17,9 +17,8 @@ public:
     virtual void wait_fence(RHIFence* fence) = 0;
     virtual void reset_fence(RHIFence* fence) = 0;
 
-    virtual RHIDescriptorPool* create_descriptor_pool(RHIPipeline* pipeline, 
-                                                        const RHIDescriptorSetInformation& information) = 0;
-    virtual void destroy_descriptor_pool(RHIDescriptorPool* descriptor_set_layout) = 0;
+    virtual RHIShaderResourcePool* create_shader_resource_pool(RHIPipeline* pipeline, size_t resource_count) = 0;
+    virtual void destroy_shader_resource_pool(RHIShaderResourcePool* descriptor_set_layout) = 0;
 
     virtual RHICommandAllocator* create_command_allocator(const RHICommandAllocatorDescription& description) = 0;
     virtual void destroy_command_allocator(RHICommandAllocator* command_allocator) = 0;
