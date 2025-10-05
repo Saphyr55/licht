@@ -7,8 +7,8 @@
 namespace licht {
 
 struct RHIFramebufferDescription {
-    RHIRenderPassRef render_pass;
-    Array<RHITextureViewRef> attachments;
+    RHIRenderPass* render_pass;
+    Array<RHITextureView*> attachments;
     uint32 width;
     uint32 height;
     uint32 layers = 1;

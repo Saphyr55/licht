@@ -8,8 +8,8 @@
 
 namespace licht {
 
-void RHIVulkanDescriptorSet::update(RHIBufferRef buffer, size_t binding, size_t offset, size_t range) {
-    RHIVulkanBufferRef vkbuffer = static_ref_cast<RHIVulkanBuffer>(buffer);
+void RHIVulkanDescriptorSet::update(RHIBuffer* buffer, size_t binding, size_t offset, size_t range) {
+    RHIVulkanBuffer* vkbuffer = static_cast<RHIVulkanBuffer*>(buffer);
 
     VkDescriptorBufferInfo buffer_info = {};
     buffer_info.buffer = vkbuffer->get_handle();
@@ -32,8 +32,8 @@ void RHIVulkanDescriptorSet::update(RHIBufferRef buffer, size_t binding, size_t 
     VulkanAPI::lvkUpdateDescriptorSets(context_.device, 1, &descriptor_write, 0, nullptr);
 }
 
-RHIDescriptorSetRef RHIVulkanDescriptorPool::get_descriptor_set(uint32 index) {
-    return descriptor_sets_[index];
+RHIDescriptorSet* RHIVulkanDescriptorPool::get_descriptor_set(uint32 index) {
+    return &descriptor_sets_[index];
 }
 
 void RHIVulkanDescriptorPool::initialize() {
@@ -66,9 +66,9 @@ void RHIVulkanDescriptorPool::initialize() {
     
     LICHT_VULKAN_CHECK(VulkanAPI::lvkAllocateDescriptorSets(context_.device, &descriptor_set_allocation_info, vk_descriptor_sets.data()))
 
-    descriptor_sets_.resize(image_count);
+    descriptor_sets_.reserve(image_count);
     for (uint32 i = 0; i < image_count; i++) {
-        descriptor_sets_[i] = new_ref<RHIVulkanDescriptorSet>(context_, vk_descriptor_sets[i]);
+        descriptor_sets_.append(RHIVulkanDescriptorSet(context_, vk_descriptor_sets[i]));
     }
 
 }

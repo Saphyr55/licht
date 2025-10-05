@@ -58,6 +58,7 @@ VkSurfaceFormatKHR vulkan_choose_swasurface_format(const Array<VkSurfaceFormatKH
 RHIVulkanSwapchain::RHIVulkanSwapchain(VulkanContext& context, uint32 width, uint32 height, uint32 image_count)
     : context_(context)
     , extent_({width, height})
+    , format_(VK_FORMAT_B8G8R8A8_SRGB)
     , image_count_(image_count) {
 }
 
@@ -151,9 +152,8 @@ void RHIVulkanSwapchain::initialize() {
     format_ = surface_format.format;
 
     for (uint32 i = 0; i < image_count; i++) {
-        VkImageView image_view;
-        RHIVulkanTextureViewRef texture_view = new_ref<RHIVulkanTextureView>(image_view);
         VkImage image = images_[i];
+        RHIVulkanTextureView* texture_view = lnew(DefaultAllocator::get_instance(), RHIVulkanTextureView());
 
         VkImageViewCreateInfo image_view_create_info = {};
         image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -179,8 +179,8 @@ void RHIVulkanSwapchain::initialize() {
 }
 
 void RHIVulkanSwapchain::destroy() {
-    for (RHITextureViewRef texture_view : texture_views_) {
-        RHIVulkanTextureViewRef vk_texture_view = static_ref_cast<RHIVulkanTextureView>(texture_view);
+    for (RHITextureView* texture_view : texture_views_) {
+        RHIVulkanTextureView* vk_texture_view = static_cast<RHIVulkanTextureView*>(texture_view);
         VulkanAPI::lvkDestroyImageView(context_.device, vk_texture_view->get_handle(), context_.allocator);
     }
 
@@ -189,7 +189,7 @@ void RHIVulkanSwapchain::destroy() {
 }
 
 void RHIVulkanSwapchain::acquire_next_frame(RHIFrameContext& context) {
-    SharedRef<RHIVulkanSemaphore> frame_available_semaphore = static_ref_cast<RHIVulkanSemaphore>(context.current_frame_available_semaphore());
+    RHIVulkanSemaphore* frame_available_semaphore = static_cast<RHIVulkanSemaphore*>(context.current_frame_available_semaphore());
 
     VkResult acquire_next_image_result = VulkanAPI::lvkAcquireNextImageKHR(context_.device, handle_, UINT64_MAX, frame_available_semaphore->get_handle(), VK_NULL_HANDLE, &context.frame_index);
     switch (acquire_next_image_result) {

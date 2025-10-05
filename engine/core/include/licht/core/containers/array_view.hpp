@@ -125,7 +125,7 @@ public:
         : data_(array.data()), size_(array.size()) {}
 
     template <size_type Capacity>
-    ArrayView(StaticArray<ElementType, Capacity> array)
+    ArrayView(FixedArray<ElementType, Capacity> array)
         : data_(array.data()), size_(array.size()) {}
 
 private:

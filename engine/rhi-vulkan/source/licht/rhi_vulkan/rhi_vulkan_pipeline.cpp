@@ -184,7 +184,7 @@ void RHIVulkanPipeline::initialize() {
 
     LICHT_VULKAN_CHECK(VulkanAPI::lvkCreatePipelineLayout(context_.device, &pipeline_layout_create_info, context_.allocator, &pipeline_layout_));
 
-    SharedRef<RHIVulkanRenderPass> render_pass = static_ref_cast<RHIVulkanRenderPass>(description_.render_pass);
+    RHIVulkanRenderPass* render_pass = static_cast<RHIVulkanRenderPass*>(description_.render_pass);
 
     VkGraphicsPipelineCreateInfo graphics_pipeline_create_info = {};
     graphics_pipeline_create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;

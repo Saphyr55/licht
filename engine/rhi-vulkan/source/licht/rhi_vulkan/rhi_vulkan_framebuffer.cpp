@@ -27,11 +27,11 @@ VkFramebuffer& RHIVulkanFramebuffer::get_handle() {
 }
 
 void RHIVulkanFramebuffer::initialize() {
-    RHIVulkanRenderPassRef render_pass = static_ref_cast<RHIVulkanRenderPass>(description_.render_pass);
+    RHIVulkanRenderPass* render_pass = static_cast<RHIVulkanRenderPass*>(description_.render_pass);
 
     Array<VkImageView> attachments(description_.attachments.size());
-    for (RHITextureViewRef texture_view : description_.attachments) {
-        RHIVulkanTextureViewRef vulkan_texture_view = static_ref_cast<RHIVulkanTextureView>(texture_view);
+    for (RHITextureView* texture_view : description_.attachments) {
+        RHIVulkanTextureView* vulkan_texture_view = static_cast<RHIVulkanTextureView*>(texture_view);
         attachments.append(vulkan_texture_view->get_handle());
     }
 

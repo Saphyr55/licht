@@ -11,7 +11,7 @@ namespace licht {
 
 class RHIVulkanDescriptorSet : public RHIDescriptorSet {
 public:
-    virtual void update(RHIBufferRef buffer, size_t binding, size_t offset, size_t range) override;
+    virtual void update(RHIBuffer* buffer, size_t binding, size_t offset, size_t range) override;
 
     inline VkDescriptorSet get_handle() {
         return descriptor_set_;
@@ -31,7 +31,7 @@ using RHIVulkanDescriptorSetRef = SharedRef<RHIVulkanDescriptorSet>;
 
 class RHIVulkanDescriptorPool : public RHIDescriptorPool {
 public:
-    virtual RHIDescriptorSetRef get_descriptor_set(uint32 index) override;
+    virtual RHIDescriptorSet* get_descriptor_set(uint32 index) override;
 
     void initialize();
 
@@ -48,7 +48,7 @@ private:
     VkDescriptorSetLayout layout_;
     RHIDescriptorSetInformation information_;
     VkDescriptorPool descriptor_pool_;
-    Array<RHIVulkanDescriptorSetRef> descriptor_sets_;
+    Array<RHIVulkanDescriptorSet> descriptor_sets_;
 };
 
 using RHIVulkanDescriptorPoolRef = SharedRef<RHIVulkanDescriptorPool>;

@@ -89,7 +89,7 @@ private:
 template <typename ResourceType, typename DeleterType>
 inline ReferenceCounter* new_reference_counter_with_deleter(ResourceType* resource, const DeleterType& deleter) noexcept {
     using RefCounter = ReferenceCounterWithDeleter<ResourceType, DeleterType>;
-    return lnew<RefCounter>(DefaultAllocator::get_instance(), resource, deleter);
+    return lnew_args<RefCounter>(DefaultAllocator::get_instance(), resource, deleter);
 }
 
 template <typename ResourceType>

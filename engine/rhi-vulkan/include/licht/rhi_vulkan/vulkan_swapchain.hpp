@@ -27,7 +27,7 @@ public:
 
     virtual RHIFormat get_format() override;
 
-    virtual const Array<RHITextureViewRef>& get_texture_views() override {
+    virtual const Array<RHITextureView*>& get_texture_views() override {
         return texture_views_;
     }
 
@@ -63,9 +63,9 @@ private:
     VkFormat format_;
     VkExtent2D extent_;
     Array<VkImage> images_;
-    Array<RHITextureViewRef> texture_views_;
+    Array<RHITextureView*> texture_views_;
     VkSwapchainKHR handle_ = VK_NULL_HANDLE;
-    uint32 image_count_;
+    uint32 image_count_ = 3;
 };
 
 using RHIVulkanSwapchainRef = SharedRef<RHIVulkanSwapchain>;

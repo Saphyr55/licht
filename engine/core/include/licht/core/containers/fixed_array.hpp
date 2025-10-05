@@ -5,9 +5,8 @@
 namespace licht {
 
 template <typename ElementType, size_t Capacity>
-class StaticArray {
+class FixedArray {
 public:
-    using IteratorType = ElementType*;
     using value_type = ElementType;
     using size_type = size_t;
     using reference = ElementType&;
@@ -16,27 +15,27 @@ public:
     using const_iterator = const ElementType*;
 
 public:
-    inline constexpr IteratorType begin() {
+    inline constexpr iterator begin() {
         return data_;
     }
 
-    inline constexpr const IteratorType begin() const {
+    inline constexpr const_iterator begin() const {
         return data_;
     }
 
-    inline constexpr const IteratorType cbegin() const {
+    inline constexpr const_iterator cbegin() const {
         return data_;
     }
 
-    inline constexpr IteratorType end() {
+    inline constexpr iterator end() {
         return data_ + Capacity;
     }
 
-    inline constexpr const IteratorType end() const {
+    inline constexpr const_iterator end() const {
         return data_ + Capacity;
     }
 
-    inline constexpr const IteratorType cend() const {
+    inline constexpr const_iterator cend() const {
         return data_ + Capacity;
     }
 
@@ -64,9 +63,9 @@ public:
     }
 
 public:
-    constexpr StaticArray() = default;
+    constexpr FixedArray() = default;
 
-    constexpr StaticArray(std::initializer_list<ElementType> init) {
+    constexpr FixedArray(std::initializer_list<ElementType> init) {
         LCHECK_MSG(init.size() <= Capacity, "Initializer list size exceeds static array capacity.");
         size_t i = 0;
         for (const ElementType& item : init) {
@@ -74,19 +73,19 @@ public:
         }
     }
 
-    constexpr StaticArray(const StaticArray& other) {
+    constexpr FixedArray(const FixedArray& other) {
         for (size_t i = 0; i < Capacity; i++) {
             new (data_ + i) ElementType(other.data_[i]);
         }
     }
 
-    constexpr StaticArray(StaticArray&& other) noexcept {
+    constexpr FixedArray(FixedArray&& other) noexcept {
         for (size_t i = 0; i < Capacity; i++) {
             new (data_ + i) ElementType(std::move(other.data_[i]));
         }
     }
 
-    constexpr StaticArray& operator=(const StaticArray& other) {
+    constexpr FixedArray& operator=(const FixedArray& other) {
         if (this != &other) {
             for (size_t i = 0; i < Capacity; i++) {
                 data_[i].~ElementType();
@@ -96,7 +95,7 @@ public:
         return *this;
     }
 
-    constexpr StaticArray& operator=(StaticArray&& other) noexcept {
+    constexpr FixedArray& operator=(FixedArray&& other) noexcept {
         if (this != &other) {
             for (size_t i = 0; i < Capacity; i++) {
                 data_[i].~ElementType();
@@ -106,7 +105,7 @@ public:
         return *this;
     }
 
-    ~StaticArray() = default;
+    ~FixedArray() = default;
 
 private:
     ElementType data_[Capacity];

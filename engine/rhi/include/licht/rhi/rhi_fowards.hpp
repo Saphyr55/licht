@@ -20,20 +20,7 @@ class RHIDescriptorPool;
 class RHICommandAllocator;
 class RHIPipeline;
 
-using RHICommandAllocatorRef = SharedRef<RHICommandAllocator>;
-using RHICommandQueueRef = SharedRef<RHICommandQueue>;
-using RHIDescriptorSetRef = SharedRef<RHIDescriptorSet>;
-using RHIDescriptorPoolRef = SharedRef<RHIDescriptorPool>;
-using RHIBufferRef = SharedRef<RHIBuffer>;
-using RHICommandBufferRef = SharedRef<RHICommandBuffer>;
-using RHISemaphoreRef = SharedRef<RHISemaphore>;
-using RHISwapchainRef = SharedRef<RHISwapchain>;
-using RHITextureRef = SharedRef<RHITexture>;
-using RHITextureViewRef = SharedRef<RHITextureView>;
 using RHIDeviceRef = SharedRef<RHIDevice>;
-using RHIFenceRef = SharedRef<RHIFence>;
-using RHIFramebufferRef = SharedRef<RHIFramebuffer>;
-using RHIRenderPassRef = SharedRef<RHIRenderPass>;
-using RHIPipelineRef = SharedRef<RHIPipeline>;
+using RHICommandQueueRef = SharedRef<RHICommandQueue>;
 
-}
+}  //namespace licht

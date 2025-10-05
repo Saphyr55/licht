@@ -10,15 +10,11 @@ namespace licht {
 
 class RHIVulkanTexture : public RHITexture {
 public:
-    static SharedRef<RHIVulkanTexture> create(VulkanContext& context,
-                                              const RHITextureDescription& description,
-                                              VkImageType type,
-                                              VkImageUsageFlags usage,
-                                              VkSharingMode sharing_mode,
-                                              const Array<uint32> queue_family_indices);
-    static void destroy(VulkanContext& context, RHIVulkanTexture& texture);
+    VkMemoryRequirements get_memory_requirements();
 
-    static VkMemoryRequirements get_memory_requirements(VulkanContext& context, VkImage image);
+    void initialize();
+
+    void destroy();
 
     virtual void bind() override;
 
@@ -27,35 +23,54 @@ public:
     }
 
 public:
-    RHIVulkanTexture(VulkanContext& context, VkImage handle, VkDeviceMemory memory)
-        : context_(context), handle_(handle), memory_(memory) {
+    RHIVulkanTexture(VulkanContext& context,
+                     const RHITextureDescription& description,
+                     VkImageType type,
+                     VkImageUsageFlags usage,
+                     VkSharingMode sharing_mode,
+                     const Array<uint32>& queue_family_indices)
+        : context_(context)
+        , description_(description)
+        , type_(type)
+        , usage_(usage)
+        , sharing_mode_(sharing_mode)
+        , queue_family_indices_(queue_family_indices)
+        , handle_(VK_NULL_HANDLE)
+        , memory_(VK_NULL_HANDLE) {
     }
 
     ~RHIVulkanTexture() = default;
 
 private:
     VulkanContext& context_;
-    VkDeviceMemory memory_ = VK_NULL_HANDLE;
-    VkImage handle_ = VK_NULL_HANDLE;
+    RHITextureDescription description_;
+    VkImageType type_;
+    VkImageUsageFlags usage_;
+    VkSharingMode sharing_mode_;
+    VkDeviceMemory memory_;
+    VkImage handle_;
+    Array<uint32> queue_family_indices_;
 };
 
 class RHIVulkanTextureView : public RHITextureView {
-public:
-
 public:
     VkImageView& get_handle() {
         return handle_;
     }
 
+    void initialize();
+
+    void destroy();
+
 public:
-    RHIVulkanTextureView(VkImageView handle)
-        : handle_(handle) {
+    RHIVulkanTextureView()
+        : handle_(VK_NULL_HANDLE) {
     }
 
     ~RHIVulkanTextureView() = default;
 
 private:
-    VkImageView handle_ = VK_NULL_HANDLE;
+    VkImageView handle_;
 };
 
 using RHIVulkanTextureViewRef = SharedRef<RHIVulkanTextureView>;

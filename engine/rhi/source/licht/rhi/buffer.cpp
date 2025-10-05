@@ -24,27 +24,27 @@ RHIBufferDescription RHIDeviceMemoryUploader::create_buffer_description(const RH
     return buffer_description;
 }
 
-RHITextureRef RHIDeviceMemoryUploader::send_texture(const RHIStagingBufferContext& context, const RHITextureDescription& description) {
+RHITexture* RHIDeviceMemoryUploader::send_texture(const RHIStagingBufferContext& context, const RHITextureDescription& description) {
     RHIBufferDescription staging_buffer_description = create_staging_buffer_description(context);
-    RHIBufferRef staging_buffer = device_->create_buffer(staging_buffer_description);
+    RHIBuffer* staging_buffer = device_->create_buffer(staging_buffer_description);
 
     staging_buffer->update(context.data, context.size);
 
-    RHITextureRef texture = device_->create_texture(description);
+    RHITexture* texture = device_->create_texture(description);
 
     texture_entries_.append(TextureEntry(staging_buffer, texture, context.size));
 
     return texture;
 }
 
-RHIBufferRef RHIDeviceMemoryUploader::send_buffer(const RHIStagingBufferContext& context) {
+RHIBuffer* RHIDeviceMemoryUploader::send_buffer(const RHIStagingBufferContext& context) {
     RHIBufferDescription staging_buffer_description = create_staging_buffer_description(context);
-    RHIBufferRef staging_buffer = device_->create_buffer(staging_buffer_description);
+    RHIBuffer* staging_buffer = device_->create_buffer(staging_buffer_description);
 
     staging_buffer->update(context.data, context.size);
 
     RHIBufferDescription buffer_description = create_buffer_description(context);
-    RHIBufferRef buffer = device_->create_buffer(buffer_description);
+    RHIBuffer* buffer = device_->create_buffer(buffer_description);
 
     buffer_entries_.append(BufferEntry(staging_buffer, buffer, context.size));
 
@@ -66,10 +66,10 @@ void RHIDeviceMemoryUploader::upload() {
     transfer_command_allocator_desc.count = 1;  // One command buffer allocated.
     transfer_command_allocator_desc.command_queue = transfer_queue;
 
-    RHICommandAllocatorRef transfer_command_allocator_ = device_->create_command_allocator(transfer_command_allocator_desc);
+    RHICommandAllocator* transfer_command_allocator_ = device_->create_command_allocator(transfer_command_allocator_desc);
 
     // Open a transfer command buffer
-    RHICommandBufferRef transfer_cmd = transfer_command_allocator_->open();
+    RHICommandBuffer* transfer_cmd = transfer_command_allocator_->open();
     transfer_command_allocator_->reset_command_buffer(transfer_cmd);
 
     transfer_cmd->begin();
@@ -83,7 +83,7 @@ void RHIDeviceMemoryUploader::upload() {
     transfer_cmd->end();
 
     // Submit and wait for transfer to complete
-    RHIFenceRef upload_fence = device_->create_fence();
+    RHIFence* upload_fence = device_->create_fence();
     device_->reset_fence(upload_fence);
     transfer_queue->submit({transfer_cmd}, {}, {}, upload_fence);
 

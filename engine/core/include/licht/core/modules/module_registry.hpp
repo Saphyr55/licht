@@ -57,7 +57,7 @@ class ModuleRegistrant {
 public:
     ModuleRegistrant(StringRef unique_name) {
         ModuleRegistry::get_instance().register_module(unique_name, []() -> Module* {
-            return new ModuleType();
+            return lnew(DefaultAllocator::get_instance(), ModuleType());
         });
     }
 };

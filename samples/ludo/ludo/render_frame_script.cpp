@@ -39,11 +39,12 @@ RenderFrameScript::RenderFrameScript(Camera* camera)
 }
 
 void RenderFrameScript::on_startup() {
-
-    RenderFrameScript* self = this;
+    
+    constexpr size_t mega_bytes = 1024 * 1024;
 
     ModuleRegistry& registry = ModuleRegistry::get_instance();
     RHIModule* module = registry.get_module<RHIModule>(RHIModule::ModuleName);
+    frame_allocator_.initialize(500 * mega_bytes);
 
     // -- Device --
     {
@@ -207,7 +208,7 @@ void RenderFrameScript::on_startup() {
     // -- Framebuffers --
     {
         framebuffers_.reserve(swapchain_->get_texture_views().size());
-        for (RHITextureViewRef texture : swapchain_->get_texture_views()) {
+        for (RHITextureView* texture : swapchain_->get_texture_views()) {
             RHIFramebufferDescription description = {};
             description.height = swapchain_->get_height();
             description.width = swapchain_->get_width();
@@ -215,7 +216,7 @@ void RenderFrameScript::on_startup() {
             description.attachments = {texture};
             description.layers = 1;
 
-            RHIFramebufferRef framebuffer = device_->create_framebuffer(render_pass_, description);
+            RHIFramebuffer* framebuffer = device_->create_framebuffer(description);
             framebuffers_.append(framebuffer);
         }
     }
@@ -243,7 +244,7 @@ void RenderFrameScript::on_startup() {
             uniform_buffer_description.memory_usage = RHIBufferMemoryUsage::Host;
             uniform_buffer_description.size = sizeof(UniformBufferObject);
 
-            RHIBufferRef uniform_buffer = device_->create_buffer(uniform_buffer_description);
+            RHIBuffer* uniform_buffer = device_->create_buffer(uniform_buffer_description);
             uniform_buffers_.append(uniform_buffer);
         }
     }
@@ -258,7 +259,7 @@ void RenderFrameScript::on_startup() {
         descriptor_pool_ = device_->create_descriptor_pool(graphics_pipeline_, RHIDescriptorSetInformation(image_count));
 
         for (uint32 i = 0; i < image_count; i++) {
-            RHIDescriptorSetRef descriptor_set = descriptor_pool_->get_descriptor_set(i);
+            RHIDescriptorSet* descriptor_set = descriptor_pool_->get_descriptor_set(i);
             descriptor_set->update(uniform_buffers_[i], binding, offset, size);
         }
     }
@@ -303,8 +304,10 @@ void RenderFrameScript::on_tick(float32 delta_time) {
         return;
     }
     LCHECK(frame_context_.success);
+    
+    update_uniform();
 
-    RHICommandBufferRef graphics_command_buffer = graphics_command_allocator_->open(frame_context_.current_frame);
+    RHICommandBuffer* graphics_command_buffer = graphics_command_allocator_->open(frame_context_.current_frame);
     graphics_command_allocator_->reset_command_buffer(graphics_command_buffer);
 
     graphics_command_buffer->begin();
@@ -348,7 +351,7 @@ void RenderFrameScript::on_tick(float32 delta_time) {
             graphics_command_buffer->bind_vertex_buffers({position_buffer_, color_buffer_});
             graphics_command_buffer->bind_index_buffer(index_buffer_);
 
-            RHIDescriptorSetRef descriptor_set = descriptor_pool_->get_descriptor_set(frame_context_.current_frame);
+            RHIDescriptorSet* descriptor_set = descriptor_pool_->get_descriptor_set(frame_context_.current_frame);
             graphics_command_buffer->bind_descriptor_sets(graphics_pipeline_, {descriptor_set});
 
             RHIDrawIndexedCommand draw_indexed_command = {};
@@ -364,8 +367,6 @@ void RenderFrameScript::on_tick(float32 delta_time) {
     frame_context_.frame_in_flight_fences[frame_context_.frame_index] = &frame_context_.in_flight_fences[frame_context_.current_frame];
 
     device_->reset_fence(frame_context_.in_flight_fences[frame_context_.current_frame]);
-
-    update_uniform();
 
     graphics_command_queue_->submit({graphics_command_buffer},
                                     {frame_context_.current_frame_available_semaphore()},
@@ -413,7 +414,7 @@ void RenderFrameScript::reset() {
     device_->wait_idle();
 
     // Destroy all existing framebuffers
-    for (RHIFramebufferRef framebuffer : framebuffers_) {
+    for (RHIFramebuffer* framebuffer : framebuffers_) {
         device_->destroy_framebuffer(framebuffer);
     }
     framebuffers_.clear();
@@ -424,7 +425,7 @@ void RenderFrameScript::reset() {
 
     // Create new framebuffers
     framebuffers_.reserve(swapchain_->get_texture_views().size());
-    for (RHITextureViewRef texture : swapchain_->get_texture_views()) {
+    for (RHITextureView* texture : swapchain_->get_texture_views()) {
         RHIFramebufferDescription description = {};
         description.height = swapchain_->get_height();
         description.width = swapchain_->get_width();
@@ -432,7 +433,7 @@ void RenderFrameScript::reset() {
         description.attachments = {texture};
         description.layers = 1;
 
-        RHIFramebufferRef framebuffer = device_->create_framebuffer(render_pass_, description);
+        RHIFramebuffer* framebuffer = device_->create_framebuffer(description);
         framebuffers_.append(framebuffer);
     }
 }
@@ -476,7 +477,7 @@ void RenderFrameScript::on_shutdown() {
 
     // -- Framebuffers --
     {
-        for (RHIFramebufferRef framebuffer : framebuffers_) {
+        for (RHIFramebuffer* framebuffer : framebuffers_) {
             device_->destroy_framebuffer(framebuffer);
         }
         framebuffers_.clear();

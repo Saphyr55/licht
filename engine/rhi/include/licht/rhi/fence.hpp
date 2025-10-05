@@ -11,5 +11,4 @@ public:
     virtual ~RHIFence() = default;
 };
 
-
 }  //namespace licht

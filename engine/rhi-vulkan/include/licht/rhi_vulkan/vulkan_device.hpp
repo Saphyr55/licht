@@ -1,5 +1,7 @@
 #pragma once
 
+#include "licht/core/memory/heap_allocator.hpp"
+#include "licht/core/memory/linear_allocator.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/command_queue.hpp"
@@ -10,50 +12,50 @@
 #include "licht/rhi/swapchain.hpp"
 #include "licht/rhi/texture.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
+#include "licht/rhi_vulkan/vulkan_swapchain.hpp"
 
 namespace licht {
 
 class RHIVulkanDevice : public RHIDevice {
 public:
     virtual void wait_idle() override;
-    
-    virtual void wait_fence(RHIFenceRef fence) override;
-    virtual void reset_fence(RHIFenceRef fence) override;
-    
-    virtual RHIDescriptorPoolRef create_descriptor_pool(RHIPipelineRef pipeline, const RHIDescriptorSetInformation& information) override;
-    virtual void destroy_descriptor_pool(RHIDescriptorPoolRef descriptor_set_layout) override;
 
-    virtual RHICommandAllocatorRef create_command_allocator(const RHICommandAllocatorDescription& description) override;
-    virtual void destroy_command_allocator(RHICommandAllocatorRef command_allocator) override;
+    virtual void wait_fence(RHIFence* fence) override;
+    virtual void reset_fence(RHIFence* fence) override;
 
-    virtual RHITextureRef create_texture(const RHITextureDescription& description) override;
-    virtual void destroy_texture(RHITextureRef texture) override;
-    
-    virtual RHITextureViewRef create_texture_view(const RHITextureViewDescription& description) override;
-    virtual void destroy_texture_view(RHITextureViewRef texture_view) override;
+    virtual RHIDescriptorPool* create_descriptor_pool(RHIPipeline* pipeline, const RHIDescriptorSetInformation& information) override;
+    virtual void destroy_descriptor_pool(RHIDescriptorPool* descriptor_set_layout) override;
 
-    virtual RHIRenderPassRef create_render_pass(const RHIRenderPassDescription& description) override;
-    virtual void destroy_render_pass(RHIRenderPassRef render_pass) override;
+    virtual RHICommandAllocator* create_command_allocator(const RHICommandAllocatorDescription& description) override;
+    virtual void destroy_command_allocator(RHICommandAllocator* command_allocator) override;
 
-    virtual RHIPipelineRef create_graphics_pipeline(const RHIPipelineDescription& description) override;
-    virtual void destroy_graphics_pipeline(RHIPipelineRef pipeline) override;
+    virtual RHITexture* create_texture(const RHITextureDescription& description) override;
+    virtual void destroy_texture(RHITexture* texture) override;
 
-    virtual RHIBufferRef create_buffer(RHIBufferDescription description) override;
-    virtual void destroy_buffer(RHIBufferRef buffer) override; 
+    virtual RHITextureView* create_texture_view(const RHITextureViewDescription& description) override;
+    virtual void destroy_texture_view(RHITextureView* texture_view) override;
 
-    virtual RHISwapchainRef create_swapchain(uint32 width, uint32 height, uint32 image_count) override;
-    virtual void recreate_swapchain(RHISwapchainRef swapchain, uint32 width, uint32 height) override;
-    virtual void destroy_swapchain(RHISwapchainRef swapchain) override; 
+    virtual RHIRenderPass* create_render_pass(const RHIRenderPassDescription& description) override;
+    virtual void destroy_render_pass(RHIRenderPass* render_pass) override;
 
-    virtual RHIFramebufferRef create_framebuffer(RHIRenderPassRef render_pass,
-                                                    const RHIFramebufferDescription& description) override;
-    virtual void destroy_framebuffer(RHIFramebufferRef framebuffer) override;
+    virtual RHIPipeline* create_graphics_pipeline(const RHIPipelineDescription& description) override;
+    virtual void destroy_graphics_pipeline(RHIPipeline* pipeline) override;
 
-    virtual RHISemaphoreRef create_semaphore() override;
-    virtual void destroy_semaphore(RHISemaphoreRef semaphore) override;
+    virtual RHIBuffer* create_buffer(RHIBufferDescription description) override;
+    virtual void destroy_buffer(RHIBuffer* buffer) override;
 
-    virtual RHIFenceRef create_fence() override;
-    virtual void destroy_fence(RHIFenceRef fence) override;
+    virtual RHISwapchain* create_swapchain(uint32 width, uint32 height, uint32 image_count) override;
+    virtual void recreate_swapchain(RHISwapchain* swapchain, uint32 width, uint32 height) override;
+    virtual void destroy_swapchain(RHISwapchain* swapchain) override;
+
+    virtual RHIFramebuffer* create_framebuffer(const RHIFramebufferDescription& description) override;
+    virtual void destroy_framebuffer(RHIFramebuffer* framebuffer) override;
+
+    virtual RHISemaphore* create_semaphore() override;
+    virtual void destroy_semaphore(RHISemaphore* semaphore) override;
+
+    virtual RHIFence* create_fence() override;
+    virtual void destroy_fence(RHIFence* fence) override;
 
     virtual Array<RHICommandQueueRef> get_command_queues() override;
 
@@ -61,7 +63,8 @@ public:
     RHIVulkanDevice(VulkanContext& context);
 
 private:
-    VulkanContext& context_; 
+    HeapAllocator& allocator_;
+    VulkanContext& context_;
 };
 
 }  //namespace licht

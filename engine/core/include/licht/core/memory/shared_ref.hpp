@@ -221,7 +221,7 @@ private:
 
 template <typename ResourceType, typename... Args>
 constexpr inline SharedRef<ResourceType> new_ref(Args&&... args) noexcept {
-    return SharedRef<ResourceType>(lnew<ResourceType>(DefaultAllocator::get_instance(), args...));
+    return SharedRef<ResourceType>(lnew_args<ResourceType>(DefaultAllocator::get_instance(), args...));
 }
 
 template <typename ResourceType>

@@ -54,7 +54,7 @@ int32 ludo_application_launch(int32 argc, const char** argv) {
     Camera camera(Vector3f(0.0f, 0.0f, -2.0f));
     camera.look_at(Vector3f(0.0f));
 
-    auto conn = Input::on_mouse_move.connect([&camera](const MouseMove& mouse_move) -> void {
+    Input::on_mouse_move.connect([&camera](const MouseMove& mouse_move) -> void {
         if (Input::button_is_down(Button::Left)) {
             camera.look_around(mouse_move.pos_rel_x, mouse_move.pos_rel_y);
         }
@@ -91,7 +91,5 @@ int32 ludo_application_launch(int32 argc, const char** argv) {
     render_frame_script.on_shutdown();
     rhi_module->on_shutdown();
     
-    conn.disconnect();
-
     return EXIT_SUCCESS;
 }

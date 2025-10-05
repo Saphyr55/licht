@@ -41,8 +41,8 @@ struct RHIBufferCopyCommand : RHICommand {
  * @brief Information required to begin a render pass.
  */
 struct RHIRenderPassBeginInfo {
-    RHIRenderPassRef render_pass; ///< Handle to the render pass object.
-    RHIFramebufferRef framebuffer; ///< Target framebuffer for the render pass.
+    RHIRenderPass* render_pass; ///< Handle to the render pass object.
+    RHIFramebuffer* framebuffer; ///< Target framebuffer for the render pass.
     Rect2D area; ///< Render area (typically width, height, x, y).
 };
 
@@ -76,17 +76,17 @@ public:
      * @brief Bind a graphics pipeline for subsequent draw calls.
      * @param pipeline Handle to the pipeline to bind.
      */
-    virtual void bind_pipeline(RHIPipelineRef pipeline) = 0;
+    virtual void bind_pipeline(RHIPipeline* pipeline) = 0;
 
-    virtual void bind_descriptor_sets(RHIPipelineRef pipeline, const Array<RHIDescriptorSetRef>& descriptor_sets) = 0;
+    virtual void bind_descriptor_sets(RHIPipeline* pipeline, const Array<RHIDescriptorSet*>& descriptor_sets) = 0;
 
     /**
      * @brief Bind vertex buffers for rendering.
      * @param buffers Array of buffer handles to bind.
      */
-    virtual void bind_vertex_buffers(const Array<RHIBufferRef>& buffers) = 0;
+    virtual void bind_vertex_buffers(const Array<RHIBuffer*>& buffers) = 0;
 
-    virtual void bind_index_buffer(RHIBufferRef buffer) = 0;
+    virtual void bind_index_buffer(RHIBuffer* buffer) = 0;
 
     /**
      * @brief Set scissors for rendering.
@@ -102,7 +102,7 @@ public:
      */
     virtual void set_viewports(const Viewport* viewports, uint32 count) = 0;
 
-    virtual void copy_buffer(RHIBufferRef source, RHIBufferRef destination, const RHIBufferCopyCommand& command) = 0;
+    virtual void copy_buffer(RHIBuffer* source, RHIBuffer* destination, const RHIBufferCopyCommand& command) = 0;
 
     /**
      * @brief Register a draw command.
@@ -133,13 +133,13 @@ public:
      * @param index Index identifying which buffer to open.
      * @return Handle to the opened command buffer.
      */
-    virtual RHICommandBufferRef open(uint32 index = 0) = 0;
+    virtual RHICommandBuffer* open(uint32 index = 0) = 0;
 
     /**
      * @brief Reset a previously recorded command buffer for reuse.
      * @param command_buffer Handle to the command buffer to reset.
      */
-    virtual void reset_command_buffer(RHICommandBufferRef command_buffer) = 0;
+    virtual void reset_command_buffer(RHICommandBuffer* command_buffer) = 0;
 
     /**
      * @brief Destructor.

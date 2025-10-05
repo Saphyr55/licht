@@ -29,7 +29,7 @@ struct RHIDescriptorSetLayoutBinding {
 
 class RHIDescriptorSet {
 public:
-    virtual void update(RHIBufferRef buffer, size_t binding, size_t offset, size_t range) = 0;
+    virtual void update(RHIBuffer* buffer, size_t binding, size_t offset, size_t range) = 0;
 
     virtual ~RHIDescriptorSet() = default;
 };
@@ -37,7 +37,7 @@ public:
 
 class RHIDescriptorPool {
 public:
-    virtual RHIDescriptorSetRef get_descriptor_set(uint32 index) = 0;
+    virtual RHIDescriptorSet* get_descriptor_set(uint32 index) = 0;
 
     virtual ~RHIDescriptorPool() = default;
 };

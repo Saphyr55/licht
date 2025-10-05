@@ -5,7 +5,6 @@
 
 #include "licht/core/core_exports.hpp"
 #include "licht/core/defines.hpp"
-#include "licht/core/memory/allocator.hpp"
 #include "licht/core/memory/concepts.hpp"
 
 #define lplacement_new(Memory) ::new (Memory)
@@ -22,10 +21,6 @@ enum class MemoryOwnership {
     Owner,
     NonOwner
 };
-
-}  //namespace licht
-
-namespace licht {
 
 class Memory {
 public:
@@ -126,9 +121,6 @@ public:
 
     Memory& operator=(Memory&&) = delete;
     Memory& operator=(const Memory&&) = delete;
-
-private:
-    static Allocator* s_system_allocator_;
 };
 
 }  // namespace licht
@@ -149,8 +141,18 @@ inline void lfree(void* block, size_t size) noexcept {
     licht::Memory::free(block, size);
 }
 
+template <typename T>
+inline T* lnew(licht::CAlignedAllocator auto& allocator, T&& resource) noexcept {
+    void* memory = allocator.allocate(sizeof(T), alignof(T));
+    if (!memory) {
+        return nullptr;
+    }
+    lplacement_new(memory) T(std::move(resource));
+    return static_cast<T*>(memory);
+}
+
 template <typename T, typename... Args>
-inline T* lnew(licht::CAlignedAllocator auto& allocator, Args&&... args) noexcept {
+inline T* lnew_args(licht::CAlignedAllocator auto& allocator, Args&&... args) noexcept {
     void* memory = allocator.allocate(sizeof(T), alignof(T));
     if (!memory) {
         return nullptr;

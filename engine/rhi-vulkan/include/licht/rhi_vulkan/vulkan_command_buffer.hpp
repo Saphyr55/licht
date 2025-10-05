@@ -3,6 +3,7 @@
 #include <vulkan/vulkan_core.h>
 #include "licht/core/containers/array.hpp"
 #include "licht/core/defines.hpp"
+#include "licht/core/memory/linear_allocator.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/command_buffer.hpp"
@@ -21,19 +22,19 @@ public:
 
     virtual void end_render_pass() override;
 
-    virtual void bind_pipeline(RHIPipelineRef pipeline) override;
+    virtual void bind_pipeline(RHIPipeline* pipeline) override;
     
-    virtual void bind_descriptor_sets(RHIPipelineRef pipeline, const Array<RHIDescriptorSetRef>& descriptor_sets) override;
+    virtual void bind_descriptor_sets(RHIPipeline* pipeline, const Array<RHIDescriptorSet*>& descriptor_sets) override;
 
-    virtual void bind_vertex_buffers(const Array<RHIBufferRef>& buffers) override;
+    virtual void bind_vertex_buffers(const Array<RHIBuffer*>& buffers) override;
 
-    virtual void bind_index_buffer(RHIBufferRef buffer) override;
+    virtual void bind_index_buffer(RHIBuffer* buffer) override;
 
     virtual void set_scissors(const Rect2D* scissors, uint32 count) override;
 
     virtual void set_viewports(const Viewport* viewports, uint32 count) override;
 
-    virtual void copy_buffer(RHIBufferRef source, RHIBufferRef destination, const RHIBufferCopyCommand& command) override;
+    virtual void copy_buffer(RHIBuffer* source, RHIBuffer* destination, const RHIBufferCopyCommand& command) override;
 
     virtual void draw(const RHIDrawCommand& command) override;
     virtual void draw(const RHIDrawIndexedCommand& command) override;
@@ -56,9 +57,9 @@ using RHIVulkanCommandBufferRef = SharedRef<RHIVulkanCommandBuffer>;
 
 class RHIVulkanCommandAllocator : public RHICommandAllocator {
 public:
-    virtual RHICommandBufferRef open(uint32 index = 0) override;
+    virtual RHICommandBuffer* open(uint32 index = 0) override;
 
-    virtual void reset_command_buffer(RHICommandBufferRef command_buffer) override;
+    virtual void reset_command_buffer(RHICommandBuffer* command_buffer) override;
 
 public:
     VkCommandPool& get_command_pool();
@@ -77,11 +78,13 @@ public:
     
 private:
     VkCommandPool command_pool_;
+    Array<RHIVulkanCommandBuffer*> upper_command_buffers_;
     Array<VkCommandBuffer> command_buffers_;
     RHIQueueType queue_type_;
     uint32 queue_family_index_ = 0;
     uint32 count_ = 0;
-    
+    LinearAllocator upper_command_buffer_allocator_;
+
     VulkanContext& context_;
 };
 

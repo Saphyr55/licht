@@ -1,14 +1,15 @@
 #pragma once
 
-#include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/function/function_ref.hpp"
+#include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/platform/dynamic_library.hpp"
 #include "licht/core/trace/trace.hpp"
 #include "licht/rhi/rhi_fowards.hpp"
 #include "licht/rhi/rhi_types.hpp"
-#include "licht/rhi_vulkan/vulkan_render_surface.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
 #include "licht/rhi_vulkan/vulkan_physical_device.hpp"
+#include "licht/rhi_vulkan/vulkan_render_surface.hpp"
+
 
 #include <vulkan/vulkan_core.h>
 
@@ -29,12 +30,16 @@ struct VulkanContext {
     VkDevice device = VK_NULL_HANDLE;
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     VulkanPhysicalDeviceInformation physical_device_info;
+
     Array<RHICommandQueueRef> command_queues;
+
     SharedRef<RHIVulkanRenderSurface> surface;
 
     VkDebugUtilsMessengerEXT debug_utils_messenger = VK_NULL_HANDLE;
     VkAllocationCallbacks* allocator = nullptr;
 };
+
+VulkanContext& vulkan_context_get();
 
 // Vulkan Context functions.
 void vulkan_context_initialize(VulkanContext& context, void* window_handle);

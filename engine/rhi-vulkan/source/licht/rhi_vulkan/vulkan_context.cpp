@@ -1,29 +1,34 @@
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 
-#include "licht/core/containers/hash_map.hpp"
-#include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/function/function_ref.hpp"
-#include "licht/core/trace/trace.hpp"
+#include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/platform/dynamic_library.hpp"
+#include "licht/core/trace/trace.hpp"
 #include "licht/rhi/rhi_types.hpp"
-#include "licht/rhi_vulkan/vulkan_render_surface.hpp"
-#include "licht/rhi_vulkan/vulkan_physical_device.hpp"
-#include "licht/rhi_vulkan/vulkan_shader_module.hpp"
-#include "licht/rhi_vulkan/vulkan_loader.hpp"
 #include "licht/rhi_vulkan/vulkan_command_queue.hpp"
+#include "licht/rhi_vulkan/vulkan_loader.hpp"
+#include "licht/rhi_vulkan/vulkan_physical_device.hpp"
+#include "licht/rhi_vulkan/vulkan_render_surface.hpp"
+#include "licht/rhi_vulkan/vulkan_shader_module.hpp"
+
 
 #include <vulkan/vulkan_core.h>
 
 namespace licht {
 
-void vulkan_device_initialize(VulkanContext& context, VulkanPhysicalDeviceSelector& physical_device_selector) {
+static VulkanContext g_context;
 
+VulkanContext& vulkan_context_get() {
+    return g_context;
+}
+
+void vulkan_device_initialize(VulkanContext& context, VulkanPhysicalDeviceSelector& physical_device_selector) {
     physical_device_selector.select_physical_device();
     context.physical_device_info = physical_device_selector.get_info();
 
     LCHECK_MSG(context.physical_device_info.is_suitable, "Physical device is not suitable for Vulkan operations.")
 
-    float32 queue_priority = 1.0f; // [0.0, 1.0]
+    float32 queue_priority = 1.0f;  // [0.0, 1.0]
 
     Array<uint32> queue_famillies = vulkan_query_queue_family_indices(context);
 
@@ -132,7 +137,6 @@ void vulkan_context_initialize(VulkanContext& context, void* native_window) {
 }
 
 void vulkan_context_destroy(VulkanContext& context) {
-
     vulkan_device_destroy(context);
 
     context.surface->destroy();

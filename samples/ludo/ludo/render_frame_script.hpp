@@ -33,35 +33,36 @@ public:
     ~RenderFrameScript() = default;
 
 private:
+    LinearAllocator frame_allocator_;
     Camera* camera_;
 
-    RHIBufferRef position_buffer_;
+    RHIBuffer* position_buffer_;
     Array<Vector3f> positions_;
 
-    RHIBufferRef color_buffer_;
+    RHIBuffer* color_buffer_;
     Array<Vector3f> colors_; 
         
-    RHIBufferRef index_buffer_;
+    RHIBuffer* index_buffer_;
     Array<uint32> indices_;
 
-    Array<RHIBufferRef> uniform_buffers_;
+    Array<RHIBuffer*> uniform_buffers_;
 
     WindowHandle window_handle_;
     RHIDeviceRef device_;
     
-    RHISwapchainRef swapchain_;
+    RHISwapchain* swapchain_;
 
     RHICommandQueueRef graphics_command_queue_;
     RHICommandQueueRef graphics_present_command_queue_;
 
-    RHIRenderPassRef render_pass_;
-    RHIDescriptorPoolRef descriptor_pool_;
-    RHIPipelineRef graphics_pipeline_;
+    RHIRenderPass* render_pass_;
+    RHIDescriptorPool* descriptor_pool_;
+    RHIPipeline* graphics_pipeline_;
 
     LinearAllocator framebuffer_memory_allocator_;
-    Array<RHIFramebufferRef> framebuffers_;
+    Array<RHIFramebuffer*> framebuffers_;
 
-    RHICommandAllocatorRef graphics_command_allocator_;
+    RHICommandAllocator* graphics_command_allocator_;
     RHIFrameContext frame_context_;
 
     bool pause_ = false;

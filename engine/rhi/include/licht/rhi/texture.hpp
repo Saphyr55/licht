@@ -23,7 +23,7 @@ struct RHITextureDescription {
 };
 
 struct RHITextureViewDescription {
-    RHITextureRef texture;
+    RHITexture* texture;
     RHIFormat format;
 };
 

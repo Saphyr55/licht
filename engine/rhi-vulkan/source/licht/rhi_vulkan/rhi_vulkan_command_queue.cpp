@@ -7,7 +7,8 @@
 #include "licht/rhi_vulkan/vulkan_swapchain.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
-#include "vulkan/vulkan_core.h"
+
+#include <vulkan/vulkan_core.h>
 
 namespace licht {
 
@@ -23,17 +24,17 @@ void RHIVulkanCommandQueue::wait_idle() {
     LICHT_VULKAN_CHECK(VulkanAPI::lvkQueueWaitIdle(queue_));
 }
 
-void RHIVulkanCommandQueue::submit(const Array<RHICommandBufferRef>& command_buffers, 
-                                   const Array<RHISemaphoreRef>& wait_semaphores,
-                                   const Array<RHISemaphoreRef>& signal_semaphores,
-                                   const RHIFenceRef fence) {
+void RHIVulkanCommandQueue::submit(const Array<RHICommandBuffer*>& command_buffers, 
+                                   const Array<RHISemaphore*>& wait_semaphores,
+                                   const Array<RHISemaphore*>& signal_semaphores,
+                                   const RHIFence* fence) {
     VkSubmitInfo submit_info = {};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
     // Command buffers
     Array<VkCommandBuffer> vk_command_buffers(command_buffers.size());
-    for (RHICommandBufferRef& cmd : command_buffers) {
-        RHIVulkanCommandBufferRef vk_cmd_ref = static_ref_cast<RHIVulkanCommandBuffer>(cmd);
+    for (RHICommandBuffer*& cmd : command_buffers) {
+        RHIVulkanCommandBuffer* vk_cmd_ref = static_cast<RHIVulkanCommandBuffer*>(cmd);
         vk_command_buffers.append(vk_cmd_ref->get_handle());
     }
 
@@ -42,18 +43,17 @@ void RHIVulkanCommandQueue::submit(const Array<RHICommandBufferRef>& command_buf
 
     // Wait semaphores
     Array<VkSemaphore> wait_vksemaphores(wait_semaphores.size());
-    for (RHISemaphoreRef sem : wait_semaphores) {
-        wait_vksemaphores.append(static_ref_cast<RHIVulkanSemaphore>(sem)->get_handle());
+    for (RHISemaphore* sem : wait_semaphores) {
+        wait_vksemaphores.append(static_cast<RHIVulkanSemaphore*>(sem)->get_handle());
     }
 
     submit_info.waitSemaphoreCount = wait_vksemaphores.size();
     submit_info.pWaitSemaphores = wait_vksemaphores.data();
 
     // Signal semaphores
-
     Array<VkSemaphore> signal_vksemaphores(signal_semaphores.size());
-    for (RHISemaphoreRef sem : signal_semaphores) {
-        signal_vksemaphores.append(static_ref_cast<RHIVulkanSemaphore>(sem)->get_handle());
+    for (RHISemaphore* sem : signal_semaphores) {
+        signal_vksemaphores.append(static_cast<RHIVulkanSemaphore*>(sem)->get_handle());
     }
 
     submit_info.signalSemaphoreCount = signal_vksemaphores.size();
@@ -67,19 +67,16 @@ void RHIVulkanCommandQueue::submit(const Array<RHICommandBufferRef>& command_buf
 
     submit_info.pWaitDstStageMask = wait_stages.data();
     // Fence
-    SharedRef<RHIVulkanFence> rhi_vkfence = static_ref_cast<RHIVulkanFence>(fence);
-    VkFence vkfence = VK_NULL_HANDLE;
-    if (rhi_vkfence) {
-        vkfence = rhi_vkfence->get_handle();
-    }
+    const RHIVulkanFence* rhi_vkfence = static_cast<const RHIVulkanFence*>(fence);
+    VkFence vkfence = rhi_vkfence ? rhi_vkfence->get_handle() : VK_NULL_HANDLE;
 
     // Submit
     LICHT_VULKAN_CHECK(VulkanAPI::lvkQueueSubmit(queue_, 1, &submit_info, vkfence));
 }
 
-void RHIVulkanCommandQueue::present(RHISwapchainRef swapchain, RHIFrameContext& frame_context) {
-    RHIVulkanSwapchainRef vk_swapchain = static_ref_cast<RHIVulkanSwapchain>(swapchain);
-    SharedRef<RHIVulkanSemaphore> vk_sem_ref = static_ref_cast<RHIVulkanSemaphore>(frame_context.current_render_finished_semaphore());
+void RHIVulkanCommandQueue::present(RHISwapchain* swapchain, RHIFrameContext& frame_context) {
+    RHIVulkanSwapchain* vk_swapchain = static_cast<RHIVulkanSwapchain*>(swapchain);
+    RHIVulkanSemaphore* vk_sem_ref = static_cast<RHIVulkanSemaphore*>(frame_context.current_render_finished_semaphore());
     VkSemaphore vksemaphore = vk_sem_ref->get_handle();
 
     VkSwapchainKHR swapchains[] = {vk_swapchain->get_handle()};

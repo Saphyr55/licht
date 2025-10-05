@@ -9,6 +9,10 @@ namespace licht {
 
 class RHIVulkanFence : public RHIFence {
 public:
+    const VkFence& get_handle() const {
+        return fence_;
+    }
+
     VkFence& get_handle() {
         return fence_;
     }

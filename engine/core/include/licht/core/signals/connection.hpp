@@ -58,7 +58,6 @@ Connection<ArgumentTypes...>::Connection(size_t id, Signal<ArgumentTypes...>* si
 
 template <typename... Args>
 Connection<Args...>::~Connection() {
-    // disconnect();
 }
 
 }  //namespace licht

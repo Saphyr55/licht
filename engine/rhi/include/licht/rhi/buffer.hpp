@@ -176,9 +176,9 @@ struct LICHT_RHI_API RHIStagingBufferContext {
 
 class LICHT_RHI_API RHIDeviceMemoryUploader {
 public:
-    RHIBufferRef send_buffer(const RHIStagingBufferContext& context);
+    RHIBuffer* send_buffer(const RHIStagingBufferContext& context);
 
-    RHITextureRef send_texture(const RHIStagingBufferContext& context, const RHITextureDescription& description);
+    RHITexture* send_texture(const RHIStagingBufferContext& context, const RHITextureDescription& description);
 
     void upload();
 
@@ -192,14 +192,14 @@ private:
 
 private:
     struct BufferEntry {
-        RHIBufferRef staging;
-        RHIBufferRef main;
+        RHIBuffer* staging;
+        RHIBuffer* main;
         size_t size;
     };
 
     struct TextureEntry {
-        RHIBufferRef staging;
-        RHITextureRef main;
+        RHIBuffer* staging;
+        RHITexture* main;
         size_t size;
     };
 
