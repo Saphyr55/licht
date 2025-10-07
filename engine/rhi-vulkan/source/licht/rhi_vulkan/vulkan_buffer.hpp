@@ -42,9 +42,9 @@ public:
     ~VulkanBuffer() = default;
 
 private:
-    RHIBufferDescription description_;
-    VkDeviceMemory memory_;
-    VkBuffer buffer_;
+    RHIBufferDescription description_= {};
+    VkDeviceMemory memory_ = VK_NULL_HANDLE;
+    VkBuffer buffer_ = VK_NULL_HANDLE;
 };
 
 }  //namespace licht

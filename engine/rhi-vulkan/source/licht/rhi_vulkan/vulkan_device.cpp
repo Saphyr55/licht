@@ -25,6 +25,7 @@
 #include "licht/rhi_vulkan/vulkan_sync.hpp"
 #include "licht/rhi_vulkan/vulkan_texture.hpp"
 #include "licht/rhi_vulkan/vulkan_texture_view.hpp"
+#include "licht/rhi_vulkan/vulkan_sampler.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -150,6 +151,21 @@ void VulkanDevice::destroy_texture_view(RHITextureView* texture_view) {
     VulkanAPI::lvkDestroyImageView(context_.device, vk_texture_view->get_handle(), context_.allocator);
 
     ldelete(allocator_, vk_texture_view);
+}
+
+RHISampler* VulkanDevice::create_sampler(const RHISamplerDescription& description) {
+    VulkanSampler* sampler = lnew(allocator_, VulkanSampler());
+    sampler->initialize(description);
+    return sampler;
+}
+
+void VulkanDevice::destroy_sampler(RHISampler* sampler) {
+    LCHECK(sampler)
+
+    VulkanSampler* vksampler = static_cast<VulkanSampler*>(sampler);
+    vksampler->destroy();
+
+    ldelete(allocator_, vksampler);
 }
 
 RHIRenderPass* VulkanDevice::create_render_pass(const RHIRenderPassDescription& description) {

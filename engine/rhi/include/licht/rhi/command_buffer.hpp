@@ -96,7 +96,7 @@ public:
      */
     virtual void bind_pipeline(RHIGraphicsPipeline* pipeline) = 0;
 
-    virtual void bind_descriptor_sets(RHIGraphicsPipeline* pipeline, const Array<RHIShaderResourceGroup*>& descriptor_sets) = 0;
+    virtual void bind_shader_resource_group(RHIGraphicsPipeline* pipeline, const Array<RHIShaderResourceGroup*>& descriptor_sets) = 0;
 
     /**
      * @brief Bind vertex buffers for rendering.

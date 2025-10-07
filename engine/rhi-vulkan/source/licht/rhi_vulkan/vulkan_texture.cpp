@@ -55,6 +55,7 @@ void VulkanTexture::initialize(const RHITextureDescription& desc) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = vulkan_texture_usage_get(desc.usage);
     image_create_info.sharingMode = vulkan_sharing_mode_get(desc.sharing_mode);
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
 
     if (RHISharingMode::Private == desc.sharing_mode) {
         image_create_info.pQueueFamilyIndices = nullptr;
@@ -66,7 +67,6 @@ void VulkanTexture::initialize(const RHITextureDescription& desc) {
 
     VulkanAPI::lvkCreateImage(context.device, &image_create_info, context.allocator, &handle_);
 
-    VkDeviceMemory device_memory;
     VkMemoryRequirements memory_requirements = get_memory_requirements();
     VkMemoryPropertyFlags memory_properties = vulkan_memory_usage_get(desc.memory_usage);
 
@@ -75,15 +75,15 @@ void VulkanTexture::initialize(const RHITextureDescription& desc) {
     memory_allocation_info.allocationSize = memory_requirements.size;
     memory_allocation_info.memoryTypeIndex = vulkan_find_memory_type(context, memory_requirements.memoryTypeBits, memory_properties);
 
-    VulkanAPI::lvkAllocateMemory(context.device, &memory_allocation_info, context.allocator, &device_memory);
+    VulkanAPI::lvkAllocateMemory(context.device, &memory_allocation_info, context.allocator, &memory_);
 
     bind();
 }
 
 void VulkanTexture::destroy() {
     VulkanContext& context = vulkan_context_get();
-
     VulkanAPI::lvkDestroyImage(context.device, handle_, context.allocator);
+    VulkanAPI::lvkFreeMemory(context.device, memory_, context.allocator);
 }
 
 }  //namespace licht

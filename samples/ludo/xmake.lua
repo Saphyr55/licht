@@ -24,7 +24,7 @@ target("ludo", function()
     add_files("ludo/**.cpp")
     add_headerfiles("ludo/**.hpp")
 
-    add_files("$(projectdir)/assets/shaders/**.frag", "$(projectdir)/assets/shaders/**.vert")
+    add_files("assets/shaders/**.frag", "assets/shaders/**.vert")
 
     add_defines("LICHT_LUDO_EXPORTS")
 end)

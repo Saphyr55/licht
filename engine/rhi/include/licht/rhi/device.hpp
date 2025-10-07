@@ -1,6 +1,7 @@
 #pragma once
 
 #include "licht/core/defines.hpp"
+#include "licht/core/containers/array_view.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/buffer_view.hpp"
 #include "licht/rhi/command_buffer.hpp"
@@ -9,6 +10,7 @@
 #include "licht/rhi/rhi_fowards.hpp"
 #include "licht/rhi/shader_resource.hpp"
 #include "licht/rhi/texture.hpp"
+#include "licht/rhi/sampler.hpp"
 #include "licht/rhi/texture_view.hpp"
 #include "licht/rhi/render_pass.hpp"
 
@@ -35,6 +37,9 @@ public:
 
     virtual RHITextureView* create_texture_view(const RHITextureViewDescription& description) = 0;
     virtual void destroy_texture_view(RHITextureView* texture_view) = 0;
+
+    virtual RHISampler* create_sampler(const RHISamplerDescription& description) = 0;
+    virtual void destroy_sampler(RHISampler* sampler) = 0;
 
     virtual RHIRenderPass* create_render_pass(const RHIRenderPassDescription& description) = 0;
     virtual void destroy_render_pass(RHIRenderPass* render_pass) = 0;

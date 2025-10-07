@@ -10,9 +10,15 @@ struct RHISamplerDescription {
     RHISamplerAddressMode address_mode_u = RHISamplerAddressMode::Repeat;
     RHISamplerAddressMode address_mode_v = RHISamplerAddressMode::Repeat;
     RHISamplerAddressMode address_mode_w = RHISamplerAddressMode::Repeat;
+    bool normalize = false;
 };
 
 class RHISampler {
+public:
+    inline const RHISamplerDescription& get_description() const {
+        return description_;
+    }
+
 public:
     virtual ~RHISampler() = default;
 

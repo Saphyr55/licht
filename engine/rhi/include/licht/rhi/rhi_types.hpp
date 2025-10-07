@@ -49,12 +49,13 @@ enum class RHIShaderResourceType {
     StorageTexture
 };
 
-enum class RHIQueueType {
-    Unknown,
-    Graphics,
-    Compute,
-    Transfer,
+enum class RHIQueueType : uint8 {
+    Unknown = 0,
+    Graphics = 1 << 0,
+    Compute = 1 << 1,
+    Transfer = 1 << 2,
 };
+LICHT_ENUM_FLAGS(RHIQueueType)
 
 enum class RHIVertexInputRate {
     Vertex,
@@ -109,7 +110,7 @@ enum class RHITextureUsageFlags : uint8 {
 LICHT_ENUM_FLAGS(RHITextureUsageFlags)
 
 enum class RHITextureDimension {
-    Dim2D = 0,
+    Dim2D,
     Dim3D,
     Dim1D,
 };

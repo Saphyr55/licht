@@ -34,15 +34,17 @@ public:
     ~RenderFrameScript() = default;
 
 private:
-    LinearAllocator frame_allocator_;
     Camera* camera_;
 
-    
+    RHISampler* orange_texture_sampler_;
+    RHITexture* orange_texture_;
+    RHITextureView* orange_texture_view_;
+
     RHIBuffer* position_buffer_;
     Array<Vector3f> positions_;
 
-    RHIBuffer* color_buffer_;
-    Array<Vector3f> colors_; 
+    RHIBuffer* uv_buffer_;
+    Array<Vector2f> uvs_; 
         
     RHIBuffer* index_buffer_;
     Array<uint32> indices_;

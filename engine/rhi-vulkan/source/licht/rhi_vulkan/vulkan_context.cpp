@@ -67,6 +67,7 @@ void vulkan_device_initialize(VulkanContext& context, VulkanPhysicalDeviceSelect
     }
 
     VkPhysicalDeviceFeatures physical_device_features = {};
+    physical_device_features.samplerAnisotropy = physical_device_selector.get_info().features.samplerAnisotropy;
 
     Array<const char*> physical_device_extensions;
     physical_device_extensions.resize(g_physical_device_extensions.size());

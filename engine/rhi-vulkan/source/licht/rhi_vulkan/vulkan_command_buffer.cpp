@@ -17,11 +17,59 @@
 #include "licht/rhi_vulkan/vulkan_graphics_pipeline.hpp"
 #include "licht/rhi_vulkan/vulkan_render_pass.hpp"
 #include "licht/rhi_vulkan/vulkan_texture.hpp"
-
-#include <vulkan/vulkan_core.h>
-#include <cstddef>
+#include "licht/rhi_vulkan/vulkan_context.hpp"
 
 namespace licht {
+
+static void pick_pipeline_stages_and_access(VkQueueFlags queueFlags,
+                                            VkImageLayout oldLayout,
+                                            VkImageLayout newLayout,
+                                            VkPipelineStageFlags& outSrcStage,
+                                            VkPipelineStageFlags& outDstStage,
+                                            VkAccessFlags& outSrcAccess,
+                                            VkAccessFlags& outDstAccess) {
+    // defaults
+    outSrcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    outDstStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    outSrcAccess = 0;
+    outDstAccess = 0;
+
+    if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+        outSrcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        outDstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        outSrcAccess = 0;
+        outDstAccess = VK_ACCESS_TRANSFER_WRITE_BIT;
+        return;
+    }
+
+    if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+        outSrcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        outSrcAccess = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+        // prefer shader stages if the queue supports them
+        if (queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            outDstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            outDstAccess = VK_ACCESS_SHADER_READ_BIT;
+        } else if (queueFlags & VK_QUEUE_COMPUTE_BIT) {
+            outDstStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+            outDstAccess = VK_ACCESS_SHADER_READ_BIT;
+        } else {
+            // fallback for transfer-only queue: use transfer stage.
+            // NOTE: a later barrier on the graphics queue will be required
+            outDstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            outDstAccess = VK_ACCESS_TRANSFER_READ_BIT;
+            // You should log a warning here: the image is transitioned to shader layout
+            // on a transfer queue but shader read visibility requires extra sync on graphics queue.
+        }
+        return;
+    }
+
+    // use transfer stages if unsure
+    outSrcStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    outDstStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    outSrcAccess = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+    outDstAccess = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+}
 
 void VulkanCommandBuffer::begin(RHICommandBufferUsageFlags usage) {
     VkCommandBufferUsageFlags flags = 0;
@@ -55,17 +103,24 @@ void VulkanCommandBuffer::bind_pipeline(RHIGraphicsPipeline* pipeline) {
     VulkanAPI::lvkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, vulkan_graphics_pipeline->get_handle());
 }
 
-void VulkanCommandBuffer::bind_descriptor_sets(RHIGraphicsPipeline* pipeline, const Array<RHIShaderResourceGroup*>& descriptor_sets) {
-    static constexpr auto mapping_desc_set = [](RHIShaderResourceGroup*& descriptor_set) -> VkDescriptorSet {
+void VulkanCommandBuffer::bind_shader_resource_group(RHIGraphicsPipeline* pipeline, const Array<RHIShaderResourceGroup*>& groups) {
+    static constexpr auto mapping_group = [](RHIShaderResourceGroup*& descriptor_set) -> VkDescriptorSet {
         VulkanShaderResourceGroup* vk_descriptor_set = static_cast<VulkanShaderResourceGroup*>(descriptor_set);
         return vk_descriptor_set->get_handle();
     };
 
-    Array<VkDescriptorSet> vk_descriptor_sets = descriptor_sets.map<VkDescriptorSet>(mapping_desc_set);
+    Array<VkDescriptorSet> vk_descriptor_sets = groups.map<VkDescriptorSet>(mapping_group);
     VulkanGraphicsPipeline* vk_pipeline = static_cast<VulkanGraphicsPipeline*>(pipeline);
 
-    VulkanAPI::lvkCmdBindDescriptorSets(command_buffer_, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                        vk_pipeline->get_layout(), 0, vk_descriptor_sets.size(), vk_descriptor_sets.data(), 0, nullptr);
+    VulkanAPI::lvkCmdBindDescriptorSets(
+        command_buffer_,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        vk_pipeline->get_layout(),
+        0,
+        vk_descriptor_sets.size(),
+        vk_descriptor_sets.data(),
+        0,
+        nullptr);
 }
 
 void VulkanCommandBuffer::bind_vertex_buffers(const Array<RHIBuffer*>& buffers) {
@@ -76,13 +131,22 @@ void VulkanCommandBuffer::bind_vertex_buffers(const Array<RHIBuffer*>& buffers) 
         return static_cast<VulkanBuffer*>(buffer_handle)->get_handle();
     });
 
-    VulkanAPI::lvkCmdBindVertexBuffers(command_buffer_, 0, buffers.size(), vk_buffers.data(), offsets.data());
+    VulkanAPI::lvkCmdBindVertexBuffers(
+        command_buffer_, 
+        0,
+        buffers.size(), 
+        vk_buffers.data(), 
+        offsets.data());
 }
 
 void VulkanCommandBuffer::bind_index_buffer(RHIBuffer* buffer) {
     VkBuffer vkbuffer = static_cast<VulkanBuffer*>(buffer)->get_handle();
-    // TODO: Make the type configurable
-    VulkanAPI::lvkCmdBindIndexBuffer(command_buffer_, vkbuffer, 0, VK_INDEX_TYPE_UINT32);
+    VulkanAPI::lvkCmdBindIndexBuffer(
+        command_buffer_, 
+        vkbuffer, 
+        0, 
+        // TODO: Make the type configurable
+        VK_INDEX_TYPE_UINT32);
 }
 
 void VulkanCommandBuffer::set_scissors(const Rect2D* scissors, uint32 count) {
@@ -94,7 +158,11 @@ void VulkanCommandBuffer::set_scissors(const Rect2D* scissors, uint32 count) {
         vk_scissors[i].extent.width = static_cast<uint32>(scissors[i].width);
         vk_scissors[i].extent.height = static_cast<uint32>(scissors[i].height);
     }
-    VulkanAPI::lvkCmdSetScissor(command_buffer_, 0, count, vk_scissors.data());
+    VulkanAPI::lvkCmdSetScissor(
+        command_buffer_, 
+        0, 
+        count, 
+        vk_scissors.data());
 }
 
 void VulkanCommandBuffer::set_viewports(const Viewport* viewports, uint32 count) {
@@ -108,7 +176,11 @@ void VulkanCommandBuffer::set_viewports(const Viewport* viewports, uint32 count)
         vk_viewports[i].minDepth = viewports[i].min_depth;
         vk_viewports[i].maxDepth = viewports[i].max_depth;
     }
-    VulkanAPI::lvkCmdSetViewport(command_buffer_, 0, count, vk_viewports.data());
+    VulkanAPI::lvkCmdSetViewport(
+        command_buffer_, 
+        0, 
+        count, 
+        vk_viewports.data());
 }
 
 void VulkanCommandBuffer::transition_texture(const RHITextureBarrier& texture_barrier) {
@@ -121,36 +193,33 @@ void VulkanCommandBuffer::transition_texture(const RHITextureBarrier& texture_ba
     image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     image_barrier.image = texture->get_handle();
+    // TODO: set correct aspect from texture format
     image_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    image_barrier.subresourceRange.baseMipLevel = texture->get_description().mip_levels;
+    image_barrier.subresourceRange.baseMipLevel = 0;
     image_barrier.subresourceRange.levelCount = 1;
-    image_barrier.subresourceRange.baseArrayLayer = texture->get_description().array_layers;
+    image_barrier.subresourceRange.baseArrayLayer = 0;
     image_barrier.subresourceRange.layerCount = 1;
-    image_barrier.srcAccessMask = 0;  // TODO
-    image_barrier.dstAccessMask = 0;  // TODO
 
-    VkPipelineStageFlags source_stage;
-    VkPipelineStageFlags destination_stage;
+    VkPipelineStageFlags source_stage = 0;
+    VkPipelineStageFlags destination_stage = 0;
+    VkAccessFlags srcAccess = 0;
+    VkAccessFlags dstAccess = 0;
 
-    if (image_barrier.oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && image_barrier.newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-        image_barrier.srcAccessMask = 0;
-        image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    pick_pipeline_stages_and_access(
+        vulkan_queue_type_get(queue_type_),
+        image_barrier.oldLayout,
+        image_barrier.newLayout,
+        source_stage,
+        destination_stage,
+        srcAccess,
+        dstAccess);
 
-        source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        destination_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-    } else if (image_barrier.oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && image_barrier.newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-        image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        image_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-        source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    } else {
-        LCRASH("Impossible to deduce a transition.");
-    }
+    image_barrier.srcAccessMask = srcAccess;
+    image_barrier.dstAccessMask = dstAccess;
 
     VulkanAPI::lvkCmdPipelineBarrier(
         command_buffer_,
-        source_stage, 
+        source_stage,
         destination_stage,
         0,
         0, nullptr,
@@ -177,17 +246,14 @@ void VulkanCommandBuffer::copy_buffer_to_texture(const RHICopyBufferToTextureCom
     VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT; // TODO: 
 
     VkBufferImageCopy region = {};
-
     region.bufferOffset = command.buffer_offset;
     region.bufferRowLength = 0;
     region.bufferImageHeight = 0;
-
     // Image Subresource
     region.imageSubresource.aspectMask = aspect;
     region.imageSubresource.mipLevel = command.mip_level;
     region.imageSubresource.baseArrayLayer = command.base_array_layer;
     region.imageSubresource.layerCount = command.layer_count;
-
     // Image Region
     region.imageOffset = {command.dest_x_offset, command.dest_y_offset, command.dest_z_offset};
     region.imageExtent = {final_width, final_height, final_depth};
@@ -250,11 +316,22 @@ void VulkanCommandBuffer::end_render_pass() {
 }
 
 void VulkanCommandBuffer::draw(const RHIDrawCommand& command) {
-    VulkanAPI::lvkCmdDraw(command_buffer_, command.vertex_count, command.instance_count, command.first_vertex, command.first_instance);
+    VulkanAPI::lvkCmdDraw(
+        command_buffer_, 
+        command.vertex_count, 
+        command.instance_count, 
+        command.first_vertex,
+        command.first_instance);
 }
 
 void VulkanCommandBuffer::draw(const RHIDrawIndexedCommand& command) {
-    VulkanAPI::lvkCmdDrawIndexed(command_buffer_, command.index_count, command.instance_count, command.first_index, command.vertex_offset, command.first_instance);
+    VulkanAPI::lvkCmdDrawIndexed(
+        command_buffer_, 
+        command.index_count, 
+        command.instance_count, 
+        command.first_index, 
+        command.vertex_offset, 
+        command.first_instance);
 }
 
 RHICommandBuffer* RHIVulkanCommandAllocator::open(uint32 index) {
@@ -272,17 +349,19 @@ VkCommandPool& RHIVulkanCommandAllocator::get_command_pool() {
 
 void RHIVulkanCommandAllocator::initialize_command_pool() {
     VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-
-    // TODO: Use transient.
-    // if (queue_type_ == RHIQueueType::Transfer) {
-    //     flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-    // }
+    if (queue_type_ == RHIQueueType::Transfer) {
+        flags |= VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+    }
     VkCommandPoolCreateInfo command_pool_create_info = {};
     command_pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     command_pool_create_info.flags = flags;
     command_pool_create_info.queueFamilyIndex = queue_family_index_;
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateCommandPool(context_.device, &command_pool_create_info, context_.allocator, &command_pool_));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateCommandPool(
+        context_.device, 
+        &command_pool_create_info, 
+        context_.allocator, 
+        &command_pool_));
 }
 
 void RHIVulkanCommandAllocator::allocate_command_buffers() {
@@ -292,16 +371,24 @@ void RHIVulkanCommandAllocator::allocate_command_buffers() {
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     command_buffer_allocate_info.commandBufferCount = count_;
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkAllocateCommandBuffers(context_.device, &command_buffer_allocate_info, command_buffers_.data()));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkAllocateCommandBuffers(
+        context_.device, 
+        &command_buffer_allocate_info, 
+        command_buffers_.data()));
 
     for (size_t i = 0; i < count_; i++) {
-        upper_command_buffers_[i] = lnew(upper_command_buffer_allocator_, VulkanCommandBuffer(command_buffers_[i]));
+        upper_command_buffers_[i] = lnew(
+            upper_command_buffer_allocator_, 
+            VulkanCommandBuffer(command_buffers_[i], queue_type_));
     }
 }
 
 void RHIVulkanCommandAllocator::destroy() {
     upper_command_buffer_allocator_.destroy();
-    VulkanAPI::lvkDestroyCommandPool(context_.device, command_pool_, context_.allocator);
+    VulkanAPI::lvkDestroyCommandPool(
+        context_.device, 
+        command_pool_, 
+        context_.allocator);
 }
 
 RHIVulkanCommandAllocator::RHIVulkanCommandAllocator(VulkanContext& context, const RHICommandAllocatorDescription& description)
@@ -316,7 +403,8 @@ RHIVulkanCommandAllocator::RHIVulkanCommandAllocator(VulkanContext& context, con
     upper_command_buffers_.resize(count_);
 
     upper_command_buffer_allocator_.initialize(count_ * sizeof(VulkanCommandBuffer));
-    queue_family_index_ = static_ref_cast<VulkanCommandQueue>(description.command_queue)->get_queue_family_index();
+    queue_family_index_ = static_ref_cast<VulkanCommandQueue>(description.command_queue)
+        ->get_queue_family_index();
 }
 
 }  //namespace licht

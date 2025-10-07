@@ -19,6 +19,7 @@ class RHIShaderResourceGroup;
 class RHIShaderResourceGroupPool;
 class RHICommandAllocator;
 class RHIGraphicsPipeline;
+class RHISampler;
 
 using RHIDeviceRef = SharedRef<RHIDevice>;
 using RHICommandQueueRef = SharedRef<RHICommandQueue>;

@@ -78,7 +78,6 @@ void VulkanGraphicsPipeline::initialize(const RHIGraphicsPipelineDescription& de
     }
 
     pipeline_rasterizer_state_create_info.cullMode = cull_mode;
-    // pipeline_rasterizer_state_create_info.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     pipeline_rasterizer_state_create_info.frontFace = VK_FRONT_FACE_CLOCKWISE;
     pipeline_rasterizer_state_create_info.depthBiasEnable = VK_FALSE;
     pipeline_rasterizer_state_create_info.depthBiasConstantFactor = 0.0f;  // Optional

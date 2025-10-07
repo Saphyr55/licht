@@ -10,7 +10,6 @@
 #include "licht/rhi_vulkan/vulkan_physical_device.hpp"
 #include "licht/rhi_vulkan/vulkan_render_surface.hpp"
 
-
 #include <vulkan/vulkan_core.h>
 
 #define LICHT_VULKAN_CHECK(Expr)                                                                                                                                     \
@@ -61,10 +60,6 @@ void vulkan_device_destroy(VulkanContext& context);
 const char* vulkan_string_of_present_mode(VkPresentModeKHR present_mode);
 const char* vulkan_string_of_result(VkResult result);
 
-// Converts RHIFormat to VkFormat and vice versa.
-VkFormat vulkan_format_get(RHIFormat format);
-RHIFormat rhi_format_get(VkFormat format);
-
 // Queues functions.
 RHIQueueType vulkan_queue_type(VulkanContext& context, uint32 queue_family_index);
 Array<uint32> vulkan_query_queue_family_indices(VulkanContext& context, FunctionRef<bool(const VkQueueFamilyProperties&, uint32)> predicate = [](auto&, uint32) { return true; });
@@ -74,6 +69,10 @@ bool vulkan_queue_present_support(VulkanContext& context, uint32 queue_family_in
 // Converts RHIAccessMode to VkSharingMode and vice versa.
 RHISharingMode rhi_access_mode_get(VkSharingMode mode);
 VkSharingMode vulkan_sharing_mode_get(RHISharingMode mode);
+
+// Converts RHIFormat to VkFormat and vice versa.
+VkFormat vulkan_format_get(RHIFormat format);
+RHIFormat rhi_format_get(VkFormat format);
 
 inline VkMemoryPropertyFlags vulkan_memory_usage_get(RHIMemoryUsage memory_usage) {
     VkMemoryPropertyFlags properties = 0;
@@ -278,7 +277,7 @@ inline VkDescriptorType vulkan_descriptor_type_get(RHIShaderResourceType type) {
         case RHIShaderResourceType::StorageTexture:
             return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
         case RHIShaderResourceType::Sampler:
-            return VK_DESCRIPTOR_TYPE_SAMPLER;
+            return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         default:
             LLOG_FATAL("[Vulkan]", "Unknown RHIShaderResourceType.");
             return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -310,6 +309,42 @@ inline VkShaderStageFlags vulkan_shader_stage_get(RHIShaderStage stage) {
     
     if (RHIShaderStage::AllGraphics == (stage & RHIShaderStage::AllGraphics)) {
         flags |= VK_SHADER_STAGE_ALL_GRAPHICS;
+    }
+
+    return flags;
+}
+
+inline VkFilter vulkan_filter_get(RHIFilter filter) {
+    switch (filter) {
+        case RHIFilter::Nearest: return VK_FILTER_NEAREST;
+        case RHIFilter::Linear:  return VK_FILTER_LINEAR;
+        default:                 return VK_FILTER_NEAREST;
+    }
+    return VK_FILTER_NEAREST;
+}
+
+inline VkSamplerAddressMode vulkan_address_mode_get(RHISamplerAddressMode mode) {
+    switch (mode) {
+        case RHISamplerAddressMode::Repeat:          return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        case RHISamplerAddressMode::MirroredRepeat:  return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+        case RHISamplerAddressMode::ClampToEdge:     return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        case RHISamplerAddressMode::ClampToBorder:   return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        default:                                     return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    }
+    return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+}
+
+inline VkQueueFlags vulkan_queue_type_get(RHIQueueType type) {
+    VkQueueFlags flags = 0;
+
+    if ((type & RHIQueueType::Graphics) == RHIQueueType::Graphics) {
+        flags |= VK_QUEUE_GRAPHICS_BIT;
+    }
+    if ((type & RHIQueueType::Compute) == RHIQueueType::Compute) {
+        flags |= VK_QUEUE_COMPUTE_BIT;
+    }
+    if ((type & RHIQueueType::Transfer) == RHIQueueType::Transfer) {
+        flags |= VK_QUEUE_TRANSFER_BIT;
     }
 
     return flags;

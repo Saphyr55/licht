@@ -5,6 +5,11 @@ namespace licht {
 
 void VulkanTextureView::initialize(const RHITextureViewDescription& description, VkImageView image_view) {
     handle_ = image_view;
+    initialize(description);
+}
+
+void VulkanTextureView::initialize(const RHITextureViewDescription& description) {
+    description_ = description;
 
     VulkanContext& context = vulkan_context_get();
     VulkanTexture* texture = static_cast<VulkanTexture*>(description_.texture);
@@ -41,10 +46,6 @@ void VulkanTextureView::initialize(const RHITextureViewDescription& description,
     image_view_create_info.subresourceRange.layerCount = description_.array_layer_count;
 
     LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateImageView(context.device, &image_view_create_info, context.allocator, &handle_));
-}
-
-void VulkanTextureView::initialize(const RHITextureViewDescription& description) {
-    initialize(description, handle_);
 }
 
 void VulkanTextureView::destroy() {

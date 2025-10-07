@@ -24,7 +24,7 @@ public:
 
     virtual void bind_pipeline(RHIGraphicsPipeline* pipeline) override;
     
-    virtual void bind_descriptor_sets(RHIGraphicsPipeline* pipeline, const Array<RHIShaderResourceGroup*>& descriptor_sets) override;
+    virtual void bind_shader_resource_group(RHIGraphicsPipeline* pipeline, const Array<RHIShaderResourceGroup*>& groups) override;
 
     virtual void bind_vertex_buffers(const Array<RHIBuffer*>& buffers) override;
 
@@ -49,12 +49,14 @@ public:
     }
 
 public:
-    VulkanCommandBuffer(VkCommandBuffer command_buffer)
-        : command_buffer_(command_buffer) {
+    VulkanCommandBuffer(VkCommandBuffer command_buffer, RHIQueueType queue_type)
+        : queue_type_(queue_type)
+        , command_buffer_(command_buffer) {
     }
     ~VulkanCommandBuffer() = default;
 
 private:
+    RHIQueueType queue_type_;
     VkCommandBuffer command_buffer_;
 };
 

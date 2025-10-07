@@ -35,6 +35,22 @@ public:
      */
     virtual RHIQueueType get_type() const = 0;
 
+    inline bool is_queue_type(RHIQueueType type) const {
+        return (get_type() & type) == type;
+    }
+
+    inline bool is_graphics_type() const {
+        return is_queue_type(RHIQueueType::Graphics);
+    }
+
+    inline bool is_compute_type() const {
+        return is_queue_type(RHIQueueType::Compute);
+    }
+
+    inline bool is_transfer_type() const {
+        return is_queue_type(RHIQueueType::Transfer);
+    }
+
     /**
      * @brief Block until all submitted work on this queue has completed.
      */

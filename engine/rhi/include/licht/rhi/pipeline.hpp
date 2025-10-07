@@ -64,8 +64,8 @@ struct RHIVertexAttributeDescription {
 
 struct RHIGraphicsPipelineShaderStageCreateInfo {
     StringRef name = "";
-    SPIRVShader shader = SPIRVShader();
     RHIShaderStage type = RHIShaderStage::AllGraphics;
+    SPIRVShader shader;
 };
 
 struct RHIGraphicsPipelineViewportStateInformation {
@@ -80,12 +80,12 @@ struct RHIGraphicsPipelineVertexBindingInformation {
 
 struct RHIGraphicsPipelineDescription {
     RHICullModeFlags cull_mode = RHICullModeFlags::None;
-    RHIGraphicsPipelineShaderStageCreateInfo vertex_shader_info;
-    RHIGraphicsPipelineShaderStageCreateInfo fragment_shader_info;
-    RHIGraphicsPipelineViewportStateInformation viewport_info;
-    RHIGraphicsPipelineVertexBindingInformation vertex_binding_info;
-    RHIShaderResourceGroupLayout* shader_resource_group_layout;
-    RHIRenderPass* render_pass;
+    RHIGraphicsPipelineShaderStageCreateInfo vertex_shader_info = {};
+    RHIGraphicsPipelineShaderStageCreateInfo fragment_shader_info = {};
+    RHIGraphicsPipelineViewportStateInformation viewport_info = {};
+    RHIGraphicsPipelineVertexBindingInformation vertex_binding_info = {};
+    RHIShaderResourceGroupLayout* shader_resource_group_layout = nullptr;
+    RHIRenderPass* render_pass = nullptr;
 };
 
 class RHIGraphicsPipeline {

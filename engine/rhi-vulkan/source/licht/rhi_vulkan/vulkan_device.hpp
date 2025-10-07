@@ -10,6 +10,7 @@
 #include "licht/rhi/shader_resource.hpp"
 #include "licht/rhi/swapchain.hpp"
 #include "licht/rhi/texture.hpp"
+#include "licht/rhi/sampler.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 
 namespace licht {
@@ -38,6 +39,9 @@ public:
 
     virtual RHITextureView* create_texture_view(const RHITextureViewDescription& description) override;
     virtual void destroy_texture_view(RHITextureView* texture_view) override;
+    
+    virtual RHISampler* create_sampler(const RHISamplerDescription& description) override;
+    virtual void destroy_sampler(RHISampler* sampler) override;
 
     virtual RHIRenderPass* create_render_pass(const RHIRenderPassDescription& description) override;
     virtual void destroy_render_pass(RHIRenderPass* render_pass) override;
