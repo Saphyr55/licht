@@ -3,6 +3,7 @@
 #include "licht/core/math/vector3.hpp"
 #include "licht/core/memory/linear_allocator.hpp"
 #include "licht/core/platform/window_handle.hpp"
+#include "licht/rhi/shader_resource.hpp"
 #include "licht/rhi/swapchain.hpp"
 
 namespace licht {
@@ -36,6 +37,7 @@ private:
     LinearAllocator frame_allocator_;
     Camera* camera_;
 
+    
     RHIBuffer* position_buffer_;
     Array<Vector3f> positions_;
 
@@ -56,8 +58,9 @@ private:
     RHICommandQueueRef graphics_present_command_queue_;
 
     RHIRenderPass* render_pass_;
-    RHIShaderResourcePool* shader_resource_pool_;
-    RHIPipeline* graphics_pipeline_;
+    RHIShaderResourceGroupLayout* shader_resource_group_layout_;
+    RHIShaderResourceGroupPool* shader_resource_pool_;
+    RHIGraphicsPipeline* graphics_pipeline_;
 
     LinearAllocator framebuffer_memory_allocator_;
     Array<RHIFramebuffer*> framebuffers_;

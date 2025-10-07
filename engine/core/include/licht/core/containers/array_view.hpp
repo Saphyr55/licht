@@ -1,9 +1,9 @@
 #pragma once
 
-#include "licht/core/algorithm/comparator.hpp"
 #include "licht/core/containers/array.hpp"
-#include "licht/core/containers/static_array.hpp"
+#include "licht/core/containers/fixed_array.hpp"
 #include "licht/core/defines.hpp"
+#include "licht/core/memory/concepts.hpp"
 
 namespace licht {
 
@@ -120,8 +120,8 @@ public:
     ArrayView(ElementType* data, size_type size)
         : data_(data), size_(size) {}
 
-    template <CAllocator<ElementType> AllocatorType = TypedDefaultAllocator<ElementType>>
-    ArrayView(Array<ElementType, AllocatorType> array)
+    template <CTypedAllocator<ElementType> AllocatorType = TypedDefaultAllocator<ElementType>>
+    ArrayView(Array<ElementType, AllocatorType>& array)
         : data_(array.data()), size_(array.size()) {}
 
     template <size_type Capacity>

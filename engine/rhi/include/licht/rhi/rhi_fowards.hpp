@@ -15,10 +15,10 @@ class RHIFence;
 class RHICommandQueue;
 class RHIFramebuffer;
 class RHIRenderPass;
-class RHIShaderResource;
-class RHIShaderResourcePool;
+class RHIShaderResourceGroup;
+class RHIShaderResourceGroupPool;
 class RHICommandAllocator;
-class RHIPipeline;
+class RHIGraphicsPipeline;
 
 using RHIDeviceRef = SharedRef<RHIDevice>;
 using RHICommandQueueRef = SharedRef<RHICommandQueue>;

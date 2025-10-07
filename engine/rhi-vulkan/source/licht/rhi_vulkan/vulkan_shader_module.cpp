@@ -7,13 +7,13 @@
 
 namespace licht {
 
-VulkanShaderModule::VulkanShaderModule(const Array<uint8>& p_code)
-    : code_(p_code)
+VulkanShaderModule::VulkanShaderModule(const Array<uint8>& code)
+    : code_(code)
     , handle_(VK_NULL_HANDLE) {
 }
 
-void VulkanShaderModule::initialize(VulkanContext& context) {
-
+void VulkanShaderModule::initialize() {
+    VulkanContext& context = vulkan_context_get();
     if (handle_ != VK_NULL_HANDLE) {
         return;
     }
@@ -26,7 +26,8 @@ void VulkanShaderModule::initialize(VulkanContext& context) {
     LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateShaderModule(context.device, &shader_module_create_info, context.allocator, &handle_));
 }
 
-void VulkanShaderModule::destroy(VulkanContext& context) {
+void VulkanShaderModule::destroy() {
+    VulkanContext& context = vulkan_context_get();
     VulkanAPI::lvkDestroyShaderModule(context.device, handle_, context.allocator);
 }
 

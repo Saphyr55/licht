@@ -1,3 +1,4 @@
+#include "licht/rhi/device_memory_uploader.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/command_queue.hpp"
@@ -65,7 +66,7 @@ void RHIDeviceMemoryUploader::upload() {
     RHICommandQueueRef transfer_queue = *transfer_queue_ptr;
 
     RHICommandAllocatorDescription transfer_command_allocator_desc = {};
-    transfer_command_allocator_desc.count = 1;  // One command buffer allocated.
+    transfer_command_allocator_desc.count = 1; // One command buffer allocated.
     transfer_command_allocator_desc.command_queue = transfer_queue;
 
     RHICommandAllocator* transfer_command_allocator_ = device_->create_command_allocator(transfer_command_allocator_desc);
@@ -118,6 +119,10 @@ void RHIDeviceMemoryUploader::upload() {
 
     // Standing buffers no longer needed after data upload
     for (BufferEntry& entry : buffer_entries_) {
+        device_->destroy_buffer(entry.staging);
+    }
+
+    for (TextureEntry& entry : texture_entries_) {
         device_->destroy_buffer(entry.staging);
     }
 

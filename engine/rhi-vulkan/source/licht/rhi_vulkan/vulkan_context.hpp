@@ -16,7 +16,7 @@
 #define LICHT_VULKAN_CHECK(Expr)                                                                                                                                     \
     {                                                                                                                                                                \
         VkResult __licht_vulkan_result__ = (Expr);                                                                                                                   \
-        LLOG_FATAL_WHEN(__licht_vulkan_result__ != VK_SUCCESS, "[Vulkan]", vformat("failed with the result '%s'", vulkan_string_of_result(__licht_vulkan_result__))) \
+        LLOG_FATAL_WHEN(__licht_vulkan_result__ != VK_SUCCESS, "[Vulkan]", vformat("Failed with the result '%s'", vulkan_string_of_result(__licht_vulkan_result__))) \
     }
 
 namespace licht {
@@ -267,6 +267,52 @@ inline uint32 vulkan_find_memory_type(VulkanContext& context, uint32 type_filter
 
     LCRASH("Failed to find suitable Vulkan memory type for requested properties.")
     return 0;
+}
+
+inline VkDescriptorType vulkan_descriptor_type_get(RHIShaderResourceType type) {
+    switch (type) {
+        case RHIShaderResourceType::Uniform:
+            return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        case RHIShaderResourceType::StorageBuffer:
+            return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        case RHIShaderResourceType::StorageTexture:
+            return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+        case RHIShaderResourceType::Sampler:
+            return VK_DESCRIPTOR_TYPE_SAMPLER;
+        default:
+            LLOG_FATAL("[Vulkan]", "Unknown RHIShaderResourceType.");
+            return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    }
+}
+
+inline VkShaderStageFlags vulkan_shader_stage_get(RHIShaderStage stage) {
+    VkShaderStageFlags flags = 0;
+    if ((stage & RHIShaderStage::Vertex) == RHIShaderStage::Vertex) {
+        flags |= VK_SHADER_STAGE_VERTEX_BIT;
+    }
+    
+    if ((stage & RHIShaderStage::Fragment) == RHIShaderStage::Fragment) {
+        flags |= VK_SHADER_STAGE_FRAGMENT_BIT;
+    }
+    
+    if ((stage & RHIShaderStage::Tesselation) == RHIShaderStage::Tesselation) {
+        flags |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+        flags |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+    }
+    
+    if ((stage & RHIShaderStage::Geometry) == RHIShaderStage::Geometry) {
+        flags |= VK_SHADER_STAGE_GEOMETRY_BIT;
+    }
+
+    if ((stage & RHIShaderStage::Compute) == RHIShaderStage::Compute) {
+        flags |= VK_SHADER_STAGE_COMPUTE_BIT;
+    }
+    
+    if (RHIShaderStage::AllGraphics == (stage & RHIShaderStage::AllGraphics)) {
+        flags |= VK_SHADER_STAGE_ALL_GRAPHICS;
+    }
+
+    return flags;
 }
 
 }  //namespace licht

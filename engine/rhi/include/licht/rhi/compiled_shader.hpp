@@ -7,7 +7,7 @@ namespace licht {
 
 class SPIRVShader {
 public:
-    inline Array<uint8> get_bytes() { return code_; }
+    inline const Array<uint8>& get_bytes() const { return code_; }
 
 public:
     SPIRVShader() = default;

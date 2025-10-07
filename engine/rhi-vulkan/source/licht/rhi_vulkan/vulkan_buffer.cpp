@@ -10,20 +10,17 @@
 
 namespace licht {
 
-VulkanBuffer::VulkanBuffer(VulkanContext& context, RHIBufferDescription description)
-    : context_(context)
-    , description_(description)
-    , memory_(VK_NULL_HANDLE)
-    , buffer_(VK_NULL_HANDLE) {
-}
-
 VkMemoryRequirements VulkanBuffer::get_memory_requirements() {
+    VulkanContext& context_ = vulkan_context_get();
+
     VkMemoryRequirements memory_requirements;
     VulkanAPI::lvkGetBufferMemoryRequirements(context_.device, buffer_, &memory_requirements);
     return memory_requirements;
 }
 
 Array<uint32> VulkanBuffer::get_queue_family_indices() {
+    VulkanContext& context_ = vulkan_context_get();
+
     Array<uint32> indices;
     if (description_.sharing_mode == RHISharingMode::Shared) {
         if ((description_.usage & RHIBufferUsageFlags::TransferDst) == RHIBufferUsageFlags::TransferDst ||
@@ -34,7 +31,15 @@ Array<uint32> VulkanBuffer::get_queue_family_indices() {
     return indices;
 }
 
-void VulkanBuffer::initialize() {
+void VulkanBuffer::initialize(const RHIBufferDescription& description, VkBuffer buffer) {
+    buffer_ = buffer;
+    initialize(description);
+}
+
+void VulkanBuffer::initialize(const RHIBufferDescription& description) {
+    description_ = description;
+
+    VulkanContext& context_ = vulkan_context_get();
 
     Array<uint32> indices = get_queue_family_indices();
 
@@ -63,25 +68,33 @@ void VulkanBuffer::initialize() {
 }
 
 void VulkanBuffer::destroy() {
+    VulkanContext& context_ = vulkan_context_get();
+
     VulkanAPI::lvkDestroyBuffer(context_.device, buffer_, context_.allocator);
     VulkanAPI::lvkFreeMemory(context_.device, memory_, context_.allocator);
 }
 
 void VulkanBuffer::bind() {
+    VulkanContext& context_ = vulkan_context_get();
+
     LICHT_VULKAN_CHECK(VulkanAPI::lvkBindBufferMemory(context_.device, buffer_, memory_, 0));
 }
 
 void* VulkanBuffer::map(size_t offset, size_t size) {
+    VulkanContext& context_ = vulkan_context_get();
+
     void* data = nullptr;
     LICHT_VULKAN_CHECK(VulkanAPI::lvkMapMemory(context_.device, memory_, offset, size, 0, &data));
     return data;
 }
 
 void VulkanBuffer::unmap() {
+    VulkanContext& context_ = vulkan_context_get();
     VulkanAPI::lvkUnmapMemory(context_.device, memory_);
 }
 
 void VulkanBuffer::update(const void* source, size_t size, size_t offset) {
+    VulkanContext& context_ = vulkan_context_get();
     void* destination = map(offset, size);
     if (destination) {
         Memory::copy(destination, source, size);

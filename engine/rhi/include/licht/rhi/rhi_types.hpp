@@ -20,6 +20,18 @@ struct Rect2D {
     float32 height = 0.0f;
 };
 
+enum class RHIFilter {
+    Nearest,
+    Linear
+};
+
+enum class RHISamplerAddressMode {
+    Repeat,
+    MirroredRepeat,
+    ClampToEdge,
+    ClampToBorder
+};
+
 enum class RHITextureLayout : uint8 {
     Undefined,
     TransferDst,
@@ -30,19 +42,11 @@ enum class RHITextureLayout : uint8 {
     General
 };
 
-enum class RHIShaderStage {
-    Vertex,
-    Fragment,
-    Geometry,
-    Tesselation,
-    Compute
-};
-
-enum class RHIShaderResourceBindingType {
+enum class RHIShaderResourceType {
     Uniform,
     Sampler,
     StorageBuffer,
-    StorageImage
+    StorageTexture
 };
 
 enum class RHIQueueType {
@@ -56,6 +60,24 @@ enum class RHIVertexInputRate {
     Vertex,
     Instance,
 };
+
+enum class RHIShaderStage : uint8 {
+    None = 0,
+    Vertex = 1 << 0,
+    Fragment = 1 << 1,
+    Geometry = 1 << 2,
+    Tesselation = 1 << 3,
+    Compute = 1 << 4,
+    AllGraphics = Vertex | Fragment | Geometry | Tesselation
+};
+LICHT_ENUM_FLAGS(RHIShaderStage)
+
+enum class RHICullModeFlags : uint8 {
+    None = 0,
+    Front = 1 << 0,
+    Back = 1 << 1,
+};
+LICHT_ENUM_FLAGS(RHICullModeFlags)
 
 enum class RHICommandBufferUsageFlags : uint8 {
     None = 0,
@@ -85,6 +107,12 @@ enum class RHITextureUsageFlags : uint8 {
     TransferDst = 1 << 5
 };
 LICHT_ENUM_FLAGS(RHITextureUsageFlags)
+
+enum class RHITextureDimension {
+    Dim2D = 0,
+    Dim3D,
+    Dim1D,
+};
 
 enum class RHIMemoryUsage {
     Device,

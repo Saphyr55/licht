@@ -24,7 +24,7 @@
 
 #define LLOG_FATAL(channel, msg)                                        \
     LLOG(::licht::LogSeverity::Fatal, channel, msg)                     \
-    LLOG(::licht::LogSeverity::Fatal, "[Crash]", "Application ended...")  \
+    LLOG(::licht::LogSeverity::Fatal, channel, "Application ended...")  \
     LDEBUGBREAK();
 
 #define LLOG_INFO_WHEN(cond, channel, msg) \

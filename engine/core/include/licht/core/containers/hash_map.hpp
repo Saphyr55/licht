@@ -5,8 +5,6 @@
 #include "licht/core/memory/default_allocator.hpp"
 #include "licht/core/memory/memory.hpp"
 
-#include <cstring>
-#include <functional>
 #include <initializer_list>
 #include <utility>
 
@@ -204,7 +202,6 @@ public:
                 ++size_;
             }
         }
-
     }
 
     HashMap(HashMap&& other) noexcept
@@ -273,7 +270,7 @@ public:
             cur = cur->next;
         }
     }
-    
+
     EntryType& put(const KeyType& key, const ValueType& value) {
         if (!buckets_) {
             initialize_buckets();
@@ -302,6 +299,38 @@ public:
         return ne->entry;
     }
 
+    Iterator find(const KeyType& key) {
+        if (!buckets_) {
+            return end();
+        }
+        size_t h = hash(key);
+        size_t idx = static_cast<size_t>(h % capacity_);
+        ElementType* cur = buckets_[idx];
+        while (cur) {
+            if (cur->key == key) {
+                return Iterator(this, idx, cur);
+            }
+            cur = cur->next;
+        }
+        return end();
+    }
+
+    ConstIterator find(const KeyType& key) const {
+        if (!buckets_) {
+            return end();
+        }
+        size_t h = hash(key);
+        size_t idx = static_cast<size_t>(h % capacity_);
+        ElementType* cur = buckets_[idx];
+        while (cur) {
+            if (cur->key == key) {
+                return ConstIterator(this, idx, cur);
+            }
+            cur = cur->next;
+        }
+        return end();
+    }
+
     bool contains(const KeyType& key) const {
         return find_element(key) != nullptr;
     }
@@ -324,7 +353,7 @@ public:
         }
         return put(key, value).value;
     }
-    
+
     const ValueType& get(const KeyType& key) const {
         const ElementType* e = find_element(key);
         LCHECK_MSG(e, "HashMap: key not found");
@@ -417,21 +446,8 @@ public:
         return end();
     }
 
-private:
-    ElementType* find_element(const KeyType& key) const {
-        if (!buckets_) {
-            return nullptr;
-        }
-        size_t h = hash(key);
-        size_t idx = static_cast<size_t>(h % capacity_);
-        ElementType* cur = buckets_[idx];
-        while (cur) {
-            if (cur->entry.key == key) {
-                return cur;
-            }
-            cur = cur->next;
-        }
-        return nullptr;
+    void rehash() {
+        resize_rehash(capacity_);
     }
 
     void resize_rehash(size_t new_capacity) {
@@ -458,11 +474,27 @@ private:
         capacity_ = new_capacity;
     }
 
+private:
+    ElementType* find_element(const KeyType& key) const {
+        if (!buckets_) {
+            return nullptr;
+        }
+        size_t h = hash(key);
+        size_t idx = static_cast<size_t>(h % capacity_);
+        ElementType* cur = buckets_[idx];
+        while (cur) {
+            if (cur->entry.key == key) {
+                return cur;
+            }
+            cur = cur->next;
+        }
+        return nullptr;
+    }
+
     ElementType* create_element(const KeyType& key, const ValueType& value, size_t h) {
         ElementType* raw = allocator_.allocate(1);
         ElementType* element = new (raw) ElementType(key, value, h);
         return element;
-
     }
 
     size_t hash(const KeyType& key) const {

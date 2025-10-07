@@ -14,7 +14,7 @@ public:
                         const Array<RHISemaphore*>& wait_semaphores,
                         const Array<RHISemaphore*>& signal_semaphores,
                         const RHIFence* fence) override;
-        
+
     virtual void present(RHISwapchain* swapchain, RHIFrameContext& context) override;
 
     virtual void wait_idle() override;
@@ -28,18 +28,17 @@ public:
     }
 
     virtual bool is_present_mode() override;
-    
+
     inline uint32 get_queue_family_index() {
         return queue_family_index_;
     }
 
-
 public:
-    VulkanCommandQueue(VulkanContext& context, 
-                          VkQueue queue, 
-                          RHIQueueType type, 
-                          uint32 queue_family_index, 
-                          bool is_present_mode_supported);
+    VulkanCommandQueue(VulkanContext& context,
+                       VkQueue queue,
+                       RHIQueueType type,
+                       uint32 queue_family_index,
+                       bool is_present_mode_supported);
 
 private:
     VulkanContext& context_;
@@ -48,6 +47,5 @@ private:
     uint32 queue_family_index_;
     bool is_present_mode_supported_;
 };
-
 
 }  //namespace licht

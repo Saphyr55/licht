@@ -1,5 +1,6 @@
 #pragma once
 
+#include "licht/rhi/rhi_exports.hpp"
 #include "licht/rhi/rhi_types.hpp"
 #include "licht/rhi/rhi_fowards.hpp"
 #include "licht/rhi/resource.hpp"
@@ -17,30 +18,27 @@ struct RHITextureDescription {
     RHITextureUsageFlags usage = RHITextureUsageFlags::ColorAttachment;
     RHISharingMode sharing_mode = RHISharingMode::Private;
     RHIMemoryUsage memory_usage = RHIMemoryUsage::Device;
+    RHITextureDimension dimension = RHITextureDimension::Dim2D;
     size_t width = 8;
     size_t height = 8;
     size_t depth = 1;
-    size_t mipmap_levels = 1;
-    size_t layers_count = 1;
+    size_t mip_levels = 1;
+    size_t array_layers = 1;
 };
 
-struct RHITextureViewDescription {
-    RHITexture* texture;
-    RHIFormat format;
-};
-
-class RHITexture : public RHIResource {
+class LICHT_RHI_API RHITexture : public RHIResource {
 public:
+    const RHITextureDescription& get_description() const;
+
     virtual void bind() = 0;
 
-    virtual const RHITextureDescription& get_description() const = 0;
-
     virtual ~RHITexture() = default;
-};
 
-class RHITextureView : public RHIResource {
-public:
-    virtual ~RHITextureView() = default;
+protected:
+    RHITexture() = default;
+
+protected:
+    RHITextureDescription description_;
 };
 
 }  //namespace licht

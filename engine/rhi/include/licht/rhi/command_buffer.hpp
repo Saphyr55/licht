@@ -94,9 +94,9 @@ public:
      * @brief Bind a graphics pipeline for subsequent draw calls.
      * @param pipeline Handle to the pipeline to bind.
      */
-    virtual void bind_pipeline(RHIPipeline* pipeline) = 0;
+    virtual void bind_pipeline(RHIGraphicsPipeline* pipeline) = 0;
 
-    virtual void bind_descriptor_sets(RHIPipeline* pipeline, const Array<RHIShaderResource*>& descriptor_sets) = 0;
+    virtual void bind_descriptor_sets(RHIGraphicsPipeline* pipeline, const Array<RHIShaderResourceGroup*>& descriptor_sets) = 0;
 
     /**
      * @brief Bind vertex buffers for rendering.

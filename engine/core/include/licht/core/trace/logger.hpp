@@ -14,7 +14,7 @@ namespace licht {
  * @enum LogSeverity
  * @brief Defines the severity levels for log messages.
  */
-enum class LICHT_CORE_API LogSeverity {
+enum class LogSeverity {
     Info,
     Warn,
     Debug,

@@ -1,14 +1,11 @@
-#include "licht/rhi_vulkan/vulkan_pipeline.hpp"
+#include "licht/rhi_vulkan/vulkan_graphics_pipeline.hpp"
 
 #include "licht/core/defines.hpp"
-#include "licht/core/memory/shared_ref.hpp"
-#include "licht/core/memory/shared_ref_cast.hpp"
-#include "licht/rhi/buffer.hpp"
 #include "licht/rhi/compiled_shader.hpp"
-#include "licht/rhi_vulkan/vulkan_render_pass.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
-#include "licht/rhi_vulkan/vulkan_description_set.hpp"
+#include "licht/rhi_vulkan/vulkan_render_pass.hpp"
+#include "vulkan_description_set.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -31,22 +28,25 @@ static constexpr auto vk_attribute_map = [](const RHIVertexAttributeDescription&
     return vulkan_description;
 };
 
-VulkanPipeline::VulkanPipeline(VulkanContext& context, const RHIPipelineDescription& description)
-    : context_(context)
-    , description_(description) {
-}
+VulkanGraphicsPipeline::VulkanGraphicsPipeline() = default;
 
-void VulkanPipeline::initialize() {
-    SPIRVShader* vertex_compiled_shader = description_.vertex_shader_info.shader;
-    VulkanShaderModule vertex_shader_module(vertex_compiled_shader->get_bytes());
+void VulkanGraphicsPipeline::initialize(const RHIGraphicsPipelineDescription& description) {
+    VulkanContext& context = vulkan_context_get();
+    description_ = description;
 
-    SPIRVShader* fragment_compiled_shader = description_.fragment_shader_info.shader;
-    VulkanShaderModule fragment_shader_module(fragment_compiled_shader->get_bytes());
+    SPIRVShader& vertex_compiled_shader = description_.vertex_shader_info.shader;
+    VulkanShaderModule vertex_shader_module(vertex_compiled_shader.get_bytes());
+
+    SPIRVShader& fragment_compiled_shader = description_.fragment_shader_info.shader;
+    VulkanShaderModule fragment_shader_module(fragment_compiled_shader.get_bytes());
 
     VkPipelineInputAssemblyStateCreateInfo pipeline_input_assembly_state_create_info{};
     pipeline_input_assembly_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     pipeline_input_assembly_state_create_info.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     pipeline_input_assembly_state_create_info.primitiveRestartEnable = VK_FALSE;
+
+    vertex_shader_module.initialize();
+    fragment_shader_module.initialize();
 
     Array<VkVertexInputBindingDescription> vertex_bindings = description_.vertex_binding_info.bindings
                                                                  .map<VkVertexInputBindingDescription>(vk_binding_map);
@@ -67,9 +67,19 @@ void VulkanPipeline::initialize() {
     pipeline_rasterizer_state_create_info.rasterizerDiscardEnable = VK_FALSE;
     pipeline_rasterizer_state_create_info.polygonMode = VK_POLYGON_MODE_FILL;
     pipeline_rasterizer_state_create_info.lineWidth = 1.0f;
-    pipeline_rasterizer_state_create_info.cullMode = VK_CULL_MODE_BACK_BIT;
-    pipeline_rasterizer_state_create_info.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-    // pipeline_rasterizer_state_create_info.frontFace = VK_FRONT_FACE_CLOCKWISE;
+
+    VkCullModeFlags cull_mode = VK_CULL_MODE_NONE;
+    if (description_.cull_mode == RHICullModeFlags::Back) {
+        cull_mode = VK_CULL_MODE_BACK_BIT;
+    } else if (description_.cull_mode == RHICullModeFlags::Front) {
+        cull_mode = VK_CULL_MODE_FRONT_BIT;
+    } else if (description_.cull_mode == RHICullModeFlags::None) {
+        cull_mode = VK_CULL_MODE_NONE;
+    }
+
+    pipeline_rasterizer_state_create_info.cullMode = cull_mode;
+    // pipeline_rasterizer_state_create_info.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    pipeline_rasterizer_state_create_info.frontFace = VK_FRONT_FACE_CLOCKWISE;
     pipeline_rasterizer_state_create_info.depthBiasEnable = VK_FALSE;
     pipeline_rasterizer_state_create_info.depthBiasConstantFactor = 0.0f;  // Optional
     pipeline_rasterizer_state_create_info.depthBiasClamp = 0.0f;           // Optional
@@ -83,9 +93,6 @@ void VulkanPipeline::initialize() {
     pipeline_multisampling_state_create_info.pSampleMask = nullptr;             // Optional
     pipeline_multisampling_state_create_info.alphaToCoverageEnable = VK_FALSE;  // Optional
     pipeline_multisampling_state_create_info.alphaToOneEnable = VK_FALSE;       // Optional
-
-    vertex_shader_module.initialize(context_);
-    fragment_shader_module.initialize(context_);
 
     VkPipelineShaderStageCreateInfo vertex_shader_stage_create_info = {};
     vertex_shader_stage_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -102,6 +109,7 @@ void VulkanPipeline::initialize() {
     VkPipelineShaderStageCreateInfo pipeline_shader_state_create_info[] = {vertex_shader_stage_create_info, fragment_shader_stage_create_info};
 
     Array<VkDynamicState> dynamic_states = {
+        VK_DYNAMIC_STATE_LINE_WIDTH,
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_SCISSOR};
 
@@ -155,40 +163,23 @@ void VulkanPipeline::initialize() {
     pipeline_color_blend_state_create_info.blendConstants[2] = 0.0f;  // Optional
     pipeline_color_blend_state_create_info.blendConstants[3] = 0.0f;  // Optional
 
-    auto desc_set_mapping = [](const RHIShaderResourceBinding& binding) {
-        VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; // TODO: Convert description information
-        VkDescriptorSetLayoutBinding layout_binding = {};
-        layout_binding.binding = binding.binding;
-        layout_binding.descriptorType = descriptor_type;
-        layout_binding.descriptorCount = binding.count;
-        layout_binding.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
-        layout_binding.pImmutableSamplers = nullptr;  // TODO: Supports texture.
-        return layout_binding;
-    };
-
-    Array<VkDescriptorSetLayoutBinding> layout_bindings = description_.bindings.map<VkDescriptorSetLayoutBinding>(desc_set_mapping);
-
-    VkDescriptorSetLayoutCreateInfo descriptor_pool_layout_create_info = {};
-    descriptor_pool_layout_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    descriptor_pool_layout_create_info.bindingCount = layout_bindings.size();
-    descriptor_pool_layout_create_info.pBindings = layout_bindings.data();
-
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateDescriptorSetLayout(context_.device, &descriptor_pool_layout_create_info, context_.allocator, &descriptor_set_layout_))
-
+    VulkanShaderResourceGroupLayout* layout = static_cast<VulkanShaderResourceGroupLayout*>(description_.shader_resource_group_layout);
+    LCHECK(layout)
+    
     VkPipelineLayoutCreateInfo pipeline_layout_create_info = {};
     pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_create_info.setLayoutCount = 1;           
-    pipeline_layout_create_info.pSetLayouts = &descriptor_set_layout_;        
-    pipeline_layout_create_info.pushConstantRangeCount = 0;   
+    pipeline_layout_create_info.setLayoutCount = 1;
+    pipeline_layout_create_info.pSetLayouts = &layout->get_handle();
+    pipeline_layout_create_info.pushConstantRangeCount = 0;
     pipeline_layout_create_info.pPushConstantRanges = nullptr;
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreatePipelineLayout(context_.device, &pipeline_layout_create_info, context_.allocator, &pipeline_layout_));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreatePipelineLayout(context.device, &pipeline_layout_create_info, context.allocator, &pipeline_layout_));
 
     VulkanRenderPass* render_pass = static_cast<VulkanRenderPass*>(description_.render_pass);
 
     VkGraphicsPipelineCreateInfo graphics_pipeline_create_info = {};
     graphics_pipeline_create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    graphics_pipeline_create_info.stageCount = 2;               // TODO: Configurable
+    graphics_pipeline_create_info.stageCount = 2;  // TODO: Configurable
     graphics_pipeline_create_info.pVertexInputState = &vertex_input_state_create_info;
     graphics_pipeline_create_info.pInputAssemblyState = &pipeline_input_assembly_state_create_info;
     graphics_pipeline_create_info.pStages = pipeline_shader_state_create_info;
@@ -204,16 +195,19 @@ void VulkanPipeline::initialize() {
     graphics_pipeline_create_info.basePipelineHandle = VK_NULL_HANDLE;  // TODO: Configurable
     graphics_pipeline_create_info.basePipelineIndex = -1;               // TODO: Configurable
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateGraphicsPipelines(context_.device, VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, context_.allocator, &pipeline_));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateGraphicsPipelines(context.device, VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, context.allocator, &pipeline_));
 
-    vertex_shader_module.destroy(context_);
-    fragment_shader_module.destroy(context_);
+    vertex_shader_module.destroy();
+    fragment_shader_module.destroy();
 }
 
-void VulkanPipeline::destroy() {
-    VulkanAPI::lvkDestroyPipeline(context_.device, pipeline_, context_.allocator);
-    VulkanAPI::lvkDestroyPipelineLayout(context_.device, pipeline_layout_, context_.allocator);
-    VulkanAPI::lvkDestroyDescriptorSetLayout(context_.device, descriptor_set_layout_, context_.allocator);
+void VulkanGraphicsPipeline::destroy() {
+    VulkanContext& context = vulkan_context_get();
+    VulkanShaderResourceGroupLayout* layout = static_cast<VulkanShaderResourceGroupLayout*>(description_.shader_resource_group_layout);
+
+    VulkanAPI::lvkDestroyPipeline(context.device, pipeline_, context.allocator);
+    VulkanAPI::lvkDestroyPipelineLayout(context.device, pipeline_layout_, context.allocator);
+    VulkanAPI::lvkDestroyDescriptorSetLayout(context.device, layout->get_handle(), context.allocator);
 }
 
 }  //namespace licht

@@ -53,6 +53,7 @@ int32 ludo_application_launch(int32 argc, const char** argv) {
 
     Camera camera(Vector3f(0.0f, 0.0f, -2.0f));
     camera.look_at(Vector3f(0.0f));
+    camera.movement_speed = 0.010f;
 
     Input::on_mouse_move.connect([&camera](const MouseMove& mouse_move) -> void {
         if (Input::button_is_down(Button::Left)) {

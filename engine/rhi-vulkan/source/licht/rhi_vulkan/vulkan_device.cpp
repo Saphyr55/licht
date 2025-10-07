@@ -1,14 +1,11 @@
+#include "licht/rhi_vulkan/vulkan_device.hpp"
 #include "licht/core/memory/default_allocator.hpp"
 #include "licht/core/memory/memory.hpp"
-#include "licht/rhi_vulkan/vulkan_device.hpp"
 
 #include "licht/core/containers/array.hpp"
 #include "licht/core/defines.hpp"
-#include "licht/core/memory/shared_ref.hpp"
-#include "licht/core/memory/shared_ref_cast.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/command_buffer.hpp"
-#include "licht/rhi/command_queue.hpp"
 #include "licht/rhi/fence.hpp"
 #include "licht/rhi/framebuffer.hpp"
 #include "licht/rhi/render_pass.hpp"
@@ -17,17 +14,17 @@
 #include "licht/rhi/texture.hpp"
 #include "licht/rhi_vulkan/vulkan_buffer.hpp"
 #include "licht/rhi_vulkan/vulkan_command_buffer.hpp"
-#include "licht/rhi_vulkan/vulkan_command_queue.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_description_set.hpp"
 #include "licht/rhi_vulkan/vulkan_framebuffer.hpp"
+#include "licht/rhi_vulkan/vulkan_graphics_pipeline.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
-#include "licht/rhi_vulkan/vulkan_pipeline.hpp"
 #include "licht/rhi_vulkan/vulkan_render_pass.hpp"
 #include "licht/rhi_vulkan/vulkan_render_surface.hpp"
 #include "licht/rhi_vulkan/vulkan_swapchain.hpp"
 #include "licht/rhi_vulkan/vulkan_sync.hpp"
 #include "licht/rhi_vulkan/vulkan_texture.hpp"
+#include "licht/rhi_vulkan/vulkan_texture_view.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -64,17 +61,29 @@ void VulkanDevice::reset_fence(RHIFence* fence) {
     rhi_vk_fence->set_signaled(false);
 }
 
-RHIShaderResourcePool* VulkanDevice::create_shader_resource_pool(RHIPipeline* pipeline, size_t count) {
-    VulkanPipeline* vkpileline = static_cast<VulkanPipeline*>(pipeline);
-    VulkanDescriptorPool* vk_descriptor_pool = lnew(allocator_, VulkanDescriptorPool(context_, vkpileline->get_descriptor_set_layout(), count));
-    vk_descriptor_pool->initialize();
+RHIShaderResourceGroupLayout* VulkanDevice::create_shader_resource_layout(const Array<RHIShaderResourceBinding>& bindings) {
+    VulkanShaderResourceGroupLayout* vk_descriptor_layout = lnew(allocator_, VulkanShaderResourceGroupLayout());
+    vk_descriptor_layout->initialize(bindings);
+    return vk_descriptor_layout;
+}
+
+void VulkanDevice::destroy_shader_resource_layout(RHIShaderResourceGroupLayout* layout) {
+    LCHECK(layout)
+    VulkanShaderResourceGroupLayout* vklayout = static_cast<VulkanShaderResourceGroupLayout*>(layout);
+    vklayout->destroy();
+    ldelete(allocator_, vklayout);
+}
+
+RHIShaderResourceGroupPool* VulkanDevice::create_shader_resource_pool(size_t max_sets, const Array<RHIShaderResourceBinding>& total_bindings) {
+    VulkanShaderResourceGroupPool* vk_descriptor_pool = lnew(allocator_, VulkanShaderResourceGroupPool());
+    vk_descriptor_pool->initialize(max_sets, total_bindings);
     return vk_descriptor_pool;
 }
 
-void VulkanDevice::destroy_shader_resource_pool(RHIShaderResourcePool* desc) {
+void VulkanDevice::destroy_shader_resource_pool(RHIShaderResourceGroupPool* desc) {
     LCHECK(desc)
-    
-    VulkanDescriptorPool* vkdesc = static_cast<VulkanDescriptorPool*>(desc);
+
+    VulkanShaderResourceGroupPool* vkdesc = static_cast<VulkanShaderResourceGroupPool*>(desc);
     vkdesc->destroy();
     ldelete(allocator_, vkdesc);
 }
@@ -99,8 +108,8 @@ void VulkanDevice::destroy_command_allocator(RHICommandAllocator* command_alloca
 }
 
 RHIBuffer* VulkanDevice::create_buffer(RHIBufferDescription description) {
-    VulkanBuffer* buffer = lnew(allocator_, VulkanBuffer(context_, description));
-    buffer->initialize();
+    VulkanBuffer* buffer = lnew(allocator_, VulkanBuffer());
+    buffer->initialize(description);
     return buffer;
 }
 
@@ -114,13 +123,8 @@ void VulkanDevice::destroy_buffer(RHIBuffer* buffer) {
 }
 
 RHITexture* VulkanDevice::create_texture(const RHITextureDescription& description) {
-    VulkanTexture* vk_texture = lnew(allocator_, VulkanTexture(
-        context_, 
-        description,
-        VK_IMAGE_TYPE_2D, 
-        {}));
-
-    vk_texture->initialize();
+    VulkanTexture* vk_texture = lnew(allocator_, VulkanTexture());
+    vk_texture->initialize(description);
     return vk_texture;
 }
 
@@ -129,32 +133,13 @@ void VulkanDevice::destroy_texture(RHITexture* texture) {
 
     VulkanTexture* vktexture = static_cast<VulkanTexture*>(texture);
     vktexture->destroy();
-    
+
     ldelete(allocator_, vktexture);
 }
 
 RHITextureView* VulkanDevice::create_texture_view(const RHITextureViewDescription& description) {
     VulkanTextureView* texture_view = lnew(allocator_, VulkanTextureView());
-
-    VulkanTexture* texture = static_cast<VulkanTexture*>(description.texture);
-
-    VkImageViewCreateInfo image_view_create_info = {};
-    image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    image_view_create_info.image = texture->get_handle();
-    image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    image_view_create_info.format = vulkan_format_get(description.format);
-    image_view_create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-    image_view_create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-    image_view_create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-    image_view_create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-    image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    image_view_create_info.subresourceRange.baseMipLevel = 0;
-    image_view_create_info.subresourceRange.levelCount = 1;
-    image_view_create_info.subresourceRange.baseArrayLayer = 0;
-    image_view_create_info.subresourceRange.layerCount = 1;
-
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateImageView(context_.device, &image_view_create_info, context_.allocator, &texture_view->get_handle()))
-
+    texture_view->initialize(description);
     return texture_view;
 }
 
@@ -182,14 +167,14 @@ void VulkanDevice::destroy_render_pass(RHIRenderPass* render_pass) {
     ldelete(allocator_, vulkan_render_pass);
 }
 
-RHIPipeline* VulkanDevice::create_graphics_pipeline(const RHIPipelineDescription& description) {
-    VulkanPipeline* graphics_pipeline = lnew(allocator_, VulkanPipeline(context_, description));
-    graphics_pipeline->initialize();
+RHIGraphicsPipeline* VulkanDevice::create_graphics_pipeline(const RHIGraphicsPipelineDescription& description) {
+    VulkanGraphicsPipeline* graphics_pipeline = lnew(allocator_, VulkanGraphicsPipeline());
+    graphics_pipeline->initialize(description);
     return graphics_pipeline;
 }
 
-void VulkanDevice::destroy_graphics_pipeline(RHIPipeline* pipeline) {
-    VulkanPipeline* graphics_pipeline = static_cast<VulkanPipeline*>(pipeline);
+void VulkanDevice::destroy_graphics_pipeline(RHIGraphicsPipeline* pipeline) {
+    VulkanGraphicsPipeline* graphics_pipeline = static_cast<VulkanGraphicsPipeline*>(pipeline);
     graphics_pipeline->destroy();
     ldelete(allocator_, graphics_pipeline);
 }

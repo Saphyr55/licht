@@ -7,6 +7,7 @@
 #include "licht/rhi/fence.hpp"
 #include "licht/rhi/framebuffer.hpp"
 #include "licht/rhi/render_pass.hpp"
+#include "licht/rhi/shader_resource.hpp"
 #include "licht/rhi/swapchain.hpp"
 #include "licht/rhi/texture.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
@@ -20,8 +21,11 @@ public:
     virtual void wait_fence(RHIFence* fence) override;
     virtual void reset_fence(RHIFence* fence) override;
 
-    virtual RHIShaderResourcePool* create_shader_resource_pool(RHIPipeline* pipeline, size_t resource_count) override;
-    virtual void destroy_shader_resource_pool(RHIShaderResourcePool* descriptor_set_layout) override;
+    virtual RHIShaderResourceGroupLayout* create_shader_resource_layout(const Array<RHIShaderResourceBinding>& bindings) override;
+    virtual void destroy_shader_resource_layout(RHIShaderResourceGroupLayout* layout) override;
+
+    virtual RHIShaderResourceGroupPool* create_shader_resource_pool(size_t max_sets, const Array<RHIShaderResourceBinding>& total_bindings) override;
+    virtual void destroy_shader_resource_pool(RHIShaderResourceGroupPool* descriptor_set_layout) override;
 
     virtual RHICommandAllocator* create_command_allocator(const RHICommandAllocatorDescription& description) override;
     virtual void destroy_command_allocator(RHICommandAllocator* command_allocator) override;
@@ -38,8 +42,8 @@ public:
     virtual RHIRenderPass* create_render_pass(const RHIRenderPassDescription& description) override;
     virtual void destroy_render_pass(RHIRenderPass* render_pass) override;
 
-    virtual RHIPipeline* create_graphics_pipeline(const RHIPipelineDescription& description) override;
-    virtual void destroy_graphics_pipeline(RHIPipeline* pipeline) override;
+    virtual RHIGraphicsPipeline* create_graphics_pipeline(const RHIGraphicsPipelineDescription& description) override;
+    virtual void destroy_graphics_pipeline(RHIGraphicsPipeline* pipeline) override;
 
     virtual RHISwapchain* create_swapchain(uint32 width, uint32 height, uint32 image_count) override;
     virtual void recreate_swapchain(RHISwapchain* swapchain, uint32 width, uint32 height) override;

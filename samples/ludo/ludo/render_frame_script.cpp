@@ -1,24 +1,25 @@
 #include "render_frame_script.hpp"
+#include "camera.hpp"
+#include "licht/core/containers/array_view.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/io/file_handle.hpp"
 #include "licht/core/io/file_system.hpp"
 #include "licht/core/math/math.hpp"
 #include "licht/core/math/matrix4.hpp"
-#include "licht/core/math/vector3.hpp"
 #include "licht/core/math/quaternion.hpp"
+#include "licht/core/math/vector3.hpp"
 #include "licht/core/modules/module_registry.hpp"
 #include "licht/core/platform/display.hpp"
 #include "licht/core/platform/window_handle.hpp"
 #include "licht/core/trace/trace.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/command_queue.hpp"
-#include "licht/rhi/shader_resource.hpp"
+#include "licht/rhi/device_memory_uploader.hpp"
 #include "licht/rhi/rhi_fowards.hpp"
 #include "licht/rhi/rhi_module.hpp"
 #include "licht/rhi/rhi_types.hpp"
+#include "licht/rhi/shader_resource.hpp"
 #include "ludo_types.hpp"
-#include "ludo_message_handler.hpp"
-#include "camera.hpp"
 
 #include <chrono>
 
@@ -39,7 +40,6 @@ RenderFrameScript::RenderFrameScript(Camera* camera)
 }
 
 void RenderFrameScript::on_startup() {
-    
     constexpr size_t mega_bytes = 1024 * 1024;
 
     ModuleRegistry& registry = ModuleRegistry::get_instance();
@@ -47,249 +47,217 @@ void RenderFrameScript::on_startup() {
     frame_allocator_.initialize(500 * mega_bytes);
 
     // -- Device --
-    {
-        device_ = module->get_device();
-        LCHECK(device_);
-    }
+    device_ = module->get_device();
+    LCHECK(device_);
 
     // -- Window Handle --
-    {
-        window_handle_ = module->get_window_handle();
-        LLOG_FATAL_WHEN(!Display::get_default().is_valid(window_handle_), "[RHIModule]",
-                        "Failed to retrieve a valid window handle. Ensure a window is created before initializing the RHI Module.");
-    }
+    window_handle_ = module->get_window_handle();
+    LLOG_FATAL_WHEN(!Display::get_default().is_valid(window_handle_), "[RHIModule]",
+                    "Failed to retrieve a valid window handle. Ensure a window is created before initializing the RHI Module.");
 
     // -- Vertices data --
-    {
-        positions_ = {
-            Vector3f(-0.5f, -0.5f, 0.0f),  // Top Left
-            Vector3f(0.5f, -0.5f, 0.0f),   // Top Right
-            Vector3f(0.5f, 0.5f, 0.0f),    // Bottom Right
-            Vector3f(-0.5f, 0.5f, 0.0f),   // Bottom Left
-        };
+    positions_ = {
+        Vector3f(-0.5f, -0.5f, 0.0f),  // Top Left
+        Vector3f(0.5f, -0.5f, 0.0f),   // Top Right
+        Vector3f(0.5f, 0.5f, 0.0f),    // Bottom Right
+        Vector3f(-0.5f, 0.5f, 0.0f),   // Bottom Left
+    };
 
-        colors_ = {
-            Vector3f(1.0f, 0.0f, 0.0f),  // Red
-            Vector3f(0.0f, 1.0f, 0.0f),  // Green
-            Vector3f(0.0f, 0.0f, 1.0f),  // Blue
-            Vector3f(1.0f, 1.0f, 1.0f),  // White
-        };
+    colors_ = {
+        Vector3f(1.0f, 0.0f, 0.0f),  // Red
+        Vector3f(0.0f, 1.0f, 0.0f),  // Green
+        Vector3f(0.0f, 0.0f, 1.0f),  // Blue
+        Vector3f(1.0f, 1.0f, 1.0f),  // White
+    };
 
-        indices_ = {
-            0, 1, 2, 2, 3, 0};
-    }
+    indices_ = {
+        0, 1, 2, 2, 3, 0};
 
     // -- Swapchain --
-    {
-        WindowStatues window_statues = Display::get_default().query_window_statues(window_handle_);
-        frame_context_.frame_height = static_cast<uint32>(window_statues.height);
-        frame_context_.frame_width = static_cast<uint32>(window_statues.width);
-        swapchain_ = device_->create_swapchain(frame_context_.frame_width, frame_context_.frame_height, frame_context_.frame_count);
-    }
+    WindowStatues window_statues = Display::get_default().query_window_statues(window_handle_);
+    frame_context_.frame_height = static_cast<uint32>(window_statues.height);
+    frame_context_.frame_width = static_cast<uint32>(window_statues.width);
+    swapchain_ = device_->create_swapchain(frame_context_.frame_width, frame_context_.frame_height, frame_context_.frame_count);
 
     // -- Queues --
-    {
-        const Array<RHICommandQueueRef>& command_queues = device_->get_command_queues();
+    const Array<RHICommandQueueRef>& command_queues = device_->get_command_queues();
 
-        RHICommandQueueRef* graphics_command_queue_ptr = command_queues.get_if([](RHICommandQueueRef command_queue) {
-            return command_queue->get_type() == RHIQueueType::Graphics;
-        });
-        LCHECK_MSG(graphics_command_queue_ptr, "Found no graphics command queue.");
-        graphics_command_queue_ = *graphics_command_queue_ptr;
+    RHICommandQueueRef* graphics_command_queue_ptr = command_queues.get_if([](RHICommandQueueRef command_queue) {
+        return command_queue->get_type() == RHIQueueType::Graphics;
+    });
+    LCHECK_MSG(graphics_command_queue_ptr, "Found no graphics command queue.");
+    graphics_command_queue_ = *graphics_command_queue_ptr;
 
-        RHICommandQueueRef* graphics_present_command_queue_ptr = command_queues.get_if([](RHICommandQueueRef command_queue) {
-            return command_queue->get_type() == RHIQueueType::Graphics && command_queue->is_present_mode();
-        });
-        LCHECK_MSG(graphics_present_command_queue_ptr, "Found no graphics command queue that support the present mode.");
-        graphics_present_command_queue_ = *graphics_present_command_queue_ptr;
-    }
+    RHICommandQueueRef* graphics_present_command_queue_ptr = command_queues.get_if([](RHICommandQueueRef command_queue) {
+        return command_queue->get_type() == RHIQueueType::Graphics && command_queue->is_present_mode();
+    });
+    LCHECK_MSG(graphics_present_command_queue_ptr, "Found no graphics command queue that support the present mode.");
+    graphics_present_command_queue_ = *graphics_present_command_queue_ptr;
 
     // -- Render Pass --
-    {
-        RHIAttachmentDescription render_pass_color_attachment = {};
-        render_pass_color_attachment.format = swapchain_->get_format();
+    RHIAttachmentDescription render_pass_color_attachment = {};
+    render_pass_color_attachment.format = swapchain_->get_format();
 
-        RHIRenderPassDescription render_pass_description = {};
-        render_pass_description.attachment_decriptions = {render_pass_color_attachment};
+    RHIRenderPassDescription render_pass_description = {};
+    render_pass_description.attachment_decriptions = {render_pass_color_attachment};
 
-        render_pass_ = device_->create_render_pass(render_pass_description);
-    }
+    render_pass_ = device_->create_render_pass(render_pass_description);
+
+    // Shader Resource Bindings And Layout
+    RHIShaderResourceBinding ubo_binding = {};
+    ubo_binding.binding = 0;
+    ubo_binding.count = 1;
+    ubo_binding.type = RHIShaderResourceType::Uniform;
+    shader_resource_group_layout_ = device_->create_shader_resource_layout({ubo_binding});
+
+    // -- Bindings and attributes --
+    RHIVertexBindingDescription position_input_binding_description = {};
+    position_input_binding_description.binding = 0;
+    position_input_binding_description.stride = sizeof(Vector3f);
+    position_input_binding_description.input_rate = RHIVertexInputRate::Vertex;
+
+    RHIVertexBindingDescription color_input_binding_description = {};
+    color_input_binding_description.binding = 1;
+    color_input_binding_description.stride = sizeof(Vector3f);
+    color_input_binding_description.input_rate = RHIVertexInputRate::Vertex;
+
+    RHIVertexAttributeDescription position_attribute_description = {};
+    position_attribute_description.binding = 0;
+    position_attribute_description.location = 0;
+    position_attribute_description.format = RHIFormat::RGB32Float;
+    position_attribute_description.offset = 0;
+
+    RHIVertexAttributeDescription color_attribute_description = {};
+    color_attribute_description.binding = 1;
+    color_attribute_description.location = 1;
+    color_attribute_description.format = RHIFormat::RGB32Float;
+    color_attribute_description.offset = 0;
 
     // -- Graphics Pipeline --
-    {
-        // -- Bindings and attributes --
-        RHIVertexBindingDescription position_input_binding_description = {};
-        position_input_binding_description.binding = 0;
-        position_input_binding_description.stride = sizeof(Vector3f);
-        position_input_binding_description.input_rate = RHIVertexInputRate::Vertex;
+    RHIGraphicsPipelineVertexBindingInformation pipeline_vertex_binding_information = {};
+    pipeline_vertex_binding_information.bindings = {position_input_binding_description, color_input_binding_description};
+    pipeline_vertex_binding_information.attributes = {position_attribute_description, color_attribute_description};
 
-        RHIVertexBindingDescription color_input_binding_description = {};
-        color_input_binding_description.binding = 1;
-        color_input_binding_description.stride = sizeof(Vector3f);
-        color_input_binding_description.input_rate = RHIVertexInputRate::Vertex;
+    float32 width = static_cast<float32>(swapchain_->get_width());
+    float32 height = static_cast<float32>(swapchain_->get_height());
 
-        RHIVertexAttributeDescription position_attribute_description = {};
-        position_attribute_description.binding = 0;
-        position_attribute_description.location = 0;
-        position_attribute_description.format = RHIFormat::RGB32Float;
-        position_attribute_description.offset = 0;
+    // -- Load shaders binary codes --
+    FileSystem& file_system = FileSystem::get_platform();
 
-        RHIVertexAttributeDescription color_attribute_description = {};
-        color_attribute_description.binding = 1;
-        color_attribute_description.location = 1;
-        color_attribute_description.format = RHIFormat::RGB32Float;
-        color_attribute_description.offset = 0;
+    FileHandleResult vertex_file_open_error = file_system.open_read("shaders/main.vert.spv");
+    LCHECK(vertex_file_open_error.has_value());
 
-        RHIPipelineVertexBindingInformation pipeline_vertex_binding_information = {};
-        pipeline_vertex_binding_information.bindings = {position_input_binding_description, color_input_binding_description};
-        pipeline_vertex_binding_information.attributes = {position_attribute_description, color_attribute_description};
+    SharedRef<FileHandle> vertex_file_handle = vertex_file_open_error.value();
+    SPIRVShader vertex_shader(vertex_file_handle->read_all_bytes());
 
-        float32 width = static_cast<float32>(swapchain_->get_width());
-        float32 height = static_cast<float32>(swapchain_->get_height());
+    FileHandleResult fragment_file_open_error = file_system.open_read("shaders/main.frag.spv");
+    LCHECK(fragment_file_open_error.has_value());
 
-        // -- Load shaders binary codes --
-        FileSystem& file_system = FileSystem::get_platform();
+    SharedRef<FileHandle> fragment_file_handle = fragment_file_open_error.value();
+    SPIRVShader fragment_shader(fragment_file_handle->read_all_bytes());
 
-        FileHandleResult vertex_file_open_error = file_system.open_read("shaders/main.vert.spv");
-        LCHECK(vertex_file_open_error.has_value())
-        SharedRef<FileHandle> vertex_file_handle = vertex_file_open_error.value();
-        SPIRVShader vertex_shader(vertex_file_handle->read_all_bytes());
+    Viewport viewport = {};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = width;
+    viewport.height = height;
+    viewport.min_depth = 0.0f;
+    viewport.max_depth = 1.0f;
 
-        FileHandleResult fragment_file_open_error = file_system.open_read("shaders/main.frag.spv");
-        LCHECK(fragment_file_open_error.has_value())
-        SharedRef<FileHandle> fragment_file_handle = fragment_file_open_error.value();
-        SPIRVShader fragment_shader(fragment_file_handle->read_all_bytes());
+    Rect2D scissor = {};
+    scissor.x = 0.0f;
+    scissor.y = 0.0f;
+    scissor.width = width;
+    scissor.height = height;
 
-        Viewport viewport = {};
-        viewport.x = 0.0f;
-        viewport.y = 0.0f;
-        viewport.width = width;
-        viewport.height = height;
-        viewport.min_depth = 0.0f;
-        viewport.max_depth = 1.0f;
+    RHIGraphicsPipelineViewportStateInformation viewport_info;
+    viewport_info.viewport = viewport;
+    viewport_info.scissor = scissor;
 
-        Rect2D scissor = {};
-        scissor.x = 0.0f;
-        scissor.y = 0.0f;
-        scissor.width = width;
-        scissor.height = height;
+    // -- Graphics Pipeline Shaders --
+    RHIGraphicsPipelineShaderStageCreateInfo vertex_stage_create_info;
+    vertex_stage_create_info.name = "main";
+    vertex_stage_create_info.shader = vertex_shader;
+    vertex_stage_create_info.type = RHIShaderStage::Vertex;
 
-        RHIPipelineViewportStateInformation viewport_info;
-        viewport_info.viewport = viewport;
-        viewport_info.scissor = scissor;
+    RHIGraphicsPipelineShaderStageCreateInfo fragment_stage_create_info;
+    fragment_stage_create_info.name = "main";
+    fragment_stage_create_info.shader = fragment_shader;
+    fragment_stage_create_info.type = RHIShaderStage::Fragment;
 
-        RHIShaderResourceBinding ubo_binding = {};
-        ubo_binding.binding = 0;
-        ubo_binding.count = 1;
-        ubo_binding.type = RHIShaderResourceBindingType::Uniform;
-
-        // -- Graphics Pipeline Shaders --
-        RHIPipelineShaderStageCreateInfo vertex_stage_create_info;
-        vertex_stage_create_info.name = "main";
-        vertex_stage_create_info.shader = &vertex_shader;
-        vertex_stage_create_info.type = RHIShaderStage::Vertex;
-
-        RHIPipelineShaderStageCreateInfo fragment_stage_create_info;
-        fragment_stage_create_info.name = "main";
-        fragment_stage_create_info.shader = &fragment_shader;
-        fragment_stage_create_info.type = RHIShaderStage::Fragment;
-
-        // -- Graphics Pipeline --
-        RHIPipelineDescription pipeline_description;
-        pipeline_description.render_pass = render_pass_;
-        pipeline_description.vertex_shader_info = vertex_stage_create_info;
-        pipeline_description.fragment_shader_info = fragment_stage_create_info;
-        pipeline_description.vertex_binding_info = pipeline_vertex_binding_information;
-        pipeline_description.viewport_info = viewport_info;
-        pipeline_description.bindings = {ubo_binding};
-        graphics_pipeline_ = device_->create_graphics_pipeline(pipeline_description);
-    }
+    // -- Graphics Pipeline --
+    RHIGraphicsPipelineDescription pipeline_description;
+    pipeline_description.render_pass = render_pass_;
+    pipeline_description.vertex_shader_info = vertex_stage_create_info;
+    pipeline_description.fragment_shader_info = fragment_stage_create_info;
+    pipeline_description.vertex_binding_info = pipeline_vertex_binding_information;
+    pipeline_description.viewport_info = viewport_info;
+    pipeline_description.shader_resource_group_layout = shader_resource_group_layout_;
+    graphics_pipeline_ = device_->create_graphics_pipeline(pipeline_description);
 
     // -- Framebuffers --
-    {
-        framebuffers_.reserve(swapchain_->get_texture_views().size());
-        for (RHITextureView* texture : swapchain_->get_texture_views()) {
-            RHIFramebufferDescription description = {};
-            description.height = swapchain_->get_height();
-            description.width = swapchain_->get_width();
-            description.render_pass = render_pass_;
-            description.attachments = {texture};
-            description.layers = 1;
+    framebuffers_.reserve(swapchain_->get_texture_views().size());
+    for (RHITextureView* texture : swapchain_->get_texture_views()) {
+        RHIFramebufferDescription description = {};
+        description.height = swapchain_->get_height();
+        description.width = swapchain_->get_width();
+        description.render_pass = render_pass_;
+        description.attachments = {texture};
+        description.layers = 1;
 
-            RHIFramebuffer* framebuffer = device_->create_framebuffer(description);
-            framebuffers_.append(framebuffer);
-        }
+        RHIFramebuffer* framebuffer = device_->create_framebuffer(description);
+        framebuffers_.append(framebuffer);
     }
 
     // -- Device Buffers --
-    {
-        RHIDeviceMemoryUploader uploader(device_, 3);
-
-        position_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsageFlags::Vertex, positions_));
-        color_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsageFlags::Vertex, colors_));
-        index_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsageFlags::Index, indices_));
-        
-        uploader.upload();
-    }
+    RHIDeviceMemoryUploader uploader(device_, 3);
+    position_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsageFlags::Vertex, ArrayView(positions_)));
+    color_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsageFlags::Vertex, ArrayView(colors_)));
+    index_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsageFlags::Index, ArrayView(indices_)));
+    uploader.upload();
 
     // -- Uniform Buffers --
-    {
-        const uint32 image_count = swapchain_->get_texture_views().size();
+    const uint32 image_count = swapchain_->get_texture_views().size();
+    uniform_buffers_.reserve(image_count);
+    for (uint32 i = 0; i < image_count; i++) {
+        RHIBufferDescription uniform_buffer_description = {};
+        uniform_buffer_description.sharing_mode = RHISharingMode::Private;
+        uniform_buffer_description.usage = RHIBufferUsageFlags::Uniform;
+        uniform_buffer_description.memory_usage = RHIMemoryUsage::Host;
+        uniform_buffer_description.size = sizeof(UniformBufferObject);
 
-        uniform_buffers_.reserve(image_count);
-        for (uint32 i = 0; i < image_count; i++) {
-            RHIBufferDescription uniform_buffer_description = {};
-            uniform_buffer_description.sharing_mode = RHISharingMode::Private;
-            uniform_buffer_description.usage = RHIBufferUsageFlags::Uniform;
-            uniform_buffer_description.memory_usage = RHIMemoryUsage::Host;
-            uniform_buffer_description.size = sizeof(UniformBufferObject);
-
-            RHIBuffer* uniform_buffer = device_->create_buffer(uniform_buffer_description);
-            uniform_buffers_.append(uniform_buffer);
-        }
+        RHIBuffer* uniform_buffer = device_->create_buffer(uniform_buffer_description);
+        uniform_buffers_.append(uniform_buffer);
     }
 
-    // -- Descriptor set layouts --
-    {
-        const uint32 image_count = swapchain_->get_texture_views().size();
-
-        constexpr uint32 binding = 0;
-        constexpr uint32 offset = 0;
-        constexpr uint32 size = sizeof(UniformBufferObject);
-
-        shader_resource_pool_ = device_->create_shader_resource_pool(graphics_pipeline_, image_count);
-
-        for (uint32 i = 0; i < image_count; i++) {
-            RHIShaderResource* descriptor_set = shader_resource_pool_->get_shader_resource(i);
-            descriptor_set->update(uniform_buffers_[i], binding, offset, size);
-        }
+    // -- Shader resource pool --
+    shader_resource_pool_ = device_->create_shader_resource_pool(image_count, {ubo_binding});
+    for (uint32 i = 0; i < image_count; i++) {
+        RHIShaderResourceGroup* shader_resource_group = shader_resource_pool_->allocate_group(shader_resource_group_layout_);
+        shader_resource_group->set_buffer(uniform_buffers_[i], 0, 0, sizeof(UniformBufferObject));
     }
 
     // -- Command Allocators
-    {
-        RHICommandAllocatorDescription graphics_command_allocator_desc = {};
-        graphics_command_allocator_desc.count = frame_context_.frame_count;
-        graphics_command_allocator_desc.command_queue = graphics_command_queue_;
+    RHICommandAllocatorDescription graphics_command_allocator_desc = {};
+    graphics_command_allocator_desc.count = frame_context_.frame_count;
+    graphics_command_allocator_desc.command_queue = graphics_command_queue_;
 
-        graphics_command_allocator_ = device_->create_command_allocator(graphics_command_allocator_desc);
-    }
+    graphics_command_allocator_ = device_->create_command_allocator(graphics_command_allocator_desc);
 
     // -- Frame Context Sync --
-    {
-        frame_context_.frame_available_semaphores.reserve(frame_context_.frame_count);
-        frame_context_.render_finished_semaphores.reserve(frame_context_.frame_count);
-        frame_context_.in_flight_fences.reserve(frame_context_.frame_count);
-        frame_context_.frame_in_flight_fences.reserve(swapchain_->get_texture_views().size());
+    frame_context_.frame_available_semaphores.reserve(frame_context_.frame_count);
+    frame_context_.render_finished_semaphores.reserve(frame_context_.frame_count);
+    frame_context_.in_flight_fences.reserve(frame_context_.frame_count);
+    frame_context_.frame_in_flight_fences.reserve(swapchain_->get_texture_views().size());
 
-        for (uint32 i = 0; i < frame_context_.frame_count; i++) {
-            frame_context_.frame_available_semaphores.append(device_->create_semaphore());
-            frame_context_.render_finished_semaphores.append(device_->create_semaphore());
-            frame_context_.in_flight_fences.append(device_->create_fence());
-        }
+    for (uint32 i = 0; i < frame_context_.frame_count; i++) {
+        frame_context_.frame_available_semaphores.append(device_->create_semaphore());
+        frame_context_.render_finished_semaphores.append(device_->create_semaphore());
+        frame_context_.in_flight_fences.append(device_->create_fence());
+    }
 
-        for (uint32 i = 0; i < swapchain_->get_texture_views().size(); i++) {
-            frame_context_.frame_in_flight_fences.append(nullptr);
-        }
+    for (uint32 i = 0; i < swapchain_->get_texture_views().size(); i++) {
+        frame_context_.frame_in_flight_fences.append(nullptr);
     }
 }
 
@@ -305,7 +273,7 @@ void RenderFrameScript::on_tick(float32 delta_time) {
         return;
     }
     LCHECK(frame_context_.success);
-    
+
     update_uniform();
 
     RHICommandBuffer* graphics_command_buffer = graphics_command_allocator_->open(frame_context_.current_frame);
@@ -326,7 +294,7 @@ void RenderFrameScript::on_tick(float32 delta_time) {
         render_pass_begin_info.render_pass = render_pass_;
         render_pass_begin_info.framebuffer = framebuffers_[frame_context_.frame_index];
         render_pass_begin_info.area = render_pass_area;
-        
+
         graphics_command_buffer->begin_render_pass(render_pass_begin_info);
         {
             graphics_command_buffer->bind_pipeline(graphics_pipeline_);
@@ -352,8 +320,8 @@ void RenderFrameScript::on_tick(float32 delta_time) {
             graphics_command_buffer->bind_vertex_buffers({position_buffer_, color_buffer_});
             graphics_command_buffer->bind_index_buffer(index_buffer_);
 
-            RHIShaderResource* descriptor_set = shader_resource_pool_->get_shader_resource(frame_context_.current_frame);
-            graphics_command_buffer->bind_descriptor_sets(graphics_pipeline_, {descriptor_set});
+            RHIShaderResourceGroup* shader_resource_group = shader_resource_pool_->get_group(frame_context_.current_frame);
+            graphics_command_buffer->bind_descriptor_sets(graphics_pipeline_, {shader_resource_group});
 
             RHIDrawIndexedCommand draw_indexed_command = {};
             draw_indexed_command.index_count = indices_.size();
@@ -364,7 +332,7 @@ void RenderFrameScript::on_tick(float32 delta_time) {
         graphics_command_buffer->end_render_pass();
     }
     graphics_command_buffer->end();
-    
+
     frame_context_.frame_in_flight_fences[frame_context_.frame_index] =
         &frame_context_.in_flight_fences[frame_context_.current_frame];
 
@@ -470,6 +438,7 @@ void RenderFrameScript::on_shutdown() {
         }
         uniform_buffers_.clear();
         device_->destroy_shader_resource_pool(shader_resource_pool_);
+        device_->destroy_shader_resource_layout(shader_resource_group_layout_);
     }
 
     // -- Allocators

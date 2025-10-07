@@ -22,9 +22,9 @@ public:
 
     virtual void end_render_pass() override;
 
-    virtual void bind_pipeline(RHIPipeline* pipeline) override;
+    virtual void bind_pipeline(RHIGraphicsPipeline* pipeline) override;
     
-    virtual void bind_descriptor_sets(RHIPipeline* pipeline, const Array<RHIShaderResource*>& descriptor_sets) override;
+    virtual void bind_descriptor_sets(RHIGraphicsPipeline* pipeline, const Array<RHIShaderResourceGroup*>& descriptor_sets) override;
 
     virtual void bind_vertex_buffers(const Array<RHIBuffer*>& buffers) override;
 

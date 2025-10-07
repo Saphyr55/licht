@@ -280,7 +280,7 @@ public:
         , data_(nullptr)
         , size_(other.size_)
         , capacity_(other.capacity_) {
-        move_data(other.data_);
+        copy_data(other.data_);
     }
 
     constexpr Array(Array&& other) noexcept
@@ -353,7 +353,7 @@ public:
     }
 
 private:
-    void move_data(ElementType* source) {
+    void copy_data(ElementType* source) {
         if (size_ <= 0) {
             return;
         }

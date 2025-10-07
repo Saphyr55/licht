@@ -11,17 +11,17 @@ struct VulkanContext;
 
 class VulkanShaderModule {
 public:
-    void set_code(const Array<uint8>& p_code) { code_ = p_code; }
+    void set_code(const Array<uint8>& bytecode) { code_ = bytecode; }
 
-    void initialize(VulkanContext& p_context);
+    void initialize();
 
-    void destroy(VulkanContext& p_context);
+    void destroy();
 
     VkShaderModule handle();
 
 public:
     VulkanShaderModule() = default;
-    VulkanShaderModule(const Array<uint8>& p_code);
+    VulkanShaderModule(const Array<uint8>& code);
 
 private:
     VkShaderModule handle_ = VK_NULL_HANDLE;

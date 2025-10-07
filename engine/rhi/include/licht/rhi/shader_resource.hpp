@@ -9,28 +9,36 @@ namespace licht {
 struct RHIShaderResourceBinding {
     uint32 binding = 0;
     uint32 count = 1;
-    RHIShaderResourceBindingType type = RHIShaderResourceBindingType::Uniform;
-
-    RHIShaderResourceBinding() = default;
-    RHIShaderResourceBinding(uint32 in_binding, uint32 in_count, RHIShaderResourceBindingType in_type) 
-         : type(in_type)
-         , binding(in_binding)
-         , count(in_count) { }
+    RHIShaderResourceType type = RHIShaderResourceType::Uniform;
+    RHIShaderStage stage = RHIShaderStage::AllGraphics;
 };
 
-class RHIShaderResource {
+class RHIShaderResourceGroupLayout {
 public:
-    virtual void update(RHIBuffer* buffer, size_t binding, size_t offset, size_t range) = 0;
+    virtual ~RHIShaderResourceGroupLayout() = default;
 
-    virtual ~RHIShaderResource() = default;
+    virtual RHIShaderResourceType get_resource_type(size_t binding) const = 0;
+
+protected:
+    RHIShaderResourceGroupLayout() = default;
 };
 
-
-class RHIShaderResourcePool {
+class RHIShaderResourceGroup {
 public:
-    virtual RHIShaderResource* get_shader_resource(uint32 index) = 0;
+    virtual void set_buffer(RHIBuffer* buffer, size_t binding, size_t offset, size_t range) = 0;
 
-    virtual ~RHIShaderResourcePool() = default;
+    virtual ~RHIShaderResourceGroup() = default;
+};
+
+class RHIShaderResourceGroupPool {
+public:
+    virtual RHIShaderResourceGroup* allocate_group(RHIShaderResourceGroupLayout* layout) = 0;
+
+    virtual RHIShaderResourceGroup* get_group(size_t pool_index) = 0;
+
+    virtual void deallocate_group(RHIShaderResourceGroup* group) = 0;
+
+    virtual ~RHIShaderResourceGroupPool() = default;
 };
 
 }

@@ -1,11 +1,15 @@
 #pragma once
 
 #include "licht/core/defines.hpp"
+#include "licht/rhi/buffer.hpp"
+#include "licht/rhi/buffer_view.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/framebuffer.hpp"
 #include "licht/rhi/pipeline.hpp"
 #include "licht/rhi/rhi_fowards.hpp"
+#include "licht/rhi/shader_resource.hpp"
 #include "licht/rhi/texture.hpp"
+#include "licht/rhi/texture_view.hpp"
 #include "licht/rhi/render_pass.hpp"
 
 namespace licht {
@@ -17,8 +21,11 @@ public:
     virtual void wait_fence(RHIFence* fence) = 0;
     virtual void reset_fence(RHIFence* fence) = 0;
 
-    virtual RHIShaderResourcePool* create_shader_resource_pool(RHIPipeline* pipeline, size_t resource_count) = 0;
-    virtual void destroy_shader_resource_pool(RHIShaderResourcePool* descriptor_set_layout) = 0;
+    virtual RHIShaderResourceGroupLayout* create_shader_resource_layout(const Array<RHIShaderResourceBinding>& bindings) = 0;
+    virtual void destroy_shader_resource_layout(RHIShaderResourceGroupLayout* layout) = 0;
+
+    virtual RHIShaderResourceGroupPool* create_shader_resource_pool(size_t max_sets, const Array<RHIShaderResourceBinding>& total_bindings) = 0;
+    virtual void destroy_shader_resource_pool(RHIShaderResourceGroupPool* group_pool) = 0;
 
     virtual RHICommandAllocator* create_command_allocator(const RHICommandAllocatorDescription& description) = 0;
     virtual void destroy_command_allocator(RHICommandAllocator* command_allocator) = 0;
@@ -32,8 +39,8 @@ public:
     virtual RHIRenderPass* create_render_pass(const RHIRenderPassDescription& description) = 0;
     virtual void destroy_render_pass(RHIRenderPass* render_pass) = 0;
 
-    virtual RHIPipeline* create_graphics_pipeline(const RHIPipelineDescription& description) = 0;
-    virtual void destroy_graphics_pipeline(RHIPipeline* pipeline) = 0;
+    virtual RHIGraphicsPipeline* create_graphics_pipeline(const RHIGraphicsPipelineDescription& description) = 0;
+    virtual void destroy_graphics_pipeline(RHIGraphicsPipeline* pipeline) = 0;
 
     virtual RHIBuffer* create_buffer(RHIBufferDescription description) = 0;
     virtual void destroy_buffer(RHIBuffer* buffer) = 0;

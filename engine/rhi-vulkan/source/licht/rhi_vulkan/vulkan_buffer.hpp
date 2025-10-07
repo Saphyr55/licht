@@ -30,18 +30,18 @@ public:
         
     Array<uint32> get_queue_family_indices();
     
-    void initialize();
+    void initialize(const RHIBufferDescription& description, VkBuffer buffer);
+    void initialize(const RHIBufferDescription& description);
 
     void destroy();
 
     VkBuffer get_handle();
 
 public:
-    VulkanBuffer(VulkanContext& context, RHIBufferDescription description);
+    VulkanBuffer() = default;
     ~VulkanBuffer() = default;
 
 private:
-    VulkanContext& context_;
     RHIBufferDescription description_;
     VkDeviceMemory memory_;
     VkBuffer buffer_;

@@ -1,12 +1,12 @@
 #include "licht/rhi_vulkan/vulkan_command_queue.hpp"
 #include "licht/core/containers/array.hpp"
-#include "licht/core/memory/shared_ref_cast.hpp"
 #include "licht/rhi/swapchain.hpp"
-#include "licht/rhi_vulkan/vulkan_sync.hpp"
 #include "licht/rhi_vulkan/vulkan_command_buffer.hpp"
-#include "licht/rhi_vulkan/vulkan_swapchain.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
+#include "licht/rhi_vulkan/vulkan_swapchain.hpp"
+#include "licht/rhi_vulkan/vulkan_sync.hpp"
+
 
 #include <vulkan/vulkan_core.h>
 
@@ -24,10 +24,11 @@ void VulkanCommandQueue::wait_idle() {
     LICHT_VULKAN_CHECK(VulkanAPI::lvkQueueWaitIdle(queue_));
 }
 
-void VulkanCommandQueue::submit(const Array<RHICommandBuffer*>& command_buffers, 
-                                   const Array<RHISemaphore*>& wait_semaphores,
-                                   const Array<RHISemaphore*>& signal_semaphores,
-                                   const RHIFence* fence) {
+void VulkanCommandQueue::submit(const Array<RHICommandBuffer*>& command_buffers,
+                                const Array<RHISemaphore*>& wait_semaphores,
+                                const Array<RHISemaphore*>& signal_semaphores,
+                                const RHIFence* fence) {
+
     VkSubmitInfo submit_info = {};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -110,7 +111,5 @@ void VulkanCommandQueue::present(RHISwapchain* swapchain, RHIFrameContext& frame
         }
     }
 }
-
-
 
 }  //namespace licht

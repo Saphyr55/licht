@@ -37,7 +37,7 @@ void vulkan_instance_initialize(VulkanContext& context) {
                                                      });
 
     for (StringRef ext : available_extension_names) {
-        LLOG_DEBUG("Ext", ext);
+        LLOG_DEBUG("[Vulkan]", ext);
     }
 
     for (StringRef required_extension : desired_extensions) {

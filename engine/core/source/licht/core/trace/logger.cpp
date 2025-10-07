@@ -6,19 +6,17 @@
 namespace licht {
 
 HashMap<LogSeverity, StringRef>& Logger::get_severity_map() {
-
     static HashMap<LogSeverity, StringRef> s_severity_map = {
-        {LogSeverity::Info, "Info"},
-        {LogSeverity::Warn, "Warn"},
-        {LogSeverity::Error, "Error"},
-        {LogSeverity::Fatal, "Fatal"},
-        {LogSeverity::Debug, "Debug"}};
+        {LogSeverity::Info, "I"},
+        {LogSeverity::Warn, "W"},
+        {LogSeverity::Error, "E"},
+        {LogSeverity::Fatal, "F"},
+        {LogSeverity::Debug, "D"}};
 
     return s_severity_map;
 }
 
 Logger& Logger::get_default() {
-    
     static Logger logger = [&]() {
         static ConsoleLogger console_logger;
         static CompositeLogger compiste_logger;
@@ -48,7 +46,6 @@ Logger::Logger(LogFn fn)
 
 ConsoleLogger::ConsoleLogger() {
     console_log_fn_ = [](const LogMessage& log_message) {
-
         const char* severity_str = Logger::get_severity_map()[log_message.severity];
 
         if (!severity_str) {
@@ -56,7 +53,7 @@ ConsoleLogger::ConsoleLogger() {
         }
 
         std::cout << "[" << severity_str << "] "
-                  << "[" << log_message.channel << "]"
+                  << log_message.channel
                   << " " << log_message.message << "\n";
     };
 }

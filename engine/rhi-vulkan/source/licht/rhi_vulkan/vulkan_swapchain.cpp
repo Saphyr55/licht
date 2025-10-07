@@ -6,6 +6,7 @@
 #include "licht/rhi_vulkan/vulkan_sync.hpp"
 #include "licht/rhi_vulkan/vulkan_render_surface.hpp"
 #include "licht/rhi_vulkan/vulkan_texture.hpp"
+#include "licht/rhi_vulkan/vulkan_texture_view.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
 #include "vulkan/vulkan_core.h"
@@ -153,6 +154,7 @@ void VulkanSwapchain::initialize() {
 
     for (uint32 i = 0; i < image_count; i++) {
         VkImage image = images_[i];
+
         VulkanTextureView* texture_view = lnew(DefaultAllocator::get_instance(), VulkanTextureView());
 
         VkImageViewCreateInfo image_view_create_info = {};

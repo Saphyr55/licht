@@ -1,8 +1,8 @@
 #pragma once
 
-#include "licht/core/memory/shared_ref.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi/texture.hpp"
+#include "licht/rhi/texture_view.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -12,15 +12,11 @@ class VulkanTexture : public RHITexture {
 public:
     VkMemoryRequirements get_memory_requirements();
 
-    void initialize();
+    void initialize(const RHITextureDescription& description);
 
     void destroy();
 
     virtual void bind() override;
-
-    virtual const RHITextureDescription& get_description() const override {
-        return description_;
-    }
 
     VkImage& get_handle() {
         return handle_;
@@ -31,48 +27,12 @@ public:
     }
 
 public:
-    VulkanTexture(VulkanContext& context,
-                  const RHITextureDescription& description,
-                  VkImageType type,
-                  const Array<uint32>& queue_family_indices)
-        : context_(context)
-        , description_(description)
-        , type_(type)
-        , queue_family_indices_(queue_family_indices)
-        , handle_(VK_NULL_HANDLE)
-        , memory_(VK_NULL_HANDLE) {
-    }
-
-    ~VulkanTexture() = default;
+    VulkanTexture() = default;
+    virtual ~VulkanTexture() override = default;
 
 private:
-    VulkanContext& context_;
-    RHITextureDescription description_;
-    VkImageType type_;
-    VkDeviceMemory memory_;
     VkImage handle_;
-    Array<uint32> queue_family_indices_;
-};
-
-class VulkanTextureView : public RHITextureView {
-public:
-    VkImageView& get_handle() {
-        return handle_;
-    }
-
-    void initialize();
-
-    void destroy();
-
-public:
-    VulkanTextureView()
-        : handle_(VK_NULL_HANDLE) {
-    }
-
-    ~VulkanTextureView() = default;
-
-private:
-    VkImageView handle_;
+    VkDeviceMemory memory_;
 };
 
 }  //namespace licht

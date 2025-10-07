@@ -12,14 +12,12 @@ template <typename ResourceType>
 class SharedRef {
 public:
     ResourceType& operator*() {
-        LCHECK(resource_)
         return *resource_;
     }
 
     ResourceType* operator->() { return resource_; }
 
     const ResourceType& operator*() const {
-        LCHECK(resource_)
         return *resource_;
     }
 

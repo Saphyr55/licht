@@ -1,71 +1,11 @@
 #pragma once
 
-#include <cstddef>
-#include "licht/core/containers/array.hpp"
-#include "licht/core/defines.hpp"
 #include "licht/rhi/resource.hpp"
 #include "licht/rhi/rhi_exports.hpp"
 #include "licht/rhi/rhi_fowards.hpp"
 #include "licht/rhi/rhi_types.hpp"
-#include "licht/rhi/texture.hpp"
-
 
 namespace licht {
-
-/**
- * @brief Describes a vertex buffer binding for the graphics pipeline.
- *
- * This structure specifies the binding index, stride, and input rate for a vertex buffer.
- */
-struct RHIVertexBindingDescription {
-    /**
-     * @brief The binding index for the vertex buffer.
-     */
-    uint32 binding = 0;
-
-    /**
-     * @brief The stride (in bytes) between elements in the vertex buffer.
-     */
-    uint32 stride = 0;
-
-    /**
-     * @brief The input rate for the vertex data (per-vertex or per-instance).
-     */
-    RHIVertexInputRate input_rate = RHIVertexInputRate::Vertex;
-};
-
-/**
- * @struct RHIVertexAttributeDescription
- * @brief Describes a single vertex attribute for the RHI (Rendering Hardware Interface).
- *
- * This struct specifies the layout of a vertex attribute, including its binding index,
- * shader location, data format, and byte offset within the vertex buffer.
- */
-struct RHIVertexAttributeDescription {
-    /**
-     * @brief The binding index of the vertex buffer.
-     * Specifies which vertex buffer this attribute is sourced from.
-     */
-    uint32 binding = 0;
-
-    /**
-     * @brief The location of the attribute in the shader.
-     * Corresponds to the input location in the vertex shader.
-     */
-    uint32 location = 0;
-
-    /**
-     * @brief The data format of the attribute.
-     * Specifies how the attribute data is interpreted (e.g., float, int).
-     */
-    RHIFormat format = RHIFormat::R32Float;
-
-    /**
-     * @brief The byte offset of the attribute within the vertex buffer.
-     * Indicates where the attribute data begins in the buffer.
-     */
-    uint32 offset = 0;
-};
 
 /**
  * @struct RHIBufferDescription
@@ -152,60 +92,6 @@ public:
      * @brief Virtual destructor.
      */
     virtual ~RHIBuffer() = default;
-};
-
-struct LICHT_RHI_API RHIStagingBufferContext {
-    RHIBufferUsageFlags usage;
-    size_t size;       // Size in bytes;
-    const void* data;  // Data to transfer to the device.
-
-    RHIStagingBufferContext(RHIBufferUsageFlags in_usage, size_t in_size, void* in_data)
-        : usage(in_usage)
-        , size(in_size)
-        , data(in_data) {}
-
-    template <typename T>
-    RHIStagingBufferContext(RHIBufferUsageFlags usage, const Array<T>& data)
-        : usage(usage)
-        , size(data.size() * sizeof(T))
-        , data(data.data()) {
-    }
-
-    ~RHIStagingBufferContext() = default;
-};
-
-class LICHT_RHI_API RHIDeviceMemoryUploader {
-public:
-    RHIBuffer* send_buffer(const RHIStagingBufferContext& context);
-
-    RHITexture* send_texture(const RHIStagingBufferContext& context, RHITextureDescription& description);
-
-    void upload();
-
-    RHIDeviceMemoryUploader(RHIDeviceRef device, size_t capacity = 8)
-        : device_(device)
-        , buffer_entries_(capacity) {}
-
-private:
-    RHIBufferDescription create_staging_buffer_description(const RHIStagingBufferContext& context);
-    RHIBufferDescription create_buffer_description(const RHIStagingBufferContext& context);
-
-private:
-    struct BufferEntry {
-        RHIBuffer* staging;
-        RHIBuffer* buffer;
-        size_t size;
-    };
-
-    struct TextureEntry {
-        RHIBuffer* staging;
-        RHITexture* texture;
-        size_t size;
-    };
-
-    RHIDeviceRef device_;
-    Array<BufferEntry> buffer_entries_;
-    Array<TextureEntry> texture_entries_;
 };
 
 }  //namespace licht

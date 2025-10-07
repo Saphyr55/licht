@@ -14,7 +14,7 @@
 #include "licht/rhi_vulkan/vulkan_description_set.hpp"
 #include "licht/rhi_vulkan/vulkan_framebuffer.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
-#include "licht/rhi_vulkan/vulkan_pipeline.hpp"
+#include "licht/rhi_vulkan/vulkan_graphics_pipeline.hpp"
 #include "licht/rhi_vulkan/vulkan_render_pass.hpp"
 #include "licht/rhi_vulkan/vulkan_texture.hpp"
 
@@ -50,19 +50,19 @@ void VulkanCommandBuffer::end() {
     LICHT_VULKAN_CHECK(VulkanAPI::lvkEndCommandBuffer(command_buffer_));
 }
 
-void VulkanCommandBuffer::bind_pipeline(RHIPipeline* pipeline) {
-    VulkanPipeline* vulkan_graphics_pipeline = static_cast<VulkanPipeline*>(pipeline);
+void VulkanCommandBuffer::bind_pipeline(RHIGraphicsPipeline* pipeline) {
+    VulkanGraphicsPipeline* vulkan_graphics_pipeline = static_cast<VulkanGraphicsPipeline*>(pipeline);
     VulkanAPI::lvkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, vulkan_graphics_pipeline->get_handle());
 }
 
-void VulkanCommandBuffer::bind_descriptor_sets(RHIPipeline* pipeline, const Array<RHIShaderResource*>& descriptor_sets) {
-    static constexpr auto mapping_desc_set = [](RHIShaderResource*& descriptor_set) -> VkDescriptorSet {
-        VulkanDescriptorSet* vk_descriptor_set = static_cast<VulkanDescriptorSet*>(descriptor_set);
+void VulkanCommandBuffer::bind_descriptor_sets(RHIGraphicsPipeline* pipeline, const Array<RHIShaderResourceGroup*>& descriptor_sets) {
+    static constexpr auto mapping_desc_set = [](RHIShaderResourceGroup*& descriptor_set) -> VkDescriptorSet {
+        VulkanShaderResourceGroup* vk_descriptor_set = static_cast<VulkanShaderResourceGroup*>(descriptor_set);
         return vk_descriptor_set->get_handle();
     };
 
     Array<VkDescriptorSet> vk_descriptor_sets = descriptor_sets.map<VkDescriptorSet>(mapping_desc_set);
-    VulkanPipeline* vk_pipeline = static_cast<VulkanPipeline*>(pipeline);
+    VulkanGraphicsPipeline* vk_pipeline = static_cast<VulkanGraphicsPipeline*>(pipeline);
 
     VulkanAPI::lvkCmdBindDescriptorSets(command_buffer_, VK_PIPELINE_BIND_POINT_GRAPHICS,
                                         vk_pipeline->get_layout(), 0, vk_descriptor_sets.size(), vk_descriptor_sets.data(), 0, nullptr);
@@ -122,10 +122,10 @@ void VulkanCommandBuffer::transition_texture(const RHITextureBarrier& texture_ba
     image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     image_barrier.image = texture->get_handle();
     image_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    image_barrier.subresourceRange.baseMipLevel = texture->get_description().mipmap_levels;
+    image_barrier.subresourceRange.baseMipLevel = texture->get_description().mip_levels;
     image_barrier.subresourceRange.levelCount = 1;
-    image_barrier.subresourceRange.baseArrayLayer = 0;
-    image_barrier.subresourceRange.layerCount = texture->get_description().layers_count;
+    image_barrier.subresourceRange.baseArrayLayer = texture->get_description().array_layers;
+    image_barrier.subresourceRange.layerCount = 1;
     image_barrier.srcAccessMask = 0;  // TODO
     image_barrier.dstAccessMask = 0;  // TODO
 
