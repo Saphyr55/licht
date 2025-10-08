@@ -63,7 +63,7 @@ struct RHIVertexAttributeDescription {
 };
 
 struct RHIGraphicsPipelineShaderStageCreateInfo {
-    StringRef name = "";
+    StringRef name = "main";
     RHIShaderStage type = RHIShaderStage::AllGraphics;
     SPIRVShader shader;
 };

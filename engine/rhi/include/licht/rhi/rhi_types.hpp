@@ -187,6 +187,31 @@ enum class RHIFormat {
     ASTC_8x8,
 };
 
+inline bool rhi_format_is_depth(RHIFormat format) {
+    switch (format) {
+        case RHIFormat::D16:
+        case RHIFormat::D24:
+        case RHIFormat::D32:
+        case RHIFormat::D24S8:
+        case RHIFormat::D32S8:
+            return true;
+            
+        default:
+            return false;
+    }
+}
+
+inline bool rhi_format_is_depth_stencil(RHIFormat format) {
+    switch (format) {
+        case RHIFormat::D24S8:
+        case RHIFormat::D32S8:
+            return true;
+            
+        default:
+            return false;
+    }
+}
+
 inline bool rhi_command_buffer_usage_has_flag(RHICommandBufferUsageFlags value, RHICommandBufferUsageFlags flag) {
     return (value & flag) == flag;
 }

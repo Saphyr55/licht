@@ -183,7 +183,7 @@ void VulkanSwapchain::initialize() {
 void VulkanSwapchain::destroy() {
     for (RHITextureView* texture_view : texture_views_) {
         VulkanTextureView* vk_texture_view = static_cast<VulkanTextureView*>(texture_view);
-        VulkanAPI::lvkDestroyImageView(context_.device, vk_texture_view->get_handle(), context_.allocator);
+        vk_texture_view->destroy();
     }
 
     texture_views_.clear();

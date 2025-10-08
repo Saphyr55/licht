@@ -61,7 +61,7 @@ public:
     }
 
     inline ElementType* data() {
-        return data_;
+        return const_cast<ElementType*>(data_);
     }
 
     bool contains(const ElementType& element) const {
@@ -93,7 +93,7 @@ public:
 
 public:
     iterator begin() {
-        return data_;
+        return const_cast<iterator>(data_);
     }
 
     const_iterator begin() const {
@@ -105,7 +105,7 @@ public:
     }
 
     iterator end() {
-        return data_ + size_;
+        return const_cast<iterator>(data_) + size_;
     }
 
     const_iterator end() const {
@@ -121,7 +121,7 @@ public:
         : data_(data), size_(size) {}
 
     template <CTypedAllocator<ElementType> AllocatorType = TypedDefaultAllocator<ElementType>>
-    ArrayView(Array<ElementType, AllocatorType>& array)
+    ArrayView(const Array<ElementType, AllocatorType>& array)
         : data_(array.data()), size_(array.size()) {}
 
     template <size_type Capacity>
@@ -129,7 +129,7 @@ public:
         : data_(array.data()), size_(array.size()) {}
 
 private:
-    ElementType* data_;
+    const ElementType* data_;
     size_type size_;
 };
 

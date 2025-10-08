@@ -140,8 +140,8 @@ public:
 };
 
 struct RHICommandAllocatorDescription {
-    SharedRef<RHICommandQueue> command_queue;
-    uint32 count = 0;
+    RHICommandQueueRef command_queue;
+    uint32 count = 1;
 };
 
 /**

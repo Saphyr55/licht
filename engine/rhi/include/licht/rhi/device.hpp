@@ -1,9 +1,7 @@
 #pragma once
 
 #include "licht/core/defines.hpp"
-#include "licht/core/containers/array_view.hpp"
 #include "licht/rhi/buffer.hpp"
-#include "licht/rhi/buffer_view.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/framebuffer.hpp"
 #include "licht/rhi/pipeline.hpp"

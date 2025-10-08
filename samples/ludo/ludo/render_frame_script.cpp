@@ -1,7 +1,6 @@
 #include "render_frame_script.hpp"
 
 #include "image.hpp"
-#include "ludo_types.hpp"
 #include "camera.hpp"
 
 #include "licht/core/containers/array_view.hpp"
@@ -16,6 +15,7 @@
 #include "licht/core/platform/display.hpp"
 #include "licht/core/platform/window_handle.hpp"
 #include "licht/core/trace/trace.hpp"
+#include "licht/engine/project_settings.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/command_queue.hpp"
 #include "licht/rhi/device_memory_uploader.hpp"
@@ -23,7 +23,9 @@
 #include "licht/rhi/sampler.hpp"
 #include "licht/rhi/shader_resource.hpp"
 #include "licht/rhi/rhi_module.hpp"
-#include "licht/engine/project_settings.hpp"
+#include "licht/rhi/rhi_types.hpp"
+#include "licht/rhi/texture.hpp"
+#include "licht/rhi/texture_view.hpp"
 
 #include <chrono>
 
@@ -64,23 +66,6 @@ void RenderFrameScript::on_startup() {
         "[RHIModule]",
         "Failed to retrieve a valid window handle. Ensure a window is created before initializing the RHI Module.");
 
-    // Vertices data.
-    positions_ = {
-        Vector3f(-0.5f, -0.5f, 0.0f),  // Top Left
-        Vector3f(0.5f, -0.5f, 0.0f),   // Top Right
-        Vector3f(0.5f, 0.5f, 0.0f),    // Bottom Right
-        Vector3f(-0.5f, 0.5f, 0.0f),   // Bottom Left
-    };
-
-    uvs_ = {
-        Vector2f(1.0f, 0.0f),
-        Vector2f(0.0f, 0.0f),
-        Vector2f(0.0f, 1.0f),
-        Vector2f(1.0f, 1.0f),
-    };
-
-    indices_ = {0, 1, 2, 2, 3, 0};
-
     // Swapchain.
     WindowStatues window_statues = Display::get_default().query_window_statues(window_handle_);
     frame_context_.frame_height = static_cast<uint32>(window_statues.height);
@@ -102,12 +87,20 @@ void RenderFrameScript::on_startup() {
     LCHECK_MSG(graphics_present_command_queue_ptr, "Found no graphics command queue that support the present mode.");
     graphics_present_command_queue_ = *graphics_present_command_queue_ptr;
 
+    // -- Command Allocators
+    RHICommandAllocatorDescription graphics_command_allocator_desc = {};
+    graphics_command_allocator_desc.count = frame_context_.frame_count;
+    graphics_command_allocator_desc.command_queue = graphics_command_queue_;
+
+    graphics_command_allocator_ = device_->create_command_allocator(graphics_command_allocator_desc);
+
     // Render Pass.
-    RHIAttachmentDescription render_pass_color_attachment = {};
+    RHIColorAttachmentDescription render_pass_color_attachment = {};
     render_pass_color_attachment.format = swapchain_->get_format();
 
     RHIRenderPassDescription render_pass_description = {};
     render_pass_description.attachment_decriptions = {render_pass_color_attachment};
+    render_pass_description.deph_attachement_description;
 
     render_pass_ = device_->create_render_pass(render_pass_description);
 
@@ -212,6 +205,18 @@ void RenderFrameScript::on_startup() {
     pipeline_description.shader_resource_group_layout = shader_resource_group_layout_;
     graphics_pipeline_ = device_->create_graphics_pipeline(pipeline_description);
 
+    RHITextureDescription depth_texture_desc = {};
+    depth_texture_desc.format = RHIFormat::D24S8;
+    depth_texture_desc.usage = RHITextureUsageFlags::DepthStencilAttachment;
+    depth_texture_desc.width = width;
+    depth_texture_desc.height = height;
+    depth_texture_ = device_->create_texture(depth_texture_desc); 
+
+    RHITextureViewDescription depth_texture_view_desc = {};
+    depth_texture_view_desc.texture = depth_texture_;
+    depth_texture_view_desc.format = depth_texture_->get_description().format;
+    depth_texture_view_ = device_->create_texture_view(depth_texture_view_desc); 
+   
     // -- Framebuffers --
     framebuffers_.reserve(swapchain_->get_texture_views().size());
     for (RHITextureView* texture : swapchain_->get_texture_views()) {
@@ -219,7 +224,7 @@ void RenderFrameScript::on_startup() {
         description.height = height;
         description.width = width;
         description.render_pass = render_pass_;
-        description.attachments = {texture};
+        description.attachments = {texture, depth_texture_view_};
         description.layers = 1;
 
         RHIFramebuffer* framebuffer = device_->create_framebuffer(description);
@@ -244,9 +249,9 @@ void RenderFrameScript::on_startup() {
     RHIDeviceMemoryUploader uploader(device_);
 
     // Vertex
-    position_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsageFlags::Vertex, ArrayView(positions_)));
-    uv_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsageFlags::Vertex, ArrayView(uvs_)));
-    index_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsageFlags::Index, ArrayView(indices_)));
+    position_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsageFlags::Vertex, ArrayView(cube_mesh_.positions)));
+    uv_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsageFlags::Vertex, ArrayView(cube_mesh_.UVs)));
+    index_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsageFlags::Index, ArrayView(cube_mesh_.indices)));
     
     // Texture
     orange_texture_ = uploader.send_texture(RHIStagingBufferContext(
@@ -307,13 +312,6 @@ void RenderFrameScript::on_startup() {
 
         shader_resource_group->compile();
     }
-
-    // -- Command Allocators
-    RHICommandAllocatorDescription graphics_command_allocator_desc = {};
-    graphics_command_allocator_desc.count = frame_context_.frame_count;
-    graphics_command_allocator_desc.command_queue = graphics_command_queue_;
-
-    graphics_command_allocator_ = device_->create_command_allocator(graphics_command_allocator_desc);
 
     // -- Frame Context Sync --
     frame_context_.frame_available_semaphores.reserve(frame_context_.frame_count);
@@ -395,7 +393,7 @@ void RenderFrameScript::on_tick(float32 delta_time) {
             graphics_command_buffer->bind_shader_resource_group(graphics_pipeline_, {shader_resource_group});
 
             RHIDrawIndexedCommand draw_indexed_command = {};
-            draw_indexed_command.index_count = indices_.size();
+            draw_indexed_command.index_count = cube_mesh_.indices.size();
             draw_indexed_command.instance_count = 1;
 
             graphics_command_buffer->draw(draw_indexed_command);
@@ -440,11 +438,12 @@ void RenderFrameScript::update_uniform() {
     UniformBufferObject ubo;
 
     Quaternion rotation = Quaternion::from_axis_angle(Vector3f::forward(), time * Math::radians(90.0f));
+    rotation = rotation * Quaternion::from_axis_angle(Vector3f(0.0f, 1.0f, 0.0f), time * Math::radians(90.0f));
     ubo.model = Quaternion::rotation_matrix(rotation);
 
     ubo.view = camera_->view;
 
-    ubo.proj = Matrix4f::perspective(Math::radians(75.0f), aspect_ratio, 0.0f, 10000.0f);
+    ubo.proj = Matrix4f::perspective(Math::radians(75.0f), aspect_ratio, 0.00001f, 10000.0f);
 
     ubo.proj[1][1] *= -1.0f;
 
@@ -454,24 +453,38 @@ void RenderFrameScript::update_uniform() {
 void RenderFrameScript::reset() {
     device_->wait_idle();
 
+    device_->destroy_texture_view(depth_texture_view_);
+    device_->destroy_texture(depth_texture_);
+
+    RHITextureDescription depth_texture_desc = {};
+    depth_texture_desc.format = RHIFormat::D24S8;
+    depth_texture_desc.usage = RHITextureUsageFlags::DepthStencilAttachment;
+    depth_texture_desc.width = frame_context_.frame_width;
+    depth_texture_desc.height = frame_context_.frame_height;
+    depth_texture_ = device_->create_texture(depth_texture_desc);
+
+    RHITextureViewDescription depth_texture_view_desc = {};
+    depth_texture_view_desc.texture = depth_texture_;
+    depth_texture_view_desc.format = depth_texture_->get_description().format;
+    depth_texture_view_ = device_->create_texture_view(depth_texture_view_desc); 
+
     // Destroy all existing framebuffers
     for (RHIFramebuffer* framebuffer : framebuffers_) {
         device_->destroy_framebuffer(framebuffer);
     }
     framebuffers_.clear();
-    framebuffer_memory_allocator_.reset();
 
     // Recreate swapchain
     device_->recreate_swapchain(swapchain_, frame_context_.frame_width, frame_context_.frame_height);
-
+    
     // Create new framebuffers
     framebuffers_.reserve(swapchain_->get_texture_views().size());
-    for (RHITextureView* texture : swapchain_->get_texture_views()) {
+    for (RHITextureView* texture_view : swapchain_->get_texture_views()) {
         RHIFramebufferDescription description = {};
         description.height = swapchain_->get_height();
         description.width = swapchain_->get_width();
         description.render_pass = render_pass_;
-        description.attachments = {texture};
+        description.attachments = {texture_view, depth_texture_view_};
         description.layers = 1;
 
         RHIFramebuffer* framebuffer = device_->create_framebuffer(description);
@@ -512,6 +525,9 @@ void RenderFrameScript::on_shutdown() {
 
     device_->destroy_texture_view(orange_texture_view_);    
     device_->destroy_texture(orange_texture_);
+
+    device_->destroy_texture_view(depth_texture_view_);
+    device_->destroy_texture(depth_texture_);
 
     device_->destroy_buffer(position_buffer_);
     device_->destroy_buffer(uv_buffer_);

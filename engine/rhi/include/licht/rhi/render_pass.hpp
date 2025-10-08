@@ -1,23 +1,30 @@
 #pragma once
 
 #include "licht/core/containers/array.hpp"
-#include "licht/core/memory/shared_ref.hpp"
+#include "licht/core/containers/option.hpp"
 #include "licht/rhi/rhi_types.hpp"
 
 namespace licht {
 
-struct RHIAttachmentDescription {
+struct RHIColorAttachmentDescription {
+    RHIFormat format;
+};
+
+struct RHIDepthAttachementDescription {
     RHIFormat format;
 };
 
 struct RHIRenderPassDescription {
-    Array<RHIAttachmentDescription> attachment_decriptions;
+    Array<RHIColorAttachmentDescription> attachment_decriptions;
+    Option<RHIDepthAttachementDescription> deph_attachement_description = Option<RHIDepthAttachementDescription>::some(
+        RHIDepthAttachementDescription(RHIFormat::D24S8));
 };
 
 class RHIRenderPass {
 public:
+    virtual const RHIRenderPassDescription& get_description() const = 0;
+
     virtual ~RHIRenderPass() = default;
 };
 
-
-}
+}  //namespace licht

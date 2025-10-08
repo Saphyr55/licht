@@ -16,6 +16,8 @@ struct RHIFramebufferDescription {
 
 class RHIFramebuffer {
 public:
+    virtual const RHIFramebufferDescription& get_description() const = 0;
+
     virtual ~RHIFramebuffer() = default;
 };
 

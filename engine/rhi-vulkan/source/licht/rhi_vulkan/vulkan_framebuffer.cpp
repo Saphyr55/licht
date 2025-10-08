@@ -49,7 +49,11 @@ void VulkanFramebuffer::initialize() {
     framebuffer_create_info.height = description_.height;
     framebuffer_create_info.layers = description_.layers;
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateFramebuffer(context_.device, &framebuffer_create_info, context_.allocator, &handle_));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateFramebuffer(
+        context_.device, 
+        &framebuffer_create_info, 
+        context_.allocator, 
+        &handle_));
 }
 
 void VulkanFramebuffer::destroy() {

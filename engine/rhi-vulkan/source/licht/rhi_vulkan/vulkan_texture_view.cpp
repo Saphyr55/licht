@@ -39,13 +39,17 @@ void VulkanTextureView::initialize(const RHITextureViewDescription& description)
     image_view_create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
     image_view_create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
     image_view_create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-    image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    image_view_create_info.subresourceRange.aspectMask = vulkan_format_to_image_aspect(description_.format);
     image_view_create_info.subresourceRange.baseMipLevel = description_.mip_level;
     image_view_create_info.subresourceRange.levelCount = description_.mip_level_count;
     image_view_create_info.subresourceRange.baseArrayLayer = description_.array_layer;
     image_view_create_info.subresourceRange.layerCount = description_.array_layer_count;
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateImageView(context.device, &image_view_create_info, context.allocator, &handle_));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateImageView(
+        context.device,
+        &image_view_create_info,
+        context.allocator,
+        &handle_));
 }
 
 void VulkanTextureView::destroy() {
@@ -53,4 +57,4 @@ void VulkanTextureView::destroy() {
     VulkanAPI::lvkDestroyImageView(context.device, handle_, context.allocator);
 }
 
-}
+}  //namespace licht

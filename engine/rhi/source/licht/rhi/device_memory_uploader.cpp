@@ -59,7 +59,7 @@ void RHIDeviceMemoryUploader::upload() {
     // Fetch transfer queue.
     const Array<RHICommandQueueRef>& command_queues = device_->get_command_queues();
     RHICommandQueueRef* transfer_queue_ptr = command_queues.get_if([](RHICommandQueueRef queue) {
-        return queue->get_type() == RHIQueueType::Transfer;
+        return queue->is_transfer_type();
     });
 
     LCHECK_MSG(transfer_queue_ptr, "Found no transfer command queue.");
@@ -69,11 +69,11 @@ void RHIDeviceMemoryUploader::upload() {
     transfer_command_allocator_desc.count = 1; // One command buffer allocated.
     transfer_command_allocator_desc.command_queue = transfer_queue;
 
-    RHICommandAllocator* transfer_command_allocator_ = device_->create_command_allocator(transfer_command_allocator_desc);
+    RHICommandAllocator* transfer_command_allocator = device_->create_command_allocator(transfer_command_allocator_desc);
 
     // Open a transfer command buffer
-    RHICommandBuffer* transfer_cmd = transfer_command_allocator_->open();
-    transfer_command_allocator_->reset_command_buffer(transfer_cmd);
+    RHICommandBuffer* transfer_cmd = transfer_command_allocator->open();
+    transfer_command_allocator->reset_command_buffer(transfer_cmd);
 
     transfer_cmd->begin();
     {
@@ -126,7 +126,7 @@ void RHIDeviceMemoryUploader::upload() {
         device_->destroy_buffer(entry.staging);
     }
 
-    device_->destroy_command_allocator(transfer_command_allocator_);
+    device_->destroy_command_allocator(transfer_command_allocator);
 }
 
 }  //namespace licht

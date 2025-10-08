@@ -176,6 +176,18 @@ void VulkanGraphicsPipeline::initialize(const RHIGraphicsPipelineDescription& de
 
     VulkanRenderPass* render_pass = static_cast<VulkanRenderPass*>(description_.render_pass);
 
+    VkPipelineDepthStencilStateCreateInfo depth_stencil = {};
+    depth_stencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depth_stencil.depthTestEnable = VK_TRUE;
+    depth_stencil.depthWriteEnable = VK_TRUE;
+    depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS;
+    depth_stencil.depthBoundsTestEnable = VK_FALSE;
+    depth_stencil.minDepthBounds = 0.0f;
+    depth_stencil.maxDepthBounds = 1.0f;
+    depth_stencil.stencilTestEnable = VK_FALSE;
+    depth_stencil.front = {};
+    depth_stencil.back = {}; 
+
     VkGraphicsPipelineCreateInfo graphics_pipeline_create_info = {};
     graphics_pipeline_create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     graphics_pipeline_create_info.stageCount = 2;  // TODO: Configurable
@@ -185,7 +197,7 @@ void VulkanGraphicsPipeline::initialize(const RHIGraphicsPipelineDescription& de
     graphics_pipeline_create_info.pViewportState = &pipeline_viewport_state_create_info;
     graphics_pipeline_create_info.pRasterizationState = &pipeline_rasterizer_state_create_info;
     graphics_pipeline_create_info.pMultisampleState = &pipeline_multisampling_state_create_info;
-    graphics_pipeline_create_info.pDepthStencilState = nullptr;  // TODO: Configurable
+    graphics_pipeline_create_info.pDepthStencilState = &depth_stencil;
     graphics_pipeline_create_info.pColorBlendState = &pipeline_color_blend_state_create_info;
     graphics_pipeline_create_info.pDynamicState = &pipeline_dymanic_state_create_info;
     graphics_pipeline_create_info.layout = pipeline_layout_;

@@ -41,4 +41,6 @@ protected:
     RHITextureDescription description_;
 };
 
+LICHT_RHI_API void rhi_transition_texture(RHIDeviceRef device, const RHITextureBarrier& barrier);
+
 }  //namespace licht

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "licht/core/memory/shared_ref.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/fence.hpp"
 #include "licht/rhi/semaphore.hpp"
@@ -10,7 +9,7 @@
 namespace licht {
 
 /**
- * @brief Abstract interface for a GPU command queue.
+ * @brief Interface for a GPU command queue.
  *
  * A command queue is responsible for submitting command buffers to the GPU,
  * synchronizing via fences/semaphores, and presenting images to a swapchain.

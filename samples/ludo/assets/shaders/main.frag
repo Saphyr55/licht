@@ -11,5 +11,9 @@ layout(location = 0) out vec4 out_frag_color;
 layout(binding = 1) uniform sampler2D orange_texture;
 
 void main() {
+    float depth_value = gl_FragCoord.z;
+
     out_frag_color = texture(orange_texture, in_texture_uv);
+    // out_frag_color = vec4(depth_value, depth_value, depth_value, 1.0);
+    // out_frag_color = vec4(1.0, 0.5, 0.0, 1.0);
 }

@@ -334,6 +334,22 @@ inline VkSamplerAddressMode vulkan_address_mode_get(RHISamplerAddressMode mode) 
     return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 }
 
+inline VkImageAspectFlags vulkan_format_to_image_aspect(RHIFormat format) {
+    switch (format) {
+        case RHIFormat::D16:
+        case RHIFormat::D24:
+        case RHIFormat::D32:
+            return VK_IMAGE_ASPECT_DEPTH_BIT;
+        case RHIFormat::D24S8:
+        case RHIFormat::D32S8:
+            return (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+        case RHIFormat::Undefined:
+            return VK_IMAGE_ASPECT_NONE; 
+        default:
+            return VK_IMAGE_ASPECT_COLOR_BIT;
+    }
+}
+
 inline VkQueueFlags vulkan_queue_type_get(RHIQueueType type) {
     VkQueueFlags flags = 0;
 

@@ -10,6 +10,10 @@ namespace licht {
 
 class VulkanFramebuffer : public RHIFramebuffer {
 public:
+    inline virtual const RHIFramebufferDescription& get_description() const override {
+        return description_;
+    }
+
     VkFramebuffer& get_handle();
 
     const VkFramebuffer& get_handle() const;

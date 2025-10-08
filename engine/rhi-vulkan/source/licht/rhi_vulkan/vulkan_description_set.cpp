@@ -240,7 +240,7 @@ void VulkanShaderResourceGroupPool::initialize(size_t max_groups, const Array<RH
     descriptor_pool_create_info.poolSizeCount = pool_sizes.size();
     descriptor_pool_create_info.pPoolSizes = pool_sizes.data();
     descriptor_pool_create_info.maxSets = static_cast<uint32>(max_groups);
-    descriptor_pool_create_info.flags = 0;
+    descriptor_pool_create_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
     LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateDescriptorPool(
         context.device,

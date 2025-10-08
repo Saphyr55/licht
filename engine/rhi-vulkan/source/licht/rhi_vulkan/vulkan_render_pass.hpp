@@ -9,6 +9,10 @@ namespace licht {
 
 class VulkanRenderPass : public RHIRenderPass {
 public:
+    inline virtual const RHIRenderPassDescription& get_description() const override {
+        return description_;
+    }
+
     VkRenderPass& get_handle() {
         return render_pass_;
     }
@@ -24,7 +28,8 @@ public:
 public:
     VulkanRenderPass(VulkanContext& context, const RHIRenderPassDescription& description)
         : context_(context)
-        , description_(description) {
+        , description_(description)
+        , render_pass_(VK_NULL_HANDLE) {
     }
 
 private:

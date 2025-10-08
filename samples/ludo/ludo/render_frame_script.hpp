@@ -5,6 +5,8 @@
 #include "licht/core/platform/window_handle.hpp"
 #include "licht/rhi/shader_resource.hpp"
 #include "licht/rhi/swapchain.hpp"
+#include "licht/rhi/texture.hpp"
+#include "ludo_types.hpp"
 
 namespace licht {
 
@@ -41,13 +43,9 @@ private:
     RHITextureView* orange_texture_view_;
 
     RHIBuffer* position_buffer_;
-    Array<Vector3f> positions_;
-
     RHIBuffer* uv_buffer_;
-    Array<Vector2f> uvs_; 
-        
     RHIBuffer* index_buffer_;
-    Array<uint32> indices_;
+    CubeMesh cube_mesh_{};
 
     Array<RHIBuffer*> uniform_buffers_;
 
@@ -66,6 +64,8 @@ private:
 
     LinearAllocator framebuffer_memory_allocator_;
     Array<RHIFramebuffer*> framebuffers_;
+    RHITextureView* depth_texture_view_ ;
+    RHITexture* depth_texture_;
 
     RHICommandAllocator* graphics_command_allocator_;
     RHIFrameContext frame_context_;

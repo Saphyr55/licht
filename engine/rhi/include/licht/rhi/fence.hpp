@@ -1,7 +1,5 @@
 #pragma once
 
-#include "licht/core/memory/shared_ref.hpp"
-
 namespace licht {
 
 class RHIFence {
