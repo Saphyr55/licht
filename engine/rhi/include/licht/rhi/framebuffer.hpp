@@ -2,7 +2,7 @@
 
 #include "licht/core/containers/array.hpp"
 #include "licht/core/defines.hpp"
-#include "licht/rhi/rhi_fowards.hpp"
+#include "licht/rhi/rhi_forwards.hpp"
 
 namespace licht {
 

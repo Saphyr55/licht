@@ -2,10 +2,12 @@
 
 #include "licht/core/containers/array.hpp"
 #include "licht/core/defines.hpp"
+#include "licht/core/math/vector4.hpp"
 #include "licht/core/memory/shared_ref.hpp"
+#include "licht/rhi/rhi_forwards.hpp"
 #include "licht/rhi/rhi_types.hpp"
-#include "licht/rhi/rhi_fowards.hpp"
 #include "licht/rhi/texture.hpp"
+
 
 namespace licht {
 
@@ -61,7 +63,8 @@ struct RHICopyBufferToTextureCommand : RHICommand {
 struct RHIRenderPassBeginInfo {
     RHIRenderPass* render_pass = nullptr;   ///< Handle to the render pass object.
     RHIFramebuffer* framebuffer = nullptr;  ///< Target framebuffer for the render pass.
-    Rect2D area = {};                ///< Render area (typically width, height, x, y).
+    Rect2D area = {};                       ///< Render area (typically width, height, x, y).
+    Vector4f color = Vector4f(0.0f);
 };
 
 /**

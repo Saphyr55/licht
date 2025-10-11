@@ -2,7 +2,7 @@
 
 #include "licht/rhi/resource.hpp"
 #include "licht/rhi/rhi_exports.hpp"
-#include "licht/rhi/rhi_fowards.hpp"
+#include "licht/rhi/rhi_forwards.hpp"
 #include "licht/rhi/rhi_types.hpp"
 
 namespace licht {
@@ -93,5 +93,7 @@ public:
      */
     virtual ~RHIBuffer() = default;
 };
+
+using RHIBufferHandle = RHIResourceHandle<RHIBuffer>;
 
 }  //namespace licht

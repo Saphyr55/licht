@@ -18,97 +18,101 @@
 #include "licht/rhi_vulkan/vulkan_render_pass.hpp"
 #include "licht/rhi_vulkan/vulkan_texture.hpp"
 
-
 namespace licht {
 
-static void pick_pipeline_stages_and_access(VkQueueFlags queueFlags,
-                                            VkImageLayout oldLayout,
-                                            VkImageLayout newLayout,
-                                            VkPipelineStageFlags& outSrcStage,
-                                            VkPipelineStageFlags& outDstStage,
-                                            VkAccessFlags& outSrcAccess,
-                                            VkAccessFlags& outDstAccess) {
-    outSrcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    outDstStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-    outSrcAccess = 0;
-    outDstAccess = 0;
-    if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-        outSrcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        outDstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        outSrcAccess = 0;
-        outDstAccess = VK_ACCESS_TRANSFER_WRITE_BIT;
+static void pick_pipeline_stages_and_access(VkQueueFlags queue_flags,
+                                            VkImageLayout old_layout,
+                                            VkImageLayout new_layout,
+                                            VkPipelineStageFlags& out_src_stage,
+                                            VkPipelineStageFlags& out_dst_stage,
+                                            VkAccessFlags& out_src_access,
+                                            VkAccessFlags& out_dst_access) {
+    out_src_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    out_dst_stage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    out_src_access = 0;
+    out_dst_access = 0;
+
+    if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+        out_src_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        out_dst_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        out_src_access = 0;
+        out_dst_access = VK_ACCESS_TRANSFER_WRITE_BIT;
         return;
     }
 
-    if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-        outSrcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        outSrcAccess = VK_ACCESS_TRANSFER_WRITE_BIT;
+    if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+        out_src_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        out_dst_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        out_src_access = 0;
+        out_dst_access = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        return;
+    }
 
-        if (queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            outDstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;  // Most common read stage for textures
-            outDstAccess = VK_ACCESS_SHADER_READ_BIT;
-
-        } else if (queueFlags & VK_QUEUE_COMPUTE_BIT) {
-            outDstStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-            outDstAccess = VK_ACCESS_SHADER_READ_BIT;
+    if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+        out_src_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        out_src_access = VK_ACCESS_TRANSFER_WRITE_BIT;
+        if (queue_flags & VK_QUEUE_GRAPHICS_BIT) {
+            out_dst_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            out_dst_access = VK_ACCESS_SHADER_READ_BIT;
+        } else if (queue_flags & VK_QUEUE_COMPUTE_BIT) {
+            out_dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+            out_dst_access = VK_ACCESS_SHADER_READ_BIT;
         } else {
-            outDstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            outDstAccess = VK_ACCESS_TRANSFER_READ_BIT;  // Use transfer read for general read access
+            out_dst_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            out_dst_access = VK_ACCESS_TRANSFER_READ_BIT;
         }
         return;
     }
-    if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
-        outSrcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        outDstStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        outSrcAccess = 0;
-        outDstAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+    if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && (new_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
+                                                    new_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
+                                                    new_layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL)) {
+        out_src_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        out_dst_stage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        out_src_access = 0;
+        out_dst_access = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         return;
     }
-    if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
-                                                   newLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
-                                                   newLayout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL)) {
-        outSrcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        outDstStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-        outSrcAccess = 0;
-        outDstAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    if (old_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+        out_src_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        out_dst_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        out_src_access = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        out_dst_access = VK_ACCESS_SHADER_READ_BIT;
         return;
     }
-    if (oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-        outSrcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        outDstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;  // Use FRAGMENT_SHADER_BIT as the consumer
-        outSrcAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        outDstAccess = VK_ACCESS_SHADER_READ_BIT;
+
+    if (new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && (old_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
+                                                                   old_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
+                                                                   old_layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL)) {
+        out_src_stage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        out_dst_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        out_src_access = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+        out_dst_access = VK_ACCESS_SHADER_READ_BIT;
         return;
     }
-    if ((oldLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
-         oldLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
-         oldLayout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL) &&
-        newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-        outSrcStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-        outDstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        outSrcAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-        outDstAccess = VK_ACCESS_SHADER_READ_BIT;
-        return;
-    }
-    if (newLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
-        if (oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
-            outSrcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            outSrcAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-            outSrcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            outSrcAccess = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+    if (new_layout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
+        if (old_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+            out_src_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            out_src_access = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        } else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+            out_src_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            out_src_access = VK_ACCESS_TRANSFER_WRITE_BIT;
         } else {
-            outSrcStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-            outSrcAccess = VK_ACCESS_MEMORY_WRITE_BIT;
+            out_src_stage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+            out_src_access = VK_ACCESS_MEMORY_WRITE_BIT;
         }
-        outDstStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;  // Present doesn't have a stage
-        outDstAccess = 0;
+
+        out_dst_stage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        out_dst_access = 0;
         return;
     }
-    outSrcStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-    outDstStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-    outSrcAccess = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
-    outDstAccess = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+
+    out_src_stage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    out_dst_stage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    out_src_access = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+    out_dst_access = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
 }
 
 void VulkanCommandBuffer::begin(RHICommandBufferUsageFlags usage) {
@@ -224,7 +228,6 @@ void VulkanCommandBuffer::set_viewports(const Viewport* viewports, uint32 count)
 }
 
 void VulkanCommandBuffer::transition_texture(const RHITextureBarrier& texture_barrier) {
-    
     VulkanTexture* texture = static_cast<VulkanTexture*>(texture_barrier.texture);
     VkImageAspectFlags aspect_mask = vulkan_format_to_image_aspect(
         texture->get_description().format);
@@ -341,7 +344,11 @@ void VulkanCommandBuffer::begin_render_pass(const RHIRenderPassBeginInfo& begin_
         return;
     }
 
-    VkClearColorValue default_clear_color = {0.12f, 0.12f, 0.12f, 1.0f};
+    VkClearColorValue default_clear_color = {
+        begin_info.color.x,
+        begin_info.color.y,
+        begin_info.color.z,
+        begin_info.color.w};
 
     VkClearDepthStencilValue depth_stencil_value = {};
     depth_stencil_value.depth = 1.0f;

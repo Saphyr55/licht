@@ -5,7 +5,7 @@
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/framebuffer.hpp"
 #include "licht/rhi/pipeline.hpp"
-#include "licht/rhi/rhi_fowards.hpp"
+#include "licht/rhi/rhi_forwards.hpp"
 #include "licht/rhi/shader_resource.hpp"
 #include "licht/rhi/texture.hpp"
 #include "licht/rhi/sampler.hpp"

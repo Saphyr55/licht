@@ -3,7 +3,7 @@
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/command_queue.hpp"
 #include "licht/rhi/device.hpp"
-#include "licht/rhi/rhi_fowards.hpp"
+#include "licht/rhi/rhi_forwards.hpp"
 
 namespace licht {
 

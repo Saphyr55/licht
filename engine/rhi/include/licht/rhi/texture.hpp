@@ -2,7 +2,7 @@
 
 #include "licht/rhi/rhi_exports.hpp"
 #include "licht/rhi/rhi_types.hpp"
-#include "licht/rhi/rhi_fowards.hpp"
+#include "licht/rhi/rhi_forwards.hpp"
 #include "licht/rhi/resource.hpp"
 
 namespace licht {

@@ -250,6 +250,14 @@ public:
         data_ = allocator_allocate(capacity_);
     }
 
+    constexpr Array(NoAllocationOnConstructionPolicy,
+                    const AllocatorType& allocator = AllocatorType()) noexcept
+        : data_(nullptr)
+        , size_(0)
+        , capacity_(0)
+        , allocator_(allocator) {
+    }
+
     constexpr Array(size_t capacity,
                     const AllocatorType& allocator = AllocatorType()) noexcept
         : data_(nullptr)

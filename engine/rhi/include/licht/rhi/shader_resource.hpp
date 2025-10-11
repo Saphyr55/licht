@@ -2,7 +2,7 @@
 
 #include <cstddef>  // Required for size_t
 #include "licht/core/defines.hpp"
-#include "licht/rhi/rhi_fowards.hpp"
+#include "licht/rhi/rhi_forwards.hpp"
 #include "licht/rhi/rhi_types.hpp"
 
 namespace licht {

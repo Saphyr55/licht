@@ -2,6 +2,8 @@
 
 namespace licht {
 
+struct NoAllocationOnConstructionPolicy {};
+
 class Allocator {
 public:
     virtual void* allocate(size_t size) = 0;

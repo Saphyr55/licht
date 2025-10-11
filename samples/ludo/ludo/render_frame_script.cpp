@@ -11,6 +11,7 @@
 #include "licht/core/math/matrix4.hpp"
 #include "licht/core/math/quaternion.hpp"
 #include "licht/core/math/vector3.hpp"
+#include "licht/core/math/vector4.hpp"
 #include "licht/core/modules/module_registry.hpp"
 #include "licht/core/platform/display.hpp"
 #include "licht/core/platform/window_handle.hpp"
@@ -19,7 +20,7 @@
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/command_queue.hpp"
 #include "licht/rhi/device_memory_uploader.hpp"
-#include "licht/rhi/rhi_fowards.hpp"
+#include "licht/rhi/rhi_forwards.hpp"
 #include "licht/rhi/sampler.hpp"
 #include "licht/rhi/shader_resource.hpp"
 #include "licht/rhi/rhi_module.hpp"
@@ -100,7 +101,6 @@ void RenderFrameScript::on_startup() {
 
     RHIRenderPassDescription render_pass_description = {};
     render_pass_description.attachment_decriptions = {render_pass_color_attachment};
-    render_pass_description.deph_attachement_description;
 
     render_pass_ = device_->create_render_pass(render_pass_description);
 
@@ -203,6 +203,7 @@ void RenderFrameScript::on_startup() {
     pipeline_description.vertex_binding_info = pipeline_vertex_binding_information;
     pipeline_description.viewport_info = viewport_info;
     pipeline_description.shader_resource_group_layout = shader_resource_group_layout_;
+    pipeline_description.cull_mode = RHICullModeFlags::None;
     graphics_pipeline_ = device_->create_graphics_pipeline(pipeline_description);
 
     RHITextureDescription depth_texture_desc = {};
@@ -363,6 +364,7 @@ void RenderFrameScript::on_tick(float32 delta_time) {
         render_pass_begin_info.render_pass = render_pass_;
         render_pass_begin_info.framebuffer = framebuffers_[frame_context_.frame_index];
         render_pass_begin_info.area = render_pass_area;
+        render_pass_begin_info.color = Vector4f(0.01f, 0.01f, 0.01f, 1.0f);
 
         graphics_command_buffer->begin_render_pass(render_pass_begin_info);
         {

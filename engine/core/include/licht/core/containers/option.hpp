@@ -2,6 +2,7 @@
 
 #include "licht/core/defines.hpp"
 #include "licht/core/memory/memory.hpp"
+#include "licht/core/traits/aligned_storage.hpp"
 
 namespace licht {
 
@@ -73,7 +74,7 @@ private:
     T* data() { return reinterpret_cast<T*>(&storage_); }
 
 private:
-    alignas(T) uint8 storage_[sizeof(T)];
+    AlignedStorageType<T> storage_;
     bool is_some_;
 };
 
