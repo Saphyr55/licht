@@ -1,7 +1,7 @@
 #include "render_frame_script.hpp"
 
-#include "image.hpp"
 #include "camera.hpp"
+#include "image.hpp"
 
 #include "licht/core/containers/array_view.hpp"
 #include "licht/core/defines.hpp"
@@ -12,6 +12,7 @@
 #include "licht/core/math/quaternion.hpp"
 #include "licht/core/math/vector3.hpp"
 #include "licht/core/math/vector4.hpp"
+#include "licht/core/memory/default_allocator.hpp"
 #include "licht/core/modules/module_registry.hpp"
 #include "licht/core/platform/display.hpp"
 #include "licht/core/platform/window_handle.hpp"
@@ -21,12 +22,13 @@
 #include "licht/rhi/command_queue.hpp"
 #include "licht/rhi/device_memory_uploader.hpp"
 #include "licht/rhi/rhi_forwards.hpp"
-#include "licht/rhi/sampler.hpp"
-#include "licht/rhi/shader_resource.hpp"
 #include "licht/rhi/rhi_module.hpp"
 #include "licht/rhi/rhi_types.hpp"
+#include "licht/rhi/sampler.hpp"
+#include "licht/rhi/shader_resource.hpp"
 #include "licht/rhi/texture.hpp"
 #include "licht/rhi/texture_view.hpp"
+#include "licht/rhi/texture_pool.hpp"
 
 namespace licht {
 
@@ -49,7 +51,6 @@ RenderFrameScript::RenderFrameScript(Camera* camera)
 }
 
 void RenderFrameScript::on_startup() {
-
     // RHI Module.
     ProjectSettings& project_settings = ProjectSettings::get_instance();
     ModuleRegistry& registry = ModuleRegistry::get_instance();
@@ -85,9 +86,13 @@ void RenderFrameScript::on_startup() {
     });
     LCHECK_MSG(graphics_present_command_queue_ptr, "Found no graphics command queue that support the present mode.");
     graphics_present_command_queue_ = *graphics_present_command_queue_ptr;
-    
-    // Buffer Pool
+
+    // Pools
     buffer_pool_ = device_->create_buffer_pool();
+    buffer_pool_->initialize_pool(&DefaultAllocator::get_instance(), 64);
+
+    texture_pool_ = device_->create_texture_pool();
+    texture_pool_->initialize_pool(&DefaultAllocator::get_instance(), 64);
 
     // Command Allocators
     RHICommandAllocatorDescription graphics_command_allocator_desc = {};
@@ -105,52 +110,35 @@ void RenderFrameScript::on_startup() {
 
     render_pass_ = device_->create_render_pass(render_pass_description);
 
-    // Shader Resource Bindings and layouts.
-    RHIShaderResourceBinding ubo_binding = {};
-    ubo_binding.binding = 0;
-    ubo_binding.count = 1;
-    ubo_binding.stage = RHIShaderStage::Fragment | RHIShaderStage::Vertex;
-    ubo_binding.type = RHIShaderResourceType::Uniform;
+    RHIShaderResourceBinding ubo_binding(
+        0, RHIShaderResourceType::Uniform, RHIShaderStage::Fragment | RHIShaderStage::Vertex, 1);
 
-    RHIShaderResourceBinding orange_sampler_binding = {};
-    orange_sampler_binding.binding = 1;
-    orange_sampler_binding.count = 1;
-    orange_sampler_binding.type = RHIShaderResourceType::Sampler;
-    orange_sampler_binding.stage = RHIShaderStage::Fragment;
+    RHIShaderResourceBinding orange_sampler_binding(
+        1, RHIShaderResourceType::Sampler, RHIShaderStage::Fragment);
 
     Array<RHIShaderResourceBinding> shader_resource_binding = {ubo_binding, orange_sampler_binding};
     shader_resource_group_layout_ = device_->create_shader_resource_layout(shader_resource_binding);
 
     // Bindings and attributes.
-    RHIVertexBindingDescription position_input_binding_description = {};
-    position_input_binding_description.binding = 0;
-    position_input_binding_description.stride = sizeof(Vector3f);
-    position_input_binding_description.input_rate = RHIVertexInputRate::Vertex;
+    RHIVertexBindingDescription position_input_binding_description(
+        0, sizeof(Vector3f), RHIVertexInputRate::Vertex);
 
-    RHIVertexAttributeDescription position_attribute_description = {};
-    position_attribute_description.binding = 0;
-    position_attribute_description.location = 0;
-    position_attribute_description.format = RHIFormat::RGB32Float;
-    position_attribute_description.offset = 0;
+    RHIVertexAttributeDescription position_attribute_description(
+        0, 0, RHIFormat::RGB32Float);
 
-    RHIVertexBindingDescription texture_uv_input_binding_description = {};
-    texture_uv_input_binding_description.binding = 1;
-    texture_uv_input_binding_description.stride = sizeof(Vector2f);
-    texture_uv_input_binding_description.input_rate = RHIVertexInputRate::Vertex;
+    RHIVertexBindingDescription texture_uv_input_binding_description(
+        1, sizeof(Vector2f), RHIVertexInputRate::Vertex);
 
-    RHIVertexAttributeDescription texture_uv_attribute_description = {};
-    texture_uv_attribute_description.binding = 1;
-    texture_uv_attribute_description.location = 1;
-    texture_uv_attribute_description.format = RHIFormat::RG32Float;
-    texture_uv_attribute_description.offset = 0;
+    RHIVertexAttributeDescription texture_uv_attribute_description(
+        1, 1, RHIFormat::RG32Float);
 
     // Graphics Pipeline.
-    RHIGraphicsPipelineVertexBindingInformation pipeline_vertex_binding_information = {};
-    pipeline_vertex_binding_information.bindings = {position_input_binding_description, texture_uv_input_binding_description};
-    pipeline_vertex_binding_information.attributes = {position_attribute_description, texture_uv_attribute_description};
+    RHIGraphicsPipelineVertexBindingInformation pipeline_vertex_binding_information = {
+        .bindings = {position_input_binding_description, texture_uv_input_binding_description},
+        .attributes = {position_attribute_description, texture_uv_attribute_description}};
 
-    float32 width = static_cast<float32>(swapchain_->get_width());
-    float32 height = static_cast<float32>(swapchain_->get_height());
+    float32 width = swapchain_->get_width();
+    float32 height = swapchain_->get_height();
 
     // Load shaders binary codes.
     FileSystem& file_system = FileSystem::get_platform();
@@ -167,67 +155,64 @@ void RenderFrameScript::on_startup() {
     SharedRef<FileHandle> fragment_file_handle = fragment_file_open_error.value();
     SPIRVShader fragment_shader(fragment_file_handle->read_all_bytes());
 
-    Viewport viewport = {};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = width;
-    viewport.height = height;
-    viewport.min_depth = 0.0f;
-    viewport.max_depth = 1.0f;
-
-    Rect2D scissor = {};
-    scissor.x = 0.0f;
-    scissor.y = 0.0f;
-    scissor.width = width;
-    scissor.height = height;
-
-    RHIGraphicsPipelineViewportStateInformation viewport_info;
-    viewport_info.viewport = viewport;
-    viewport_info.scissor = scissor;
+    RHIGraphicsPipelineViewportStateInformation viewport_info = {
+        .viewport = Viewport{
+            .width = width,
+            .height = height,
+        },
+        .scissor = Rect2D{
+            .width = width,
+            .height = height,
+        },
+    };
 
     // -- Graphics Pipeline Shaders --
-    RHIGraphicsPipelineShaderStageCreateInfo vertex_stage_create_info;
-    vertex_stage_create_info.name = "main";
-    vertex_stage_create_info.shader = vertex_shader;
-    vertex_stage_create_info.type = RHIShaderStage::Vertex;
+    RHIGraphicsPipelineShaderStageCreateInfo vertex_stage_create_info = {
+        .name = "main",
+        .shader = vertex_shader,
+        .type = RHIShaderStage::Vertex,
+    };
 
-    RHIGraphicsPipelineShaderStageCreateInfo fragment_stage_create_info;
-    fragment_stage_create_info.name = "main";
-    fragment_stage_create_info.shader = fragment_shader;
-    fragment_stage_create_info.type = RHIShaderStage::Fragment;
+    RHIGraphicsPipelineShaderStageCreateInfo fragment_stage_create_info = {
+        .name = "main",
+        .shader = fragment_shader,
+        .type = RHIShaderStage::Fragment,
+    };
 
     // -- Graphics Pipeline --
-    RHIGraphicsPipelineDescription pipeline_description;
-    pipeline_description.render_pass = render_pass_;
-    pipeline_description.vertex_shader_info = vertex_stage_create_info;
-    pipeline_description.fragment_shader_info = fragment_stage_create_info;
-    pipeline_description.vertex_binding_info = pipeline_vertex_binding_information;
-    pipeline_description.viewport_info = viewport_info;
-    pipeline_description.shader_resource_group_layout = shader_resource_group_layout_;
-    pipeline_description.cull_mode = RHICullModeFlags::None;
-    graphics_pipeline_ = device_->create_graphics_pipeline(pipeline_description);
+    graphics_pipeline_ = device_->create_graphics_pipeline(
+        RHIGraphicsPipeline::description_builder()
+            .with_render_pass(render_pass_)
+            .with_vertex_shader(vertex_stage_create_info.shader, vertex_stage_create_info.name)
+            .with_fragment_shader(fragment_stage_create_info.shader, fragment_stage_create_info.name)
+            .with_vertex_bindings(pipeline_vertex_binding_information.bindings, pipeline_vertex_binding_information.attributes)
+            .with_viewport(viewport_info.viewport, viewport_info.scissor)
+            .with_shader_resource_group_layout(shader_resource_group_layout_)
+            .with_cull_mode(RHICullModeFlags::Back)
+            .build());
 
-    RHITextureDescription depth_texture_desc = {};
-    depth_texture_desc.format = RHIFormat::D24S8;
-    depth_texture_desc.usage = RHITextureUsageFlags::DepthStencilAttachment;
-    depth_texture_desc.width = width;
-    depth_texture_desc.height = height;
-    depth_texture_ = device_->create_texture(depth_texture_desc); 
+    depth_texture_ = texture_pool_->create_texture(RHITextureDescription{
+        .format = RHIFormat::D24S8,
+        .usage =  RHITextureUsageFlags::DepthStencilAttachment,
+        .width =  width,
+        .height = height,
+    });
 
-    RHITextureViewDescription depth_texture_view_desc = {};
-    depth_texture_view_desc.texture = depth_texture_;
-    depth_texture_view_desc.format = depth_texture_->get_description().format;
-    depth_texture_view_ = device_->create_texture_view(depth_texture_view_desc); 
-   
+    depth_texture_view_ = device_->create_texture_view(RHITextureViewDescription{
+        .texture = depth_texture_,
+        .format = depth_texture_->get_description().format,
+    });
+
     // -- Framebuffers --
     framebuffers_.reserve(swapchain_->get_texture_views().size());
     for (RHITextureView* texture : swapchain_->get_texture_views()) {
-        RHIFramebufferDescription description = {};
-        description.height = height;
-        description.width = width;
-        description.render_pass = render_pass_;
-        description.attachments = {texture, depth_texture_view_};
-        description.layers = 1;
+        RHIFramebufferDescription description = {
+            .render_pass = render_pass_,
+            .attachments = {texture, depth_texture_view_},
+            .width = width,
+            .height = height,
+            .layers = 1,
+        };
 
         RHIFramebuffer* framebuffer = device_->create_framebuffer(description);
         framebuffers_.append(framebuffer);
@@ -248,69 +233,71 @@ void RenderFrameScript::on_startup() {
     orange_texture_description.height = orange_image->get_heigth();
 
     // Device objects --
-    RHIDeviceMemoryUploader uploader(device_, buffer_pool_);
+    RHIDeviceMemoryUploader uploader(device_, buffer_pool_, texture_pool_);
 
     // Vertex
-    position_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsageFlags::Vertex, ArrayView(cube_mesh_.positions)));
-    uv_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsageFlags::Vertex, ArrayView(cube_mesh_.UVs)));
-    index_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsageFlags::Index, ArrayView(cube_mesh_.indices)));
-    
+    position_buffer_ = uploader.send_buffer(RHIStagingBufferContext(
+        RHIBufferUsageFlags::Vertex, ArrayView(cube_mesh_.positions)));
+
+    uv_buffer_ = uploader.send_buffer(RHIStagingBufferContext(
+        RHIBufferUsageFlags::Vertex, ArrayView(cube_mesh_.UVs)));
+
+    index_buffer_ = uploader.send_buffer(RHIStagingBufferContext(
+        RHIBufferUsageFlags::Index, ArrayView(cube_mesh_.indices)));
+
     // Texture
     orange_texture_ = uploader.send_texture(RHIStagingBufferContext(
-        RHIBufferUsageFlags::Storage, 
-        orange_image->get_size(), 
-        orange_image->data()), 
-        orange_texture_description);
-    
+                                                RHIBufferUsageFlags::Storage,
+                                                orange_image->get_size(),
+                                                orange_image->data()),
+                                            orange_texture_description);
+
     uploader.upload();
 
     // Unload images.
     Image::unload(orange_image);
-    
+
     // Texture views.
-    RHITextureViewDescription orange_texture_view_desc = {};
-    orange_texture_view_desc.dimension = RHITextureDimension::Dim2D;
-    orange_texture_view_desc.texture = orange_texture_;
-    orange_texture_view_desc.format = orange_texture_->get_description().format;
-    orange_texture_view_ = device_->create_texture_view(orange_texture_view_desc);
+    orange_texture_view_ = device_->create_texture_view(RHITextureViewDescription{
+        .texture = orange_texture_,
+        .format = orange_texture_->get_description().format,
+        .dimension = RHITextureDimension::Dim2D,
+    });
 
     // Samplers
-    RHISamplerDescription sampler_desc;
-    orange_texture_sampler_ = device_->create_sampler(sampler_desc);
+    orange_texture_sampler_ = device_->create_sampler(RHISamplerDescription{});
 
     // -- Uniform Buffers --
     uint32 image_count = swapchain_->get_texture_views().size();
     uniform_buffers_.reserve(image_count);
     for (uint32 i = 0; i < image_count; i++) {
-        RHIBufferDescription uniform_buffer_description = {};
-        uniform_buffer_description.sharing_mode = RHISharingMode::Private;
-        uniform_buffer_description.usage = RHIBufferUsageFlags::Uniform;
-        uniform_buffer_description.memory_usage = RHIMemoryUsage::Host;
-        uniform_buffer_description.size = sizeof(UniformBufferObject);
-
-        RHIBuffer* uniform_buffer = buffer_pool_->create_buffer(uniform_buffer_description);
-        uniform_buffers_.append(uniform_buffer);
+        RHIBufferDescription uniform_buffer_desc(
+            sizeof(UniformBufferObject),
+            RHIBufferUsageFlags::Uniform,
+            RHIMemoryUsage::Host,
+            RHISharingMode::Private);
+        uniform_buffers_.append(buffer_pool_->create_buffer(uniform_buffer_desc));
     }
 
     // -- Shader resource pool --
     shader_resource_pool_ = device_->create_shader_resource_pool(image_count, shader_resource_binding);
     for (uint32 i = 0; i < image_count; i++) {
         RHIShaderResourceGroup* shader_resource_group = shader_resource_pool_->allocate_group(shader_resource_group_layout_);
-        
-        RHIBuffer* uniform_buffer = uniform_buffers_[i];
-        
-        RHIWriteBufferResource write_buffer = {};
-        write_buffer.binding = ubo_binding.binding;
-        write_buffer.buffer = uniform_buffer;
-        write_buffer.offset = 0;
-        write_buffer.range = uniform_buffer->get_size();
-        shader_resource_group->set_buffer(write_buffer);
 
-        RHIWriteTextureSamplerResource write_texture_sampler = {};
-        write_texture_sampler.binding = orange_sampler_binding.binding;
-        write_texture_sampler.sampler = orange_texture_sampler_;
-        write_texture_sampler.texture_view = orange_texture_view_;
-        shader_resource_group->set_texture_sampler(write_texture_sampler);
+        RHIBuffer* uniform_buffer = uniform_buffers_[i];
+
+        shader_resource_group->set_buffer(
+            RHIWriteBufferResource(
+                ubo_binding.binding,
+                uniform_buffer,
+                0,
+                uniform_buffer->get_size()));
+
+        shader_resource_group->set_texture_sampler(
+            RHIWriteTextureSamplerResource(
+                orange_sampler_binding.binding,
+                orange_texture_view_,
+                orange_texture_sampler_));
 
         shader_resource_group->compile();
     }
@@ -429,7 +416,6 @@ void RenderFrameScript::on_tick(float64 delta_time) {
 }
 
 void RenderFrameScript::update_uniform(float64 delta_time) {
-
     UniformBufferObject ubo;
 
     static float32 rotation_x = 0.0f;
@@ -441,7 +427,7 @@ void RenderFrameScript::update_uniform(float64 delta_time) {
     Quaternion rot_x = Quaternion::from_axis_angle(Vector3f(1.0f, 0.0f, 0.0f), Math::radians(rotation_x));
     Quaternion rot_y = Quaternion::from_axis_angle(Vector3f(0.0f, 1.0f, 0.0f), Math::radians(rotation_y));
     Quaternion rotation = rot_x * rot_y;
-    
+
     ubo.model = Quaternion::rotation_matrix(rotation);
 
     ubo.view = camera_->view;
@@ -457,19 +443,19 @@ void RenderFrameScript::reset() {
     device_->wait_idle();
 
     device_->destroy_texture_view(depth_texture_view_);
-    device_->destroy_texture(depth_texture_);
+    texture_pool_->destroy_texture(depth_texture_);
 
     RHITextureDescription depth_texture_desc = {};
     depth_texture_desc.format = RHIFormat::D24S8;
     depth_texture_desc.usage = RHITextureUsageFlags::DepthStencilAttachment;
     depth_texture_desc.width = frame_context_.frame_width;
     depth_texture_desc.height = frame_context_.frame_height;
-    depth_texture_ = device_->create_texture(depth_texture_desc);
+    depth_texture_ = texture_pool_->create_texture(depth_texture_desc);
 
     RHITextureViewDescription depth_texture_view_desc = {};
     depth_texture_view_desc.texture = depth_texture_;
     depth_texture_view_desc.format = depth_texture_->get_description().format;
-    depth_texture_view_ = device_->create_texture_view(depth_texture_view_desc); 
+    depth_texture_view_ = device_->create_texture_view(depth_texture_view_desc);
 
     // Destroy all existing framebuffers
     for (RHIFramebuffer* framebuffer : framebuffers_) {
@@ -479,7 +465,7 @@ void RenderFrameScript::reset() {
 
     // Recreate swapchain
     device_->recreate_swapchain(swapchain_, frame_context_.frame_width, frame_context_.frame_height);
-    
+
     // Create new framebuffers
     framebuffers_.reserve(swapchain_->get_texture_views().size());
     for (RHITextureView* texture_view : swapchain_->get_texture_views()) {
@@ -526,13 +512,13 @@ void RenderFrameScript::on_shutdown() {
     // -- Buffers, samplers and textures --
     device_->destroy_sampler(orange_texture_sampler_);
 
-    device_->destroy_texture_view(orange_texture_view_);    
-    device_->destroy_texture(orange_texture_);
-
+    device_->destroy_texture_view(orange_texture_view_);
     device_->destroy_texture_view(depth_texture_view_);
-    device_->destroy_texture(depth_texture_);
+
+    texture_pool_->dispose();
 
     buffer_pool_->dispose();
+
     uniform_buffers_.clear();
 
     // SRx

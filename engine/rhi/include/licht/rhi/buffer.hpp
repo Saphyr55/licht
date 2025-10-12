@@ -14,26 +14,20 @@ namespace licht {
  * This struct contains information about the intended usage, access mode, and size of a buffer.
  */
 struct RHIBufferDescription {
-    /**
-     * @brief Specifies the usage type of the buffer (e.g., Vertex, Index, etc.).
-     */
+    size_t size = 0;
     RHIBufferUsageFlags usage = RHIBufferUsageFlags::Vertex;
-
-    /**
-     * @brief
-     */
     RHIMemoryUsage memory_usage = RHIMemoryUsage::Host;
-
-    /**
-     * @brief Defines the access mode for the buffer (e.g., Private, Read, Write).
-     */
-
     RHISharingMode sharing_mode = RHISharingMode::Private;
 
-    /**
-     * @brief The size of the buffer in bytes.
-     */
-    size_t size = 0;
+    RHIBufferDescription() = default;
+    RHIBufferDescription(size_t in_size,
+                         RHIBufferUsageFlags in_usage = RHIBufferUsageFlags::Vertex,
+                         RHIMemoryUsage in_memory_usage = RHIMemoryUsage::Host,
+                         RHISharingMode in_sharing_mode = RHISharingMode::Private)
+        : size(in_size)
+        , usage(in_usage)
+        , memory_usage(in_memory_usage)
+        , sharing_mode(in_sharing_mode) {}
 };
 
 /**

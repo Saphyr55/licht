@@ -1,10 +1,12 @@
 #pragma once
 
-#include "licht/core/memory/shared_ref.hpp"
-#include "licht/rhi/buffer.hpp"
 #include "licht/rhi/rhi_exports.hpp"
 
 namespace licht {
+
+class Allocator;
+class RHIBuffer;
+struct RHIBufferDescription;
 
 class LICHT_RHI_API RHIBufferPool {
 public:
@@ -18,7 +20,5 @@ public:
 
     virtual ~RHIBufferPool() = default;
 };
-
-using RHIBufferPoolRef = SharedRef<RHIBufferPool>;
 
 }  //namespace licht

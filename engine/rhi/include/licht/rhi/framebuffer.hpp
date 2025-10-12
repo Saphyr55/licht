@@ -7,10 +7,10 @@
 namespace licht {
 
 struct RHIFramebufferDescription {
-    RHIRenderPass* render_pass;
+    RHIRenderPass* render_pass = nullptr;
     Array<RHITextureView*> attachments;
-    uint32 width;
-    uint32 height;
+    float32 width = 0;
+    float32 height = 0;
     uint32 layers = 1;
 };
 

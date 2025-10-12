@@ -1,8 +1,6 @@
 #pragma once
 
-#include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi/texture.hpp"
-#include "licht/rhi/texture_view.hpp"
 
 #include <vulkan/vulkan_core.h>
 

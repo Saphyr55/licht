@@ -1,4 +1,5 @@
 #include "licht/rhi_vulkan/vulkan_texture_view.hpp"
+#include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_texture.hpp"
 
 namespace licht {

@@ -1,9 +1,6 @@
 #pragma once
 
 #include "licht/core/memory/heap_allocator.hpp"
-#include "licht/core/memory/shared_ref.hpp"
-#include "licht/rhi/buffer.hpp"
-#include "licht/rhi/buffer_pool.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/device.hpp"
 #include "licht/rhi/fence.hpp"
@@ -12,7 +9,6 @@
 #include "licht/rhi/sampler.hpp"
 #include "licht/rhi/shader_resource.hpp"
 #include "licht/rhi/swapchain.hpp"
-#include "licht/rhi/texture.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 
 namespace licht {
@@ -24,6 +20,9 @@ public:
     virtual void wait_fence(RHIFence* fence) override;
     virtual void reset_fence(RHIFence* fence) override;
 
+    virtual RHIBufferPoolRef create_buffer_pool() override;
+    virtual RHITexturePoolRef create_texture_pool() override;
+
     virtual RHIShaderResourceGroupLayout* create_shader_resource_layout(const Array<RHIShaderResourceBinding>& bindings) override;
     virtual void destroy_shader_resource_layout(RHIShaderResourceGroupLayout* layout) override;
 
@@ -33,11 +32,6 @@ public:
 
     virtual RHICommandAllocator* create_command_allocator(const RHICommandAllocatorDescription& description) override;
     virtual void destroy_command_allocator(RHICommandAllocator* command_allocator) override;
-
-    virtual RHIBufferPoolRef create_buffer_pool() override;
-
-    virtual RHITexture* create_texture(const RHITextureDescription& description) override;
-    virtual void destroy_texture(RHITexture* texture) override;
 
     virtual RHITextureView* create_texture_view(const RHITextureViewDescription& description) override;
     virtual void destroy_texture_view(RHITextureView* texture_view) override;

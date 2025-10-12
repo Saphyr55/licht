@@ -22,9 +22,11 @@ class RHIGraphicsPipeline;
 class RHISampler;
 
 class RHIBufferPool;
+class RHITexturePool;
 
 using RHIDeviceRef = SharedRef<RHIDevice>;
 using RHICommandQueueRef = SharedRef<RHICommandQueue>;
 using RHIBufferPoolRef = SharedRef<RHIBufferPool>;
+using RHITexturePoolRef = SharedRef<RHITexturePool>;
 
 }  //namespace licht

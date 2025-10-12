@@ -1,4 +1,5 @@
 #include "licht/rhi_vulkan/vulkan_device.hpp"
+
 #include "licht/core/memory/default_allocator.hpp"
 #include "licht/core/memory/deleter.hpp"
 #include "licht/core/memory/memory.hpp"
@@ -6,15 +7,12 @@
 #include "licht/core/containers/array.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/memory/shared_ref.hpp"
-#include "licht/rhi/buffer.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/fence.hpp"
 #include "licht/rhi/framebuffer.hpp"
 #include "licht/rhi/render_pass.hpp"
 #include "licht/rhi/semaphore.hpp"
 #include "licht/rhi/swapchain.hpp"
-#include "licht/rhi/texture.hpp"
-#include "licht/rhi_vulkan/vulkan_buffer.hpp"
 #include "licht/rhi_vulkan/vulkan_buffer_pool.hpp"
 #include "licht/rhi_vulkan/vulkan_command_buffer.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
@@ -27,13 +25,10 @@
 #include "licht/rhi_vulkan/vulkan_sampler.hpp"
 #include "licht/rhi_vulkan/vulkan_swapchain.hpp"
 #include "licht/rhi_vulkan/vulkan_sync.hpp"
-#include "licht/rhi_vulkan/vulkan_texture.hpp"
+#include "licht/rhi_vulkan/vulkan_texture_pool.hpp"
 #include "licht/rhi_vulkan/vulkan_texture_view.hpp"
 
 #include <vulkan/vulkan_core.h>
-#include <type_traits>
-#include <utility>
-#include "vulkan_device.hpp"
 
 namespace licht {
 
@@ -111,28 +106,20 @@ void VulkanDevice::destroy_command_allocator(RHICommandAllocator* command_alloca
 
     RHIVulkanCommandAllocator* vulkan_command_allocator = static_cast<RHIVulkanCommandAllocator*>(command_allocator);
     vulkan_command_allocator->destroy();
-    
+
     ldelete(allocator_, vulkan_command_allocator);
 }
 
 RHIBufferPoolRef VulkanDevice::create_buffer_pool() {
-    auto deleter = Deleter<VulkanBufferPool, decltype(allocator_)>(allocator_);
-    return SharedRef<VulkanBufferPool>(lnew(allocator_, VulkanBufferPool()), deleter);
+    return SharedRef<VulkanBufferPool>(
+        lnew(allocator_, VulkanBufferPool()),
+        create_deleter<VulkanBufferPool>(allocator_));
 }
 
-RHITexture* VulkanDevice::create_texture(const RHITextureDescription& description) {
-    VulkanTexture* vk_texture = lnew(allocator_, VulkanTexture());
-    vk_texture->initialize(description);
-    return vk_texture;
-}
-
-void VulkanDevice::destroy_texture(RHITexture* texture) {
-    LCHECK(texture)
-
-    VulkanTexture* vktexture = static_cast<VulkanTexture*>(texture);
-    vktexture->destroy();
-
-    ldelete(allocator_, vktexture);
+RHITexturePoolRef VulkanDevice::create_texture_pool() {
+    return SharedRef<VulkanTexturePool>(
+        lnew(allocator_, VulkanTexturePool()),
+        create_deleter<RHITexturePool>(allocator_));
 }
 
 RHITextureView* VulkanDevice::create_texture_view(const RHITextureViewDescription& description) {

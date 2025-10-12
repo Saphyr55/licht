@@ -1,10 +1,8 @@
 #pragma once
 
 #include "licht/core/containers/array.hpp"
-#include "licht/core/memory/shared_ref.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/rhi_types.hpp"
-#include "licht/rhi_vulkan/vulkan_context.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -15,7 +13,7 @@ public:
     virtual RHIBufferUsageFlags get_usage() override;
 
     virtual RHISharingMode get_sharing_mode() override;
-    
+
     virtual size_t get_size() override;
 
     virtual void bind() override;

@@ -7,65 +7,43 @@
 
 namespace licht {
 
-/**
- * @brief Describes a vertex buffer binding for the graphics pipeline.
- *
- * This structure specifies the binding index, stride, and input rate for a vertex buffer.
- */
 struct RHIVertexBindingDescription {
-    /**
-     * @brief The binding index for the vertex buffer.
-     */
     uint32 binding = 0;
-
-    /**
-     * @brief The stride (in bytes) between elements in the vertex buffer.
-     */
     uint32 stride = 0;
-
-    /**
-     * @brief The input rate for the vertex data (per-vertex or per-instance).
-     */
     RHIVertexInputRate input_rate = RHIVertexInputRate::Vertex;
+
+    RHIVertexBindingDescription() = default;
+
+    RHIVertexBindingDescription(uint32 in_binding,
+                                uint32 in_stride,
+                                RHIVertexInputRate in_input_rate = RHIVertexInputRate::Vertex)
+        : binding(in_binding)
+        , stride(in_stride)
+        , input_rate(in_input_rate) {}
 };
 
-/**
- * @struct RHIVertexAttributeDescription
- * @brief Describes a single vertex attribute for the RHI (Rendering Hardware Interface).
- *
- * This struct specifies the layout of a vertex attribute, including its binding index,
- * shader location, data format, and byte offset within the vertex buffer.
- */
 struct RHIVertexAttributeDescription {
-    /**
-     * @brief The binding index of the vertex buffer.
-     * Specifies which vertex buffer this attribute is sourced from.
-     */
     uint32 binding = 0;
-
-    /**
-     * @brief The location of the attribute in the shader.
-     * Corresponds to the input location in the vertex shader.
-     */
     uint32 location = 0;
-
-    /**
-     * @brief The data format of the attribute.
-     * Specifies how the attribute data is interpreted (e.g., float, int).
-     */
     RHIFormat format = RHIFormat::R32Float;
-
-    /**
-     * @brief The byte offset of the attribute within the vertex buffer.
-     * Indicates where the attribute data begins in the buffer.
-     */
     uint32 offset = 0;
+
+    RHIVertexAttributeDescription() = default;
+
+    RHIVertexAttributeDescription(uint32 in_binding,
+                                  uint32 in_location,
+                                  RHIFormat in_format,
+                                  uint32 in_offset = 0)
+        : binding(in_binding)
+        , location(in_location)
+        , format(in_format)
+        , offset(in_offset) {}
 };
 
 struct RHIGraphicsPipelineShaderStageCreateInfo {
     StringRef name = "main";
-    RHIShaderStage type = RHIShaderStage::AllGraphics;
     SPIRVShader shader;
+    RHIShaderStage type = RHIShaderStage::AllGraphics;
 };
 
 struct RHIGraphicsPipelineViewportStateInformation {
@@ -88,8 +66,70 @@ struct RHIGraphicsPipelineDescription {
     RHIRenderPass* render_pass = nullptr;
 };
 
+class RHIGraphicsPipelineDescriptionBuilder {
+public:
+    RHIGraphicsPipelineDescriptionBuilder& with_cull_mode(RHICullModeFlags mode) {
+        desc_.cull_mode = mode;
+        return *this;
+    }
+
+    RHIGraphicsPipelineDescriptionBuilder& with_vertex_shader(const SPIRVShader& shader, StringRef name = "main") {
+        desc_.vertex_shader_info = {
+            .name = name, 
+            .shader = shader, 
+            .type = RHIShaderStage::Vertex
+        };
+        return *this;
+    }
+
+    RHIGraphicsPipelineDescriptionBuilder& with_fragment_shader(const SPIRVShader& shader, StringRef name = "main") {
+        desc_.fragment_shader_info = {
+            .name = name, 
+            .shader = shader, 
+            .type = RHIShaderStage::Fragment
+        };
+        return *this;
+    }
+
+    RHIGraphicsPipelineDescriptionBuilder& with_viewport(const Viewport& viewport, const Rect2D& scissor) {
+        desc_.viewport_info = {viewport, scissor};
+        return *this;
+    }
+
+    RHIGraphicsPipelineDescriptionBuilder& with_vertex_bindings(
+        const Array<RHIVertexBindingDescription>& bindings,
+        const Array<RHIVertexAttributeDescription>& attributes) {
+        desc_.vertex_binding_info = {bindings, attributes};
+        return *this;
+    }
+
+    RHIGraphicsPipelineDescriptionBuilder& with_shader_resource_group_layout(RHIShaderResourceGroupLayout* layout) {
+        desc_.shader_resource_group_layout = layout;
+        return *this;
+    }
+
+    RHIGraphicsPipelineDescriptionBuilder& with_render_pass(RHIRenderPass* render_pass) {
+        desc_.render_pass = render_pass;
+        return *this;
+    }
+
+    /**
+     * @brief Finalize and return the pipeline description.
+     */
+    RHIGraphicsPipelineDescription build() const {
+        return desc_;
+    }
+
+private:
+    RHIGraphicsPipelineDescription desc_ = {};
+};
+
 class RHIGraphicsPipeline {
 public:
+    static RHIGraphicsPipelineDescriptionBuilder description_builder() {
+        return RHIGraphicsPipelineDescriptionBuilder();
+    }
+
     virtual ~RHIGraphicsPipeline() = default;
 };
 

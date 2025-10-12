@@ -4,6 +4,7 @@
 #include "licht/core/memory/linear_allocator.hpp"
 #include "licht/core/platform/window_handle.hpp"
 #include "licht/rhi/buffer_pool.hpp"
+#include "licht/rhi/rhi_forwards.hpp"
 #include "licht/rhi/shader_resource.hpp"
 #include "licht/rhi/swapchain.hpp"
 #include "licht/rhi/texture.hpp"
@@ -53,6 +54,7 @@ private:
     WindowHandle window_handle_;
     RHIDeviceRef device_;
     RHIBufferPoolRef buffer_pool_;
+    RHITexturePoolRef texture_pool_;
 
     RHISwapchain* swapchain_;
 

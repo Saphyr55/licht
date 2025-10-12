@@ -19,8 +19,8 @@ struct RHITextureDescription {
     RHISharingMode sharing_mode = RHISharingMode::Private;
     RHIMemoryUsage memory_usage = RHIMemoryUsage::Device;
     RHITextureDimension dimension = RHITextureDimension::Dim2D;
-    size_t width = 8;
-    size_t height = 8;
+    float32 width = 8;
+    float32 height = 8;
     size_t depth = 1;
     size_t mip_levels = 1;
     size_t array_layers = 1;

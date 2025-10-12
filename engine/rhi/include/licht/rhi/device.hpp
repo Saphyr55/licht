@@ -8,7 +8,6 @@
 #include "licht/rhi/pipeline.hpp"
 #include "licht/rhi/rhi_forwards.hpp"
 #include "licht/rhi/shader_resource.hpp"
-#include "licht/rhi/texture.hpp"
 #include "licht/rhi/sampler.hpp"
 #include "licht/rhi/texture_view.hpp"
 #include "licht/rhi/render_pass.hpp"
@@ -23,6 +22,7 @@ public:
     virtual void reset_fence(RHIFence* fence) = 0;
 
     virtual RHIBufferPoolRef create_buffer_pool() = 0;
+    virtual RHITexturePoolRef create_texture_pool() = 0;
 
     virtual RHIShaderResourceGroupLayout* create_shader_resource_layout(const Array<RHIShaderResourceBinding>& bindings) = 0;
     virtual void destroy_shader_resource_layout(RHIShaderResourceGroupLayout* layout) = 0;
@@ -32,9 +32,6 @@ public:
 
     virtual RHICommandAllocator* create_command_allocator(const RHICommandAllocatorDescription& description) = 0;
     virtual void destroy_command_allocator(RHICommandAllocator* command_allocator) = 0;
-
-    virtual RHITexture* create_texture(const RHITextureDescription& description) = 0;
-    virtual void destroy_texture(RHITexture* texture) = 0;
 
     virtual RHITextureView* create_texture_view(const RHITextureViewDescription& description) = 0;
     virtual void destroy_texture_view(RHITextureView* texture_view) = 0;

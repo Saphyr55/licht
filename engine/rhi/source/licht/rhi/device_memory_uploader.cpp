@@ -1,17 +1,24 @@
 #include "licht/rhi/device_memory_uploader.hpp"
-#include "licht/rhi/buffer.hpp"
+
+#include "licht/core/memory/default_allocator.hpp"
+#include "licht/rhi/buffer_pool.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/command_queue.hpp"
 #include "licht/rhi/device.hpp"
-#include "licht/rhi/rhi_forwards.hpp"
+#include "licht/rhi/texture_pool.hpp"
 
 namespace licht {
 
-RHIDeviceMemoryUploader::RHIDeviceMemoryUploader(RHIDeviceRef device, RHIBufferPoolRef buffer_pool, size_t capacity)
+RHIDeviceMemoryUploader::RHIDeviceMemoryUploader(RHIDeviceRef device,
+                                                 RHIBufferPoolRef buffer_pool,
+                                                 RHITexturePoolRef texture_pool,
+                                                 size_t capacity)
     : device_(device)
     , buffer_pool_(buffer_pool)
+    , texture_pool_(texture_pool)
     , buffer_entries_(capacity) {
     staging_buffer_pool_ = device_->create_buffer_pool();
+    staging_buffer_pool_->initialize_pool(&DefaultAllocator::get_instance(), 64);
 }
 
 RHIBufferDescription RHIDeviceMemoryUploader::create_staging_buffer_description(const RHIStagingBufferContext& context) {
@@ -40,7 +47,7 @@ RHITexture* RHIDeviceMemoryUploader::send_texture(const RHIStagingBufferContext&
 
     description.usage = description.usage | RHITextureUsageFlags::TransferDst;
     description.memory_usage = RHIMemoryUsage::Device;
-    RHITexture* texture = device_->create_texture(description);
+    RHITexture* texture = texture_pool_->create_texture(description);
 
     texture_entries_.append(TextureEntry(staging_buffer, texture, context.size));
 

@@ -25,8 +25,8 @@ private:
 template <typename ResourceType, CAlignedAllocator AllocatorType>
 class Deleter {
 public:
-    void operator()(ResourceType* resource) noexcept { 
-        destroy(resource); 
+    void operator()(ResourceType* resource) noexcept {
+        destroy(resource);
     }
 
     void destroy(ResourceType* resource) noexcept {
@@ -46,5 +46,10 @@ private:
 
 template <typename ResourceType>
 using DefaultDeleter = Deleter<ResourceType, DefaultAllocator>;
+
+template <typename ResourceType>
+inline auto create_deleter(CAlignedAllocator auto& allocator) -> auto {
+    return Deleter<ResourceType, decltype(allocator)>(allocator);
+}
 
 }  // namespace licht

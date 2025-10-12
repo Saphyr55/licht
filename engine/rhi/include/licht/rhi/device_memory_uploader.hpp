@@ -38,8 +38,11 @@ public:
 
     void upload();
 
-    RHIDeviceMemoryUploader(RHIDeviceRef device, RHIBufferPoolRef buffer_pool, size_t capacity = 8);
-    
+    RHIDeviceMemoryUploader(RHIDeviceRef device,
+                            RHIBufferPoolRef buffer_pool,
+                            RHITexturePoolRef texture_pool,
+                            size_t capacity = 8);
+
 private:
     RHIBufferDescription create_staging_buffer_description(const RHIStagingBufferContext& context);
     RHIBufferDescription create_buffer_description(const RHIStagingBufferContext& context);
@@ -59,9 +62,11 @@ private:
 
     RHIBufferPoolRef staging_buffer_pool_;
     RHIBufferPoolRef buffer_pool_;
+    RHITexturePoolRef texture_pool_;
+    
     RHIDeviceRef device_;
     Array<BufferEntry> buffer_entries_;
     Array<TextureEntry> texture_entries_;
 };
 
-}
+}  //namespace licht
