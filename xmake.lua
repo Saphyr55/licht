@@ -26,13 +26,13 @@ function target_files_default(param)
 end
 
 -- Engine sources --
-includes("engine/core")
-includes("engine/messaging")
-includes("engine/engine")
-includes("engine/launcher")
-includes("engine/rhi")
-includes("engine/rhi-vulkan")
-includes("engine/scene")
+includes("runtime/core")
+includes("runtime/messaging")
+includes("runtime/engine")
+includes("runtime/launcher")
+includes("runtime/rhi")
+includes("runtime/rhi-vulkan")
+includes("runtime/scene")
 
 -- Sample sources --
 includes("samples/ludo")
