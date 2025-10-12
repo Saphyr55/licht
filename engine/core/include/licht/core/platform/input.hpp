@@ -1,10 +1,9 @@
 #pragma once
 
+#include "licht/core/containers/hash_set.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/signals/signal.hpp"
 #include "licht/core/string/string_ref.hpp"
-
-#include <set>
 
 namespace licht {
 
@@ -173,13 +172,13 @@ public:
     static bool button_is_pressed(Button button);
     static bool button_is_release(Button button);
 
-    static std::set<VirtualKey> keys_dow_;
-    static std::set<VirtualKey> keys_up_;
+    static HashSet<VirtualKey> keys_dow_;
+    static HashSet<VirtualKey> keys_up_;
     static Array<VirtualKey> keys_release_;
     static Array<VirtualKey> keys_pressed_;
     
-    static std::set<Button> buttons_dow_;
-    static std::set<Button> buttons_up_;
+    static HashSet<Button> buttons_dow_;
+    static HashSet<Button> buttons_up_;
     static Array<Button> buttons_release_;
     static Array<Button> buttons_pressed_;
 };

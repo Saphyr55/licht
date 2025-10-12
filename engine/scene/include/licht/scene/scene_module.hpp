@@ -1,13 +1,10 @@
 #pragma once
 
-#include "ludo_exports.hpp"
+#include "licht/core/modules/module_registry.hpp"
 
-#include <licht/core/modules/module.hpp>
-#include <licht/core/modules/module_registry.hpp>
+namespace licht {
 
-using namespace licht;
-
-class LUDO_API LudoModule : public Module {
+class SceneModule : public Module {
 public:
     virtual void on_load() override;
 
@@ -17,3 +14,5 @@ public:
 
     virtual void on_unload() override;
 };
+
+}  //namespace licht

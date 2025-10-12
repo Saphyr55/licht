@@ -32,7 +32,7 @@ includes("engine/engine")
 includes("engine/launcher")
 includes("engine/rhi")
 includes("engine/rhi-vulkan")
-
+includes("engine/scene")
 
 -- Sample sources --
 includes("samples/ludo")

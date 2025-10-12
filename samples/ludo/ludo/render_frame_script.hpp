@@ -1,6 +1,5 @@
 #pragma once
 
-#include "licht/core/math/vector3.hpp"
 #include "licht/core/memory/linear_allocator.hpp"
 #include "licht/core/platform/window_handle.hpp"
 #include "licht/rhi/buffer_pool.hpp"

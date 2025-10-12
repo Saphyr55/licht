@@ -1,6 +1,4 @@
-----------------------------------------------------
--- Ludo --------------------------------------------
-----------------------------------------------------
+
 target("ludo", function()
     set_kind("shared")
     add_rules("glsl")
@@ -12,6 +10,7 @@ target("ludo", function()
         "licht.rhi",
         "licht.rhi.vulkan",
         "licht.messaging",
+        "licht.scene",
         "stb"
     }
 

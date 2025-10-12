@@ -34,6 +34,7 @@ public:
 private:
     Array<const ModuleManifestInformation*> ordered_module_informations_;
     ModuleManifest manifest_;
+    
     StringRef project_directory_;
 };
 

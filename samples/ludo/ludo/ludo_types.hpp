@@ -1,5 +1,6 @@
 #pragma once
 
+#include "licht/core/containers/array.hpp"
 #include "licht/core/math/matrix4.hpp"
 
 namespace licht {

@@ -30,7 +30,7 @@ void DemoMessageHandler::on_mouse_move(float32 pos_rel_x, float32 pos_rel_y, flo
 
 void DemoMessageHandler::on_button_up(Button button) {
     Input::buttons_pressed_.remove(button);
-    Input::buttons_dow_.erase(button);
+    Input::buttons_dow_.remove(button);
 
     if (!Input::buttons_release_.contains(button)) {
         Input::buttons_release_.append(button);
@@ -43,7 +43,7 @@ void DemoMessageHandler::on_button_up(Button button) {
 
 void DemoMessageHandler::on_button_down(const Button button) {
     Input::buttons_release_.remove(button);
-    Input::buttons_up_.erase(button);
+    Input::buttons_up_.remove(button);
 
     if (!Input::buttons_pressed_.contains(button)) {
         Input::buttons_pressed_.append(button);
@@ -56,7 +56,7 @@ void DemoMessageHandler::on_button_down(const Button button) {
 
 void DemoMessageHandler::on_key_down(const VirtualKey key) {
     Input::keys_release_.remove(key);
-    Input::keys_up_.erase(key);
+    Input::keys_up_.remove(key);
 
     if (!Input::keys_pressed_.contains(key)) {
         Input::keys_pressed_.append(key);
@@ -69,7 +69,7 @@ void DemoMessageHandler::on_key_down(const VirtualKey key) {
 
 void DemoMessageHandler::on_key_up(const VirtualKey key) {
     Input::keys_pressed_.remove(key);
-    Input::keys_dow_.erase(key);
+    Input::keys_dow_.remove(key);
 
     if (!Input::keys_release_.contains(key)) {
         Input::keys_release_.append(key);

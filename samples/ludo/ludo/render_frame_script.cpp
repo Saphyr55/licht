@@ -1,6 +1,5 @@
 #include "render_frame_script.hpp"
 
-#include "camera.hpp"
 #include "image.hpp"
 
 #include "licht/core/containers/array_view.hpp"
@@ -29,6 +28,7 @@
 #include "licht/rhi/texture.hpp"
 #include "licht/rhi/texture_view.hpp"
 #include "licht/rhi/texture_pool.hpp"
+#include "licht/scene/camera.hpp"
 
 namespace licht {
 

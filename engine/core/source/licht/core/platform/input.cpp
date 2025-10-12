@@ -15,13 +15,13 @@ Signal<const Button&> Input::on_button_up;
 Signal<const Button&> Input::on_button_pressed;
 Signal<const Button&> Input::on_button_release;
 
-std::set<VirtualKey> Input::keys_dow_;
-std::set<VirtualKey> Input::keys_up_;
+HashSet<VirtualKey> Input::keys_dow_;
+HashSet<VirtualKey> Input::keys_up_;
 Array<VirtualKey> Input::keys_pressed_;
 Array<VirtualKey> Input::keys_release_;
 
-std::set<Button> Input::buttons_dow_;
-std::set<Button> Input::buttons_up_;
+HashSet<Button> Input::buttons_dow_;
+HashSet<Button> Input::buttons_up_;
 Array<Button> Input::buttons_pressed_;
 Array<Button> Input::buttons_release_;
 

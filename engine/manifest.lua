@@ -19,6 +19,13 @@ local _modules = {
         }
     },
     {
+        name = "licht.scene",
+        version = "0.0.1-dev",
+        dependencies = {
+            "licht.core"
+        }
+    },
+    {
         name = "licht.launcher",
         version = "0.0.1-dev",
         dependencies = {

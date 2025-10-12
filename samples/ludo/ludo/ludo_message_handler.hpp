@@ -1,7 +1,5 @@
 #pragma once
 
-#include <set>
-
 #include "licht/core/containers/array.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/platform/display_message_handler.hpp"
