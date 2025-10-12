@@ -1,10 +1,11 @@
 #pragma once
 
 #include "licht/core/modules/module.hpp"
+#include "licht/renderer/renderer_exports.hpp"
 
 namespace licht {
 
-class SceneModule : public Module {
+class LICHT_RENDERER_API RendererModule : public Module {
 public:
     virtual void on_load() override;
 

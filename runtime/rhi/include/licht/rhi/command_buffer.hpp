@@ -3,11 +3,9 @@
 #include "licht/core/containers/array.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/math/vector4.hpp"
-#include "licht/core/memory/shared_ref.hpp"
 #include "licht/rhi/rhi_forwards.hpp"
 #include "licht/rhi/rhi_types.hpp"
 #include "licht/rhi/texture.hpp"
-
 
 namespace licht {
 

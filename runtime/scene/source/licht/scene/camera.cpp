@@ -34,40 +34,4 @@ void Camera::update_vectors() {
     up = Vector3f::normalize(Vector3f::cross(front, right));
 }
 
-void Camera::on_tick(float64 delta_time) {
-    Vector3f direction(0.0f, 0.0f, 0.0f);
-
-    if (Input::key_is_down(VirtualKey::Z)) {
-        direction += front;
-    }
-
-    if (Input::key_is_down(VirtualKey::S)) {
-        direction -= front;
-    }
-
-    if (Input::key_is_down(VirtualKey::Q)) {
-        direction -= right;
-    }
-
-    if (Input::key_is_down(VirtualKey::D)) {
-        direction += right;
-    }
-
-    if (Input::key_is_down(VirtualKey::Space)) {
-        direction -= world_up;
-    }
-
-    if (Input::key_is_down(VirtualKey::LeftShift)) {
-        direction += world_up;
-    }
-
-    if (Vector3f::length(direction) > 0.0f) {
-        direction = Vector3f::normalize(direction);
-        position += direction * movement_speed * delta_time;
-        update_vectors();
-    }
-
-    update_view();
-}
-
 }  //namespace licht

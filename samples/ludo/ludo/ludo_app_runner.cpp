@@ -1,6 +1,5 @@
 #include "ludo_app_runner.hpp"
 
-#include "frame_rate_monitor.hpp"
 #include "ludo_message_handler.hpp"
 #include "render_frame_script.hpp"
 
@@ -12,15 +11,56 @@
 #include <licht/core/platform/input.hpp>
 #include <licht/core/platform/platform.hpp>
 #include <licht/core/platform/window_handle.hpp>
+#include <licht/core/time/delta_timer.hpp>
+#include <licht/core/time/frame_rate_monitor.hpp>
 #include <licht/core/trace/trace.hpp>
 #include <licht/rhi/rhi_module.hpp>
 #include <licht/scene/camera.hpp>
 
-Camera get_initial_camera() {
+constexpr float64 TargetFPS = 144.0;
+constexpr float64 TargetFrameRate = 1.0 / TargetFPS;
+
+static Camera initial_camera = []() {
     Camera camera(Vector3f(0.0f, 0.0f, 2.0f));
     camera.look_at(Vector3f(0.0f));
     camera.movement_speed = 10.0f;
     return camera;
+}();
+
+void LudoAppRunner::camera_on_tick(Camera& camera, float64 delta_time) {
+    Vector3f direction(0.0f, 0.0f, 0.0f);
+
+    if (Input::key_is_down(VirtualKey::Z)) {
+        direction += camera.front;
+    }
+
+    if (Input::key_is_down(VirtualKey::S)) {
+        direction -= camera.front;
+    }
+
+    if (Input::key_is_down(VirtualKey::Q)) {
+        direction -= camera.right;
+    }
+
+    if (Input::key_is_down(VirtualKey::D)) {
+        direction += camera.right;
+    }
+
+    if (Input::key_is_down(VirtualKey::Space)) {
+        direction -= camera.world_up;
+    }
+
+    if (Input::key_is_down(VirtualKey::LeftShift)) {
+        direction += camera.world_up;
+    }
+
+    if (Vector3f::length(direction) > 0.0f) {
+        direction = Vector3f::normalize(direction);
+        camera.position += direction * camera.movement_speed * delta_time;
+        camera.update_vectors();
+    }
+
+    camera.update_view();
 }
 
 void LudoAppRunner::on_run_delegate() {
@@ -44,7 +84,7 @@ void LudoAppRunner::on_run_delegate() {
     // TODO: Startup and shutdown must be launched automatically after refactoring the engine loop.
     rhi_module->on_startup();
 
-    Camera camera = get_initial_camera();
+    Camera camera = initial_camera;
 
     Input::on_mouse_move.connect([&camera](const MouseMove& mouse_move) -> void {
         if (Input::button_is_down(Button::Left)) {
@@ -56,7 +96,7 @@ void LudoAppRunner::on_run_delegate() {
     render_frame_script.on_startup();
 
     // By creating a DisplayMessageHandler, you can intercept the platform and window events.
-    SharedRef<DemoMessageHandler> demo_message_handler = new_ref<DemoMessageHandler>();
+    SharedRef<LudoDisplayMessageHandler> demo_message_handler = new_ref<LudoDisplayMessageHandler>();
     display.set_message_handler(demo_message_handler);
     demo_message_handler->set_render_frame_script(&render_frame_script);
 
@@ -69,42 +109,45 @@ void LudoAppRunner::on_run_delegate() {
 
     DeltaTimer timer;
     FrameRateMonitor frame_monitor;
-    constexpr float64 TargetFPS = 144.0;
-    constexpr float64 TargetFrameRate = 1.0 / TargetFPS;
+
+    bool unlimited_frame_rate = true;
 
     // Main loop
     while (g_is_app_running) {
         float64 delta_time = timer.tick();
 
         // Frame rate limiting
-        if (delta_time < TargetFrameRate) {
-            float64 sleep_time = TargetFrameRate - delta_time;
-            platform_delay(sleep_time);
-            delta_time = timer.tick();
+        if (!unlimited_frame_rate) {
+            delta_time = timer.limit(delta_time, TargetFrameRate);
         }
 
         // Handle window and platform events
         display.handle_events();
 
-        // Update camera view, must be call once per frame.
-        if (Input::key_is_pressed(VirtualKey::C)) {
-            camera = get_initial_camera();
-        }
-        
-        camera.on_tick(delta_time);
+        // Update the camera, must be call once per frame.
+        camera_on_tick(camera, delta_time);
 
         // Tick the render frame script with a delta time
         render_frame_script.on_tick(delta_time);
 
-        // Restart application when M key pressed.
-        if (Input::key_is_pressed(VirtualKey::M)) {
-            g_is_app_running = false;
+        // Restart the initial camera state.
+        if (Input::key_is_pressed(VirtualKey::C)) {
+            camera = initial_camera;
+        }
+
+        // Switch between 144Hz and unlimited frame rate.
+        if (Input::key_is_pressed(VirtualKey::F1)) {
+            unlimited_frame_rate = !unlimited_frame_rate;
+        }
+
+        // Restart application when Ctrl+R key pressed.
+        if (Input::key_is_pressed(VirtualKey::R) && Input::key_is_down(VirtualKey::LeftControl)) {
+            ludo_restart_app();
         }
 
         // Shutdown engine and application when Escape key pressed.
         if (Input::key_is_pressed(VirtualKey::Escape)) {
-            g_is_app_running = false;
-            g_is_engine_running = false;
+            ludo_stop_app();
         }
     }
 

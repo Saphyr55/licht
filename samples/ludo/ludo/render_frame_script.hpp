@@ -21,8 +21,6 @@ public:
 
     void on_tick(float64 delta_time);
 
-    void update_uniform(float64 delta_time);
-
     void update_resized(const uint32 width, const uint32 height);
 
     void pause();
@@ -30,6 +28,8 @@ public:
     void unpause();
 
 private:
+    void update_uniform(float64 delta_time);
+
     void reset();
 
 public:

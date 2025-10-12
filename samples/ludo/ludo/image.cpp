@@ -1,8 +1,6 @@
 #include "image.hpp"
 #include "licht/core/containers/hash_map.hpp"
 #include "licht/core/defines.hpp"
-#include "licht/core/memory/memory.hpp"
-#include "licht/core/memory/shared_ref.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>

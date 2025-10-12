@@ -33,6 +33,7 @@ includes("runtime/launcher")
 includes("runtime/rhi")
 includes("runtime/rhi-vulkan")
 includes("runtime/scene")
+includes("runtime/renderer")
 
 -- Sample sources --
 includes("samples/ludo")

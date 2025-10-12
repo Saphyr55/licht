@@ -1,5 +1,6 @@
 #include "licht/scene/scene_module.hpp"
 #include "licht/core/trace/trace.hpp"
+#include "licht/core/modules/module_registry.hpp"
 
 namespace licht {
 

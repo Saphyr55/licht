@@ -25,17 +25,15 @@ public:
 
     void look_around(float32 dx, float32 dy);
 
-    void on_tick(float64 delta_time);
+    void update_view();
+
+    void update_vectors();
 
 public:
     Camera(const Vector3f& position, const Vector3f& world_up = Vector3f(0.0f, 1.0f, 0.0f))
         : position(position), world_up(world_up), rotation(0.0f, 0.0f, 0.0f) {
         update_vectors();
     }
-
-private:
-    void update_view();
-    void update_vectors();
 };
 
 }  //namespace licht

@@ -1,16 +1,14 @@
 #pragma once
 
-#include "licht/core/containers/array.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/platform/display_message_handler.hpp"
 #include "licht/core/platform/input.hpp"
 #include "licht/core/platform/window_handle.hpp"
-#include "licht/core/signals/signal.hpp"
 #include "render_frame_script.hpp"
 
 using namespace licht;
 
-class DemoMessageHandler final : public DisplayMessageHandler {
+class LudoDisplayMessageHandler final : public DisplayMessageHandler {
 public:
     virtual void on_window_close(WindowHandle window) override;
 
@@ -25,7 +23,7 @@ public:
     virtual void on_key_down(VirtualKey key) override;
 
     virtual void on_key_up(VirtualKey key) override;
-    
+
     virtual void on_mouse_move(float32 pos_rel_x, float32 pos_rel_y, float32 pos_x, float32 pos_y) override;
 
     virtual void on_button_up(Button button) override;
@@ -42,3 +40,14 @@ private:
 
 inline bool g_is_engine_running = false;
 inline bool g_is_app_running = false;
+
+inline void ludo_restart_app() {
+    g_is_app_running = false;
+    // This is always true when we restart the application.
+    g_is_engine_running = true;
+}
+
+inline void ludo_stop_app() {
+    g_is_app_running = false;
+    g_is_engine_running = false;
+}
