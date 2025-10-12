@@ -30,6 +30,7 @@ enum class Button : uint8 {
 enum class VirtualKey : uint32 {
     None,
 
+    Escape = 0x07,
     Back = 0x08,
     Tab = 0x09,
     Clear = 0x0C,
@@ -109,12 +110,12 @@ enum class VirtualKey : uint32 {
     F11 = 0x7A,
     F12 = 0x7B,
 
-    KP_NUMLOCK = 0x90,
-    KP_DIVIDE = 0x6F,
-    KP_MULTIPLY = 0x6A,
-    KP_MINUS = 0x6D,
-    KP_PLUS = 0x6B,
-    KP_ENTER,
+    KP_NumLock = 0x90,
+    KP_Divide = 0x6F,
+    KP_Multiply = 0x6A,
+    KP_Plus = 0x6B,
+    KP_Minus = 0x6D,
+    KP_Enter,
     KP_1 = 0x61,
     KP_2 = 0x62,
     KP_3 = 0x63,
@@ -125,9 +126,9 @@ enum class VirtualKey : uint32 {
     KP_8 = 0x68,
     KP_9 = 0x69,
     KP_0 = 0x60,
-    KP_PERIOD,
-    KP_SEPARATOR = 0x6C,
-    KP_DECIMAL = 0x6E,
+    KP_Period,
+    KP_Separator = 0x6C,
+    KP_Decimal = 0x6E,
 
     KApp = 0x5D,
 

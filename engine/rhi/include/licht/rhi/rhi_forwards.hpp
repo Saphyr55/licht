@@ -21,7 +21,10 @@ class RHICommandAllocator;
 class RHIGraphicsPipeline;
 class RHISampler;
 
+class RHIBufferPool;
+
 using RHIDeviceRef = SharedRef<RHIDevice>;
 using RHICommandQueueRef = SharedRef<RHICommandQueue>;
+using RHIBufferPoolRef = SharedRef<RHIBufferPool>;
 
 }  //namespace licht

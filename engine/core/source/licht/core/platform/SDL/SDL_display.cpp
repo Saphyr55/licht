@@ -111,7 +111,7 @@ void SDLDisplay::hide(WindowHandle window) {
 
     SDL_HideWindow(sdl_window);
 }
-
+    
 void SDLDisplay::close(WindowHandle window) {
     LCHECK_MSG(is_valid(window), "Invalid window handle provided.");
 

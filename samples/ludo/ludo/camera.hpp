@@ -1,6 +1,5 @@
 #pragma once
 
-#include "licht/core/defines.hpp"
 #include "licht/core/math/math.hpp"
 #include "licht/core/math/matrix4.hpp"
 #include "licht/core/math/vector3.hpp"
@@ -18,7 +17,7 @@ public:
 
     Matrix4f view = Matrix4f(1.0f);
 
-    float32 movement_speed = 0.0015f;
+    float32 movement_speed = 1.0f;
     float32 mouse_sensitivity = 0.15f;
 
 public:
@@ -55,11 +54,9 @@ public:
 
         right = Vector3f::normalize(Vector3f::cross(front, world_up));
         up = Vector3f::normalize(Vector3f::cross(front, right));
-
-        update_view();
     }
 };
 
-void camera_update_position(Camera& camera);
+void camera_update(Camera& camera, float64 delta_time);
 
 }  //namespace licht

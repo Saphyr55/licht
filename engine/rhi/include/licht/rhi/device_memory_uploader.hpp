@@ -1,7 +1,9 @@
 #pragma once
 
+#include "buffer_pool.hpp"
 #include "licht/core/containers/array_view.hpp"
 #include "licht/rhi/buffer.hpp"
+#include "licht/rhi/buffer_pool.hpp"
 #include "licht/rhi/rhi_exports.hpp"
 #include "licht/rhi/rhi_types.hpp"
 #include "licht/rhi/texture.hpp"
@@ -36,10 +38,8 @@ public:
 
     void upload();
 
-    RHIDeviceMemoryUploader(RHIDeviceRef device, size_t capacity = 8)
-        : device_(device)
-        , buffer_entries_(capacity) {}
-
+    RHIDeviceMemoryUploader(RHIDeviceRef device, RHIBufferPoolRef buffer_pool, size_t capacity = 8);
+    
 private:
     RHIBufferDescription create_staging_buffer_description(const RHIStagingBufferContext& context);
     RHIBufferDescription create_buffer_description(const RHIStagingBufferContext& context);
@@ -57,6 +57,8 @@ private:
         size_t size;
     };
 
+    RHIBufferPoolRef staging_buffer_pool_;
+    RHIBufferPoolRef buffer_pool_;
     RHIDeviceRef device_;
     Array<BufferEntry> buffer_entries_;
     Array<TextureEntry> texture_entries_;

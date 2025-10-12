@@ -14,8 +14,17 @@ public:
 
     virtual void destroy_buffer(RHIBuffer* buffer) override;
 
+    virtual void dispose() override;
+
+public:
     VulkanBufferPool() = default;
-    virtual ~VulkanBufferPool() override = default;
+
+    virtual ~VulkanBufferPool() override {
+        dispose();
+    }
+
+private:    
+    void destroy_vulkan_buffer(VulkanBuffer* vulkan_buffer);
 
 private:
     MemoryPool<VulkanBuffer> pool_;

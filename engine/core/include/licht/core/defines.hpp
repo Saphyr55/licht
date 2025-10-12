@@ -17,6 +17,8 @@ using int64 = int64_t;
 using float32 = float;
 using float64 = double;
 
+#define NOMINMAX
+
 /**
  * Defines LDEBUG on debugging.
  */

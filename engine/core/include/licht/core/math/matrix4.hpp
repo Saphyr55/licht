@@ -13,38 +13,57 @@ struct Matrix4 {
     using Vec = Vector4<R>;
 
     constexpr Mat operator*(const Mat& m) const;
+
     constexpr Vec operator*(const Vector4<R>& v) const;
+
     constexpr Vec& operator[](size_t i);
+
     constexpr const Vec& operator[](size_t i) const;
+
     constexpr Vec col(uint32 index) const;
 
     constexpr Matrix4() = default;
+
     constexpr Matrix4(R r);
-    constexpr Matrix4(R m11, R m21, R m31, R m41, R m12, R m22, R m32, R m42, R m13, R m23, R m33, R m43, R m14, R m24, R m34, R m44);
+
+    constexpr Matrix4(R m11, R m21, R m31, R m41, 
+                      R m12, R m22, R m32, R m42, 
+                      R m13, R m23, R m33, R m43, 
+                      R m14, R m24, R m34, R m44);
+
     constexpr Matrix4(const Vec& col_1, const Vec& col_2, const Vec& col_3, const Vec& col_4);
 
     static constexpr Matrix4 identity();
+
     static constexpr Matrix4 translate(const Mat& mat, const Vector3<R>& vec);
+
     static constexpr Matrix4 scale(const Mat& mat, const Vector3<R>& vec);
+
     static constexpr Matrix4 rotate(const Mat& mat,
-                          const Real auto& theta,
-                          const Vector3<R>& vec);
+                                    const Real auto& theta,
+                                    const Vector3<R>& vec);
+
     static constexpr Matrix4 rotate_x(const float32& theta);
+
     static constexpr Matrix4 rotate_y(const float32& theta);
+
     static constexpr Matrix4 rotate_z(const float32& theta);
+
     static constexpr Matrix4 perspective(const Real auto& view,
-                               const Real auto& aspect,
-                               const Real auto& near,
-                               const Real auto& far);
+                                         const Real auto& aspect,
+                                         const Real auto& near,
+                                         const Real auto& far);
+
     static constexpr Matrix4 orthographic(const Real auto& left,
-                                const Real auto& right,
-                                const Real auto& bottom,
-                                const Real auto& top,
-                                const Real auto& near,
-                                const Real auto& far);
+                                          const Real auto& right,
+                                          const Real auto& bottom,
+                                          const Real auto& top,
+                                          const Real auto& near,
+                                          const Real auto& far);
+
     static constexpr Matrix4 look_at(const Vector3<R>& eye,
-                           const Vector3<R>& center,
-                           const Vector3<R>& up);
+                                     const Vector3<R>& center,
+                                     const Vector3<R>& up);
 
 private:
     Vec value[4];
@@ -112,9 +131,9 @@ constexpr Matrix4<R> Matrix4<R>::rotate_z(const float32& theta) {
 
 template <Real R>
 constexpr Matrix4<R> Matrix4<R>::perspective(const Real auto& view,
-                                   const Real auto& aspect,
-                                   const Real auto& near_,
-                                   const Real auto& far_) {
+                                             const Real auto& aspect,
+                                             const Real auto& near_,
+                                             const Real auto& far_) {
     Mat result(0.0);
 
     const R tan_half_fovy = Math::tan(view / static_cast<R>(2.0));
@@ -129,11 +148,11 @@ constexpr Matrix4<R> Matrix4<R>::perspective(const Real auto& view,
 
 template <Real R>
 constexpr Matrix4<R> Matrix4<R>::orthographic(const Real auto& left,
-                                    const Real auto& right,
-                                    const Real auto& bottom,
-                                    const Real auto& top,
-                                    const Real auto& near_,
-                                    const Real auto& far_) {
+                                              const Real auto& right,
+                                              const Real auto& bottom,
+                                              const Real auto& top,
+                                              const Real auto& near_,
+                                              const Real auto& far_) {
     LCHECK(far_ - near_ != 0);
     Mat result(1.0);
     result[0][0] = R(2.0f) / R(right - left);

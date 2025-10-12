@@ -8,7 +8,7 @@
 
 using namespace licht;
 
-class LICHT_LUDO_API LudoModule : public Module {
+class LUDO_API LudoModule : public Module {
 public:
     virtual void on_load() override;
 
@@ -21,4 +21,4 @@ public:
 
 LICHT_REGISTER_MODULE(LudoModule, "ludo")
 
-LICHT_LUDO_API int32 ludo_application_launch(int32 argc, const char** argv);
+LUDO_API int32 ludo_application_launch(int32 argc, const char** argv);

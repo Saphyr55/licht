@@ -73,6 +73,14 @@ public:
     static constexpr inline auto asin(const Real auto& value) -> auto {
         return std::asin(value);
     }
+
+    static constexpr inline auto min(const auto& value, const auto& min) -> auto {
+        return (value < min) ? min : value;
+    }
+
+    static constexpr inline auto max(const auto& value, const auto& max) -> auto {
+        return (value > max) ? max : value;
+    }
 };
 
 }  //namespace licht

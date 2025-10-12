@@ -4,38 +4,41 @@
 
 namespace licht {
 
-void camera_update_position(Camera& camera) {
+void camera_update(Camera& camera, float64 delta_time) {
+    
+    Vector3f direction(0.0f, 0.0f, 0.0f);
 
     if (Input::key_is_down(VirtualKey::Z)) {
-        camera.position += camera.front * camera.movement_speed;
-        camera.update_view();
+        direction += camera.front;
     }
 
     if (Input::key_is_down(VirtualKey::S)) {
-        camera.position -= camera.front * camera.movement_speed;
-        camera.update_view();
+        direction -= camera.front;
     }
-    
+
     if (Input::key_is_down(VirtualKey::Q)) {
-        camera.position -= camera.right * camera.movement_speed;
-        camera.update_view();
+        direction -= camera.right;
     }
-    
+
     if (Input::key_is_down(VirtualKey::D)) {
-        camera.position += camera.right * camera.movement_speed;
-        camera.update_view();
+        direction += camera.right;
     }
 
     if (Input::key_is_down(VirtualKey::Space)) {
-        camera.position -= camera.world_up * camera.movement_speed;
-        camera.update_view();
+        direction -= camera.world_up;
     }
 
     if (Input::key_is_down(VirtualKey::LeftShift)) {
-        camera.position += camera.world_up * camera.movement_speed;
-        camera.update_view();
+        direction += camera.world_up;
     }
 
+    if (Vector3f::length(direction) > 0.0f) {
+        direction = Vector3f::normalize(direction);
+        camera.position += direction * camera.movement_speed * delta_time;
+        camera.update_vectors();
+    }
+
+    camera.update_view();
 }
 
 }  //namespace licht

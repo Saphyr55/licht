@@ -1,5 +1,6 @@
 #pragma once
 
+#include "licht/core/defines.hpp"
 #include "licht/core/math/math.hpp"
 #include "licht/core/math/vector2.hpp"
 
@@ -18,9 +19,9 @@ struct Vector3 {
 
     auto dot(const Vector3& vec) const;
 
-    Vector3 operator*(const Real auto&) const;
-    Vector3 operator+(const Real auto&) const;
-    Vector3 operator-(const Real auto&) const;
+    Vector3 operator*(const R&) const;
+    Vector3 operator+(const R&) const;
+    Vector3 operator-(const R&) const;
     Vector3 operator*(const Vector3& vec) const;
     Vector3 operator+(const Vector3& vec) const;
     Vector3 operator-(const Vector3& vec) const;
@@ -29,10 +30,10 @@ struct Vector3 {
     Vector3& operator+=(const Vector3& vec);
     Vector3& operator-=(const Vector3& vec);
     Vector3& operator*=(const Vector3& vec);
-    Vector3& operator+=(const Real auto& t);
-    Vector3& operator-=(const Real auto& t);
-    Vector3& operator*=(const Real auto& t);
-    Vector3& operator/=(const Real auto& t);
+    Vector3& operator+=(const R& t);
+    Vector3& operator-=(const R& t);
+    Vector3& operator*=(const R& t);
+    Vector3& operator/=(const R& t);
 
     constexpr bool operator==(const Vector3& other) const {
         return x == other.x && y == other.y && z == other.z;
@@ -43,6 +44,7 @@ struct Vector3 {
     }
 
     static constexpr Vector3 forward();
+    static constexpr float32 length_squared(const Vector3<R>& vec);
     static constexpr float32 length(const Vector3<R>& vec);
     static constexpr Vector3 normalize(const Vector3<R>& vec);
     static constexpr Vector3 cross(const Vector3<R>& v1, const Vector3<R>& v2);
@@ -76,8 +78,13 @@ constexpr Vector3<R> Vector3<R>::forward() {
 }
 
 template <Real R>
+constexpr float32 Vector3<R>::length_squared(const Vector3& vec) {
+    return vec.x * vec.x + vec.y * vec.y + vec.z * vec.z;
+}
+
+template <Real R>
 constexpr float32 Vector3<R>::length(const Vector3& vec) {
-    return Math::sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+    return Math::sqrt(length_squared(vec));
 }
 
 template <Real R>
@@ -109,17 +116,17 @@ auto Vector3<R>::dot(const Vector3& vec) const {
 }
 
 template <Real R>
-Vector3<R> Vector3<R>::operator*(const Real auto& t) const {
+Vector3<R> Vector3<R>::operator*(const R& t) const {
     return Vector3{x * t, y * t, z * t};
 }
 
 template <Real R>
-Vector3<R> Vector3<R>::operator+(const Real auto& t) const {
+Vector3<R> Vector3<R>::operator+(const R& t) const {
     return Vector3{x + t, y + t, z + t};
 }
 
 template <Real R>
-Vector3<R> Vector3<R>::operator-(const Real auto& t) const {
+Vector3<R> Vector3<R>::operator-(const R& t) const {
     return Vector3{x - t, y - t, z - t};
 }
 
@@ -163,7 +170,7 @@ Vector3<R>& Vector3<R>::operator*=(const Vector3& vec) {
 }
 
 template <Real R>
-Vector3<R>& Vector3<R>::operator+=(const Real auto& t) {
+Vector3<R>& Vector3<R>::operator+=(const R& t) {
     x += t;
     y += t;
     z += t;
@@ -171,7 +178,7 @@ Vector3<R>& Vector3<R>::operator+=(const Real auto& t) {
 }
 
 template <Real R>
-Vector3<R>& Vector3<R>::operator-=(const Real auto& t) {
+Vector3<R>& Vector3<R>::operator-=(const R& t) {
     x -= t;
     y -= t;
     z -= t;
@@ -179,7 +186,7 @@ Vector3<R>& Vector3<R>::operator-=(const Real auto& t) {
 }
 
 template <Real R>
-Vector3<R>& Vector3<R>::operator*=(const Real auto& t) {
+Vector3<R>& Vector3<R>::operator*=(const R& t) {
     x *= t;
     y *= t;
     z *= t;
@@ -187,7 +194,7 @@ Vector3<R>& Vector3<R>::operator*=(const Real auto& t) {
 }
 
 template <Real R>
-Vector3<R>& Vector3<R>::operator/=(const Real auto& t) {
+Vector3<R>& Vector3<R>::operator/=(const R& t) {
     x /= t;
     y /= t;
     z /= t;

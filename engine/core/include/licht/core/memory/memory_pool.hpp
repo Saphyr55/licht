@@ -30,6 +30,9 @@ public:
 
     void dispose();
 
+    template<typename Functor>
+    void for_each(Functor&& functor);
+
     Allocator* get_allocator() {
         return allocator_;
     }
@@ -48,8 +51,6 @@ public:
 
 public:
     MemoryPool();
-    MemoryPool(const MemoryPool&) = delete;
-    MemoryPool& operator=(const MemoryPool&) = delete;
     ~MemoryPool();
 
 private:
@@ -143,6 +144,34 @@ void MemoryPool<ResourceType>::grow() {
 
     new_block[block_count_ - 1].next = free_block_;
     free_block_ = new_block;
+}
+
+template <typename ResourceType>
+template <typename Functor>
+void MemoryPool<ResourceType>::for_each(Functor&& functor) {
+    Array<Block*> free_blocks(64);
+    for (Block* b = free_block_; b != nullptr; b = b->next) {
+        free_blocks.append(b);
+    }
+
+    for (Block* chunk : blocks_) {
+        for (size_t i = 0; i < block_count_; ++i) {
+            Block* current = &chunk[i];
+
+            bool is_free = false;
+            for (Block* fb : free_blocks) {
+                if (fb == current) {
+                    is_free = true;
+                    break;
+                }
+            }
+
+            if (!is_free) {
+                ResourceType* resource = reinterpret_cast<ResourceType*>(&current->storage);
+                functor(resource);
+            }
+        }
+    }
 }
 
 }  //namespace licht

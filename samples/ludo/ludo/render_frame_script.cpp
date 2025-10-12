@@ -28,8 +28,6 @@
 #include "licht/rhi/texture.hpp"
 #include "licht/rhi/texture_view.hpp"
 
-#include <chrono>
-
 namespace licht {
 
 RenderFrameScript::RenderFrameScript(Camera* camera)
@@ -87,8 +85,11 @@ void RenderFrameScript::on_startup() {
     });
     LCHECK_MSG(graphics_present_command_queue_ptr, "Found no graphics command queue that support the present mode.");
     graphics_present_command_queue_ = *graphics_present_command_queue_ptr;
+    
+    // Buffer Pool
+    buffer_pool_ = device_->create_buffer_pool();
 
-    // -- Command Allocators
+    // Command Allocators
     RHICommandAllocatorDescription graphics_command_allocator_desc = {};
     graphics_command_allocator_desc.count = frame_context_.frame_count;
     graphics_command_allocator_desc.command_queue = graphics_command_queue_;
@@ -247,7 +248,7 @@ void RenderFrameScript::on_startup() {
     orange_texture_description.height = orange_image->get_heigth();
 
     // Device objects --
-    RHIDeviceMemoryUploader uploader(device_);
+    RHIDeviceMemoryUploader uploader(device_, buffer_pool_);
 
     // Vertex
     position_buffer_ = uploader.send_buffer(RHIStagingBufferContext(RHIBufferUsageFlags::Vertex, ArrayView(cube_mesh_.positions)));
@@ -287,7 +288,7 @@ void RenderFrameScript::on_startup() {
         uniform_buffer_description.memory_usage = RHIMemoryUsage::Host;
         uniform_buffer_description.size = sizeof(UniformBufferObject);
 
-        RHIBuffer* uniform_buffer = device_->create_buffer(uniform_buffer_description);
+        RHIBuffer* uniform_buffer = buffer_pool_->create_buffer(uniform_buffer_description);
         uniform_buffers_.append(uniform_buffer);
     }
 
@@ -331,7 +332,7 @@ void RenderFrameScript::on_startup() {
     }
 }
 
-void RenderFrameScript::on_tick(float32 delta_time) {
+void RenderFrameScript::on_tick(float64 delta_time) {
     if (pause_) {
         return;
     }
@@ -344,7 +345,7 @@ void RenderFrameScript::on_tick(float32 delta_time) {
     }
     LCHECK(frame_context_.success);
 
-    update_uniform();
+    update_uniform(delta_time);
 
     RHICommandBuffer* graphics_command_buffer = graphics_command_allocator_->open(frame_context_.current_frame);
     graphics_command_allocator_->reset_command_buffer(graphics_command_buffer);
@@ -427,26 +428,26 @@ void RenderFrameScript::on_tick(float32 delta_time) {
     frame_context_.next_frame();
 }
 
-void RenderFrameScript::update_uniform() {
-    namespace ch = std::chrono;
-
-    static ch::time_point start_time = ch::high_resolution_clock::now();
-
-    ch::time_point current_time = ch::high_resolution_clock::now();
-    float32 time = ch::duration<float32, ch::seconds::period>(current_time - start_time).count();
-
-    float32 aspect_ratio = swapchain_->get_width() / static_cast<float32>(swapchain_->get_height());
+void RenderFrameScript::update_uniform(float64 delta_time) {
 
     UniformBufferObject ubo;
 
-    Quaternion rotation = Quaternion::from_axis_angle(Vector3f::forward(), time * Math::radians(90.0f));
-    rotation = rotation * Quaternion::from_axis_angle(Vector3f(0.0f, 1.0f, 0.0f), time * Math::radians(90.0f));
+    static float32 rotation_x = 0.0f;
+    static float32 rotation_y = 0.0f;
+
+    rotation_x += delta_time * 30.0f;
+    rotation_y += delta_time * 45.0f;
+
+    Quaternion rot_x = Quaternion::from_axis_angle(Vector3f(1.0f, 0.0f, 0.0f), Math::radians(rotation_x));
+    Quaternion rot_y = Quaternion::from_axis_angle(Vector3f(0.0f, 1.0f, 0.0f), Math::radians(rotation_y));
+    Quaternion rotation = rot_x * rot_y;
+    
     ubo.model = Quaternion::rotation_matrix(rotation);
 
     ubo.view = camera_->view;
 
+    float32 aspect_ratio = swapchain_->get_width() / static_cast<float32>(swapchain_->get_height());
     ubo.proj = Matrix4f::perspective(Math::radians(75.0f), aspect_ratio, 0.00001f, 10000.0f);
-
     ubo.proj[1][1] *= -1.0f;
 
     uniform_buffers_[frame_context_.current_frame]->update(&ubo, sizeof(UniformBufferObject), 0);
@@ -531,14 +532,7 @@ void RenderFrameScript::on_shutdown() {
     device_->destroy_texture_view(depth_texture_view_);
     device_->destroy_texture(depth_texture_);
 
-    device_->destroy_buffer(position_buffer_);
-    device_->destroy_buffer(uv_buffer_);
-    device_->destroy_buffer(index_buffer_);
-
-    // -- Uniform buffers --
-    for (RHIBuffer* uniform_buffer : uniform_buffers_) {
-        device_->destroy_buffer(uniform_buffer);
-    }
+    buffer_pool_->dispose();
     uniform_buffers_.clear();
 
     // SRx

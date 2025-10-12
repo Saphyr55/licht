@@ -2,6 +2,7 @@
 
 #include "licht/core/defines.hpp"
 #include "licht/rhi/buffer.hpp"
+#include "licht/rhi/buffer_pool.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/framebuffer.hpp"
 #include "licht/rhi/pipeline.hpp"
@@ -20,6 +21,8 @@ public:
 
     virtual void wait_fence(RHIFence* fence) = 0;
     virtual void reset_fence(RHIFence* fence) = 0;
+
+    virtual RHIBufferPoolRef create_buffer_pool() = 0;
 
     virtual RHIShaderResourceGroupLayout* create_shader_resource_layout(const Array<RHIShaderResourceBinding>& bindings) = 0;
     virtual void destroy_shader_resource_layout(RHIShaderResourceGroupLayout* layout) = 0;
@@ -44,9 +47,6 @@ public:
 
     virtual RHIGraphicsPipeline* create_graphics_pipeline(const RHIGraphicsPipelineDescription& description) = 0;
     virtual void destroy_graphics_pipeline(RHIGraphicsPipeline* pipeline) = 0;
-
-    virtual RHIBuffer* create_buffer(RHIBufferDescription description) = 0;
-    virtual void destroy_buffer(RHIBuffer* buffer) = 0;
 
     virtual RHISwapchain* create_swapchain(uint32 width, uint32 height, uint32 image_count) = 0;
     virtual void recreate_swapchain(RHISwapchain* swapchain, uint32 width, uint32 height) = 0;

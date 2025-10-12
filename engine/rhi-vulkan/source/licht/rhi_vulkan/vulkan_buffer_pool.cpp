@@ -1,4 +1,6 @@
 #include "licht/rhi_vulkan/vulkan_buffer_pool.hpp"
+#include "licht/core/defines.hpp"
+#include "vulkan_buffer_pool.hpp"
 
 namespace licht {
 
@@ -13,9 +15,19 @@ RHIBuffer* VulkanBufferPool::create_buffer(const RHIBufferDescription& descripti
 }
 
 void VulkanBufferPool::destroy_buffer(RHIBuffer* buffer) {
-    VulkanBuffer* vulkan_buffer = static_cast<VulkanBuffer*>(buffer);
+    destroy_vulkan_buffer(static_cast<VulkanBuffer*>(buffer));
+}
+
+void VulkanBufferPool::dispose() {
+    pool_.for_each([this](VulkanBuffer* buffer) -> void {
+        destroy_vulkan_buffer(buffer);
+    });
+    pool_.dispose();
+}
+
+void VulkanBufferPool::destroy_vulkan_buffer(VulkanBuffer* vulkan_buffer) {
     vulkan_buffer->destroy();
     pool_.destroy_resource(vulkan_buffer);
 }
 
-}
+}  //namespace licht

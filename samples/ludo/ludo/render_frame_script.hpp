@@ -3,6 +3,7 @@
 #include "licht/core/math/vector3.hpp"
 #include "licht/core/memory/linear_allocator.hpp"
 #include "licht/core/platform/window_handle.hpp"
+#include "licht/rhi/buffer_pool.hpp"
 #include "licht/rhi/shader_resource.hpp"
 #include "licht/rhi/swapchain.hpp"
 #include "licht/rhi/texture.hpp"
@@ -18,9 +19,9 @@ public:
 
     void on_shutdown();
 
-    void on_tick(float32 delta_time);
+    void on_tick(float64 delta_time);
 
-    void update_uniform();
+    void update_uniform(float64 delta_time);
 
     void update_resized(const uint32 width, const uint32 height);
 
@@ -51,7 +52,8 @@ private:
 
     WindowHandle window_handle_;
     RHIDeviceRef device_;
-    
+    RHIBufferPoolRef buffer_pool_;
+
     RHISwapchain* swapchain_;
 
     RHICommandQueueRef graphics_command_queue_;

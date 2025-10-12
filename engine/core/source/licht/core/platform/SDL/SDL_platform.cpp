@@ -1,15 +1,12 @@
-#include "licht/core/memory/default_allocator.hpp"
-#include "licht/core/memory/heap_allocator.hpp"
-#include "licht/core/memory/memory.hpp"
 #include "licht/core/platform/SDL/SDL_display.hpp"
 #include "licht/core/platform/display.hpp"
 #include "licht/core/platform/platform.hpp"
 
 #include <SDL3/SDL.h>
 
+#include "licht/core/platform/platform_time.hpp"
 #include "licht/core/string/format.hpp"
 #include "licht/core/trace/trace.hpp"
-
 
 namespace licht {
 
@@ -18,6 +15,8 @@ void platform_start() {
         LLOG_ERROR("[Platform]", vformat("Failed to initialize SDL: %s", SDL_GetError()));
         return;
     }
+
+    platform_time_init();
 
     LLOG_INFO("[Platform]", "SDL initialized successfully.");
     

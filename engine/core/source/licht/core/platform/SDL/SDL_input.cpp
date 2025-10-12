@@ -15,6 +15,8 @@ Button button_from_SDL(int32 sdl_button) {
 
 VirtualKey key_from_SDL(SDL_Keycode p_key_code) {
      switch (p_key_code) {
+        case SDLK_ESCAPE:
+            return VirtualKey::Escape;
         case SDLK_A: return VirtualKey::A;
         case SDLK_B: return VirtualKey::B;
         case SDLK_C: return VirtualKey::C;
@@ -97,11 +99,11 @@ VirtualKey key_from_SDL(SDL_Keycode p_key_code) {
         case SDLK_VOLUMEDOWN: return VirtualKey::VolumeDown;
         case SDLK_VOLUMEUP: return VirtualKey::VolumeUp;
 
-        case SDLK_KP_PLUS: return VirtualKey::KP_PLUS;
-        case SDLK_KP_MINUS: return VirtualKey::KP_MINUS;
-        case SDLK_KP_MULTIPLY: return VirtualKey::KP_MULTIPLY;
-        case SDLK_KP_DIVIDE: return VirtualKey::KP_DIVIDE;
-        case SDLK_KP_ENTER: return VirtualKey::KP_ENTER;
+        case SDLK_KP_PLUS: return VirtualKey::KP_Plus;
+        case SDLK_KP_MINUS: return VirtualKey::KP_Minus;
+        case SDLK_KP_MULTIPLY: return VirtualKey::KP_Multiply;
+        case SDLK_KP_DIVIDE: return VirtualKey::KP_Divide;
+        case SDLK_KP_ENTER: return VirtualKey::KP_Enter;
 
         case SDLK_KP_1: return VirtualKey::KP_1;
         case SDLK_KP_2: return VirtualKey::KP_2;
@@ -114,7 +116,7 @@ VirtualKey key_from_SDL(SDL_Keycode p_key_code) {
         case SDLK_KP_9: return VirtualKey::KP_9;
 
         case SDLK_KP_0: return VirtualKey::KP_0;
-        case SDLK_KP_DECIMAL: return VirtualKey::KP_PERIOD;
+        case SDLK_KP_DECIMAL: return VirtualKey::KP_Period;
 
         default: return VirtualKey::None;
     }
@@ -215,11 +217,11 @@ SDL_Keycode key_to_SDL(VirtualKey k) {
         case VirtualKey::Mute: return SDLK_MUTE;
         case VirtualKey::VolumeDown: return SDLK_VOLUMEDOWN;
         case VirtualKey::VolumeUp: return SDLK_VOLUMEUP;
-        case VirtualKey::KP_PLUS: return SDLK_KP_PLUS;
-        case VirtualKey::KP_MINUS: return SDLK_KP_MINUS;
-        case VirtualKey::KP_MULTIPLY: return SDLK_KP_MULTIPLY;
-        case VirtualKey::KP_DIVIDE: return SDLK_KP_DIVIDE;
-        case VirtualKey::KP_ENTER: return SDLK_KP_ENTER;
+        case VirtualKey::KP_Plus: return SDLK_KP_PLUS;
+        case VirtualKey::KP_Minus: return SDLK_KP_MINUS;
+        case VirtualKey::KP_Multiply: return SDLK_KP_MULTIPLY;
+        case VirtualKey::KP_Divide: return SDLK_KP_DIVIDE;
+        case VirtualKey::KP_Enter: return SDLK_KP_ENTER;
         
         case VirtualKey::KP_1: return SDLK_KP_1;
         case VirtualKey::KP_2: return SDLK_KP_2;

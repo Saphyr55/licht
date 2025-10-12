@@ -110,11 +110,14 @@ StringRef key_to_string(VirtualKey key) {
         case VirtualKey::F11: return "F11";
         case VirtualKey::F12: return "F12";
 
+
         case VirtualKey::Left: return "Left";
         case VirtualKey::Right: return "Right";
         case VirtualKey::Up: return "Up";
         case VirtualKey::Down: return "Down";
         case VirtualKey::Return: return "Enter";
+        case VirtualKey::Escape:
+            return "Escape";
         case VirtualKey::Space: return "Space";
         case VirtualKey::Tab: return "Tab";
         case VirtualKey::Back: return "Backspace";
@@ -139,11 +142,11 @@ StringRef key_to_string(VirtualKey key) {
         case VirtualKey::LeftAlt: return "Left Alt";
         case VirtualKey::RightAlt: return "Right Alt";
 
-        case VirtualKey::KP_PLUS: return "Numpad +";
-        case VirtualKey::KP_MINUS: return "Numpad -";
-        case VirtualKey::KP_MULTIPLY: return "Numpad *";
-        case VirtualKey::KP_DIVIDE: return "Numpad /";
-        case VirtualKey::KP_ENTER: return "Numpad Enter";
+        case VirtualKey::KP_Plus: return "Numpad +";
+        case VirtualKey::KP_Minus: return "Numpad -";
+        case VirtualKey::KP_Multiply: return "Numpad *";
+        case VirtualKey::KP_Divide: return "Numpad /";
+        case VirtualKey::KP_Enter: return "Numpad Enter";
         case VirtualKey::KP_0: return "Numpad 0";
         case VirtualKey::KP_1: return "Numpad 1";
         case VirtualKey::KP_2: return "Numpad 2";

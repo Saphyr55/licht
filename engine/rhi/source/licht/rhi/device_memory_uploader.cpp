@@ -7,6 +7,13 @@
 
 namespace licht {
 
+RHIDeviceMemoryUploader::RHIDeviceMemoryUploader(RHIDeviceRef device, RHIBufferPoolRef buffer_pool, size_t capacity)
+    : device_(device)
+    , buffer_pool_(buffer_pool)
+    , buffer_entries_(capacity) {
+    staging_buffer_pool_ = device_->create_buffer_pool();
+}
+
 RHIBufferDescription RHIDeviceMemoryUploader::create_staging_buffer_description(const RHIStagingBufferContext& context) {
     RHIBufferDescription staging_buffer_description = {};
     staging_buffer_description.sharing_mode = RHISharingMode::Shared;
@@ -27,7 +34,7 @@ RHIBufferDescription RHIDeviceMemoryUploader::create_buffer_description(const RH
 
 RHITexture* RHIDeviceMemoryUploader::send_texture(const RHIStagingBufferContext& context, RHITextureDescription& description) {
     RHIBufferDescription staging_buffer_description = create_staging_buffer_description(context);
-    RHIBuffer* staging_buffer = device_->create_buffer(staging_buffer_description);
+    RHIBuffer* staging_buffer = staging_buffer_pool_->create_buffer(staging_buffer_description);
 
     staging_buffer->update(context.data, context.size);
 
@@ -42,12 +49,12 @@ RHITexture* RHIDeviceMemoryUploader::send_texture(const RHIStagingBufferContext&
 
 RHIBuffer* RHIDeviceMemoryUploader::send_buffer(const RHIStagingBufferContext& context) {
     RHIBufferDescription staging_buffer_description = create_staging_buffer_description(context);
-    RHIBuffer* staging_buffer = device_->create_buffer(staging_buffer_description);
+    RHIBuffer* staging_buffer = staging_buffer_pool_->create_buffer(staging_buffer_description);
 
     staging_buffer->update(context.data, context.size);
-    
+
     RHIBufferDescription buffer_description = create_buffer_description(context);
-    RHIBuffer* buffer = device_->create_buffer(buffer_description);
+    RHIBuffer* buffer = buffer_pool_->create_buffer(buffer_description);
 
     buffer_entries_.append(BufferEntry(staging_buffer, buffer, context.size));
 
@@ -66,7 +73,7 @@ void RHIDeviceMemoryUploader::upload() {
     RHICommandQueueRef transfer_queue = *transfer_queue_ptr;
 
     RHICommandAllocatorDescription transfer_command_allocator_desc = {};
-    transfer_command_allocator_desc.count = 1; // One command buffer allocated.
+    transfer_command_allocator_desc.count = 1;  // One command buffer allocated.
     transfer_command_allocator_desc.command_queue = transfer_queue;
 
     RHICommandAllocator* transfer_command_allocator = device_->create_command_allocator(transfer_command_allocator_desc);
@@ -87,7 +94,7 @@ void RHIDeviceMemoryUploader::upload() {
 
         for (auto& entry : texture_entries_) {
             RHITexture* texture = entry.texture;
-                
+
             RHITextureBarrier barrier_to_copy = {};
             barrier_to_copy.texture = texture;
             barrier_to_copy.old_layout = RHITextureLayout::Undefined;
@@ -118,13 +125,7 @@ void RHIDeviceMemoryUploader::upload() {
     device_->destroy_fence(upload_fence);
 
     // Standing buffers no longer needed after data upload
-    for (BufferEntry& entry : buffer_entries_) {
-        device_->destroy_buffer(entry.staging);
-    }
-
-    for (TextureEntry& entry : texture_entries_) {
-        device_->destroy_buffer(entry.staging);
-    }
+    staging_buffer_pool_->dispose();
 
     device_->destroy_command_allocator(transfer_command_allocator);
 }

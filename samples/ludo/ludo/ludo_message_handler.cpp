@@ -3,7 +3,8 @@
 
 void DemoMessageHandler::on_window_close(const WindowHandle window) {
     LLOG_INFO("[DemoMessageHandler::on_window_close]", "Window closed.");
-    g_is_running = false;
+    g_is_app_running = false;
+    g_is_engine_running = false;
 }
 
 void DemoMessageHandler::on_window_resized(const WindowHandle window, const uint32 width, const uint32 height) {

@@ -42,4 +42,5 @@ private:
     RenderFrameScript* frame_script_ = nullptr;
 };
 
-inline bool g_is_running = false;
+inline bool g_is_engine_running = false;
+inline bool g_is_app_running = false;
