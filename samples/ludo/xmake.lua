@@ -11,6 +11,7 @@ target("ludo", function()
         "licht.rhi.vulkan",
         "licht.messaging",
         "licht.scene",
+        "licht.renderer",
         "stb"
     }
 

@@ -16,8 +16,7 @@ struct RHIDepthAttachementDescription {
 
 struct RHIRenderPassDescription {
     Array<RHIColorAttachmentDescription> attachment_decriptions;
-    Option<RHIDepthAttachementDescription> deph_attachement_description = Option<RHIDepthAttachementDescription>::some(
-        RHIDepthAttachementDescription(RHIFormat::D24S8));
+    Option<RHIDepthAttachementDescription> deph_attachement_description = RHIDepthAttachementDescription(RHIFormat::D24S8);
 };
 
 class RHIRenderPass {

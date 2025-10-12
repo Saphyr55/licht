@@ -1,7 +1,9 @@
 #pragma once
 
 #include "licht/core/memory/linear_allocator.hpp"
+#include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/platform/window_handle.hpp"
+#include "licht/renderer/renderer.hpp"
 #include "licht/rhi/buffer_pool.hpp"
 #include "licht/rhi/rhi_forwards.hpp"
 #include "licht/rhi/shader_resource.hpp"
@@ -55,26 +57,23 @@ private:
     RHIBufferPoolRef buffer_pool_;
     RHITexturePoolRef texture_pool_;
 
-    RHISwapchain* swapchain_;
-
-    RHICommandQueueRef graphics_command_queue_;
-    RHICommandQueueRef graphics_present_command_queue_;
+    RHICommandQueueRef graphics_queue_;
+    RHICommandQueueRef present_queue_;
 
     RHIRenderPass* render_pass_;
     RHIShaderResourceGroupLayout* shader_resource_group_layout_;
     RHIShaderResourceGroupPool* shader_resource_pool_;
     RHIGraphicsPipeline* graphics_pipeline_;
 
-    LinearAllocator framebuffer_memory_allocator_;
     Array<RHIFramebuffer*> framebuffers_;
     RHITextureView* depth_texture_view_ ;
     RHITexture* depth_texture_;
 
-    RHICommandAllocator* graphics_command_allocator_;
-    RHIFrameContext frame_context_;
+    RHICommandAllocator* cmd_allocator_;
+
+    SharedRef<Renderer> renderer_;
 
     bool pause_ = false;
-    bool window_resized_ = false;
 };
 
 }  //namespace licht

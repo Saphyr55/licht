@@ -13,7 +13,6 @@ struct RHIVertexBindingDescription {
     RHIVertexInputRate input_rate = RHIVertexInputRate::Vertex;
 
     RHIVertexBindingDescription() = default;
-
     RHIVertexBindingDescription(uint32 in_binding,
                                 uint32 in_stride,
                                 RHIVertexInputRate in_input_rate = RHIVertexInputRate::Vertex)
@@ -29,7 +28,6 @@ struct RHIVertexAttributeDescription {
     uint32 offset = 0;
 
     RHIVertexAttributeDescription() = default;
-
     RHIVertexAttributeDescription(uint32 in_binding,
                                   uint32 in_location,
                                   RHIFormat in_format,

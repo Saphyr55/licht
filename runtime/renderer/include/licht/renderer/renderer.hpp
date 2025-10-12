@@ -1,6 +1,116 @@
 #pragma once
 
+#include "licht/core/defines.hpp"
+#include "licht/core/function/function_ref.hpp"
+#include "licht/core/platform/display.hpp"
+#include "licht/core/platform/window_handle.hpp"
+#include "licht/renderer/renderer_exports.hpp"
+#include "licht/rhi/command_buffer.hpp"
+#include "licht/rhi/rhi_forwards.hpp"
+#include "licht/rhi/swapchain.hpp"
+
 namespace licht {
 
+enum class RenderResult {
+    Success = 0,
+    OutOfDate,
+    Unknown,
+};
 
-}
+class LICHT_RENDERER_API Renderer {
+public:
+    void startup();
+
+    void shutdown();
+
+    RenderResult begin_frame();
+
+    RenderResult end_frame();
+
+    RHISwapchain* get_swapchain();
+
+    RHIDeviceRef get_device();
+
+    WindowHandle get_window_handle() {
+        return window_handle_;
+    }
+
+    const RHIFrameContext& get_frame_context() const {
+        return frame_context_;
+    }
+
+    void set_window_handle(WindowHandle window_handle) {
+        window_handle_ = window_handle;
+    }
+
+    RHICommandAllocator* get_command_allocator() {
+        return command_allocator_;
+    }
+
+    void set_command_allocator(RHICommandAllocator* cmd_allocator) {
+        command_allocator_ = cmd_allocator;
+    }
+
+    void update_resized(const uint32 width, const uint32 height) {
+        window_resized_ = true;
+        frame_context_.frame_width = width;
+        frame_context_.frame_height = height;
+    }
+
+    void set_on_reset(std::function<void()>&& on_reset) {
+        on_reset_ = on_reset;
+    } 
+
+    uint32 get_frame_count() {
+        return frame_context_.frame_count;
+    }    
+    
+    uint32 get_current_frame() {
+        return frame_context_.current_frame;
+    }
+
+    uint32 get_frame_index() {
+        return frame_context_.frame_index;
+    }
+
+    RHICommandQueueRef get_present_queue() {
+        return present_queue_;
+    }
+
+    RHICommandQueueRef get_graphics_queue() {
+        return graphics_queue_;
+    }
+
+    void set_graphics_queue(const RHICommandQueueRef& graphics_queue) {
+        graphics_queue_ = graphics_queue;
+    }
+
+    void set_present_queue(const RHICommandQueueRef& present_queue) {
+        present_queue_ = present_queue;
+    }
+
+    RHICommandBuffer* get_current_command_buffer() {
+        return current_cmd_;
+    }
+
+private:
+    void reset();
+
+public:
+    Renderer()
+        : window_handle_(Display::InvalidWindowHandle) {}
+
+private:
+    std::function<void()> on_reset_;
+    WindowHandle window_handle_;
+    RHIFrameContext frame_context_;
+    RHIDeviceRef device_;
+    RHICommandAllocator* command_allocator_;
+    RHISwapchain* swapchain_;
+    RHICommandBuffer* current_cmd_;
+    RHICommandQueueRef present_queue_;
+    RHICommandQueueRef graphics_queue_;
+    bool window_resized_ = false;
+};
+
+}  //namespace licht
