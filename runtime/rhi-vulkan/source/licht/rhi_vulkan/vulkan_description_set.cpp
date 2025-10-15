@@ -225,6 +225,14 @@ void VulkanShaderResourceGroupPool::deallocate_group(RHIShaderResourceGroup* gro
     vk_group->reset();
 }
 
+void VulkanShaderResourceGroupPool::dispose() {
+    for (size_t i = 0; i < get_count(); i++) {
+        deallocate_group(get_group(i));
+    }
+    free_groups_.clear();
+    allocated_groups_.clear();
+}
+
 void VulkanShaderResourceGroupPool::initialize(size_t max_groups, const Array<RHIShaderResourceBinding>& total_bindings) {
     max_groups_ = max_groups;
 

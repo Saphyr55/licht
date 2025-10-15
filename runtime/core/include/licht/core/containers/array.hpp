@@ -283,6 +283,16 @@ public:
         }
     }
 
+    constexpr Array(ElementType* elements,
+                    size_type size,
+                    AllocatorType allocator = AllocatorType())
+        : allocator_(allocator)
+        , data_(nullptr)
+        , size_(size)
+        , capacity_(size) {
+        copy_data(elements);
+    }
+
     constexpr Array(const Array& other) noexcept
         : allocator_(other.allocator_)
         , data_(nullptr)
@@ -299,7 +309,7 @@ public:
         other.data_ = nullptr;
     }
 
-    constexpr ~Array() {
+    ~Array() {
         if (data_) {
             clear();
             allocator_deallocate(data_, capacity_);

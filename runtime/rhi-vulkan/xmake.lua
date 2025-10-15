@@ -1,3 +1,5 @@
+add_requires("vulkan-headers")
+
 target("licht.rhi.vulkan", function()
     set_kind("shared")
     set_group("engine")

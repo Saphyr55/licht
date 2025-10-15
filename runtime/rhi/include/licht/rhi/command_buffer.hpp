@@ -63,6 +63,8 @@ struct RHIRenderPassBeginInfo {
     RHIFramebuffer* framebuffer = nullptr;  ///< Target framebuffer for the render pass.
     Rect2D area = {};                       ///< Render area (typically width, height, x, y).
     Vector4f color = Vector4f(0.0f);
+    float32 depth = 1.0f;
+    uint32 stencil = 0;
 };
 
 /**

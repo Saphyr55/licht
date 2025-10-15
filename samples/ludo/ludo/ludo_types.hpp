@@ -13,8 +13,8 @@ struct UniformBufferObject {
     UniformBufferObject() = default;
 };
 
-struct CubeMesh {
-
+struct RenderCube {
+    
     Array<Vector3f> positions = {
         Vector3f(-0.5f, -0.5f, 0.5f),  // 0
         Vector3f(0.5f, -0.5f, 0.5f),   // 1

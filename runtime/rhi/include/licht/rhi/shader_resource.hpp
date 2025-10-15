@@ -162,10 +162,16 @@ public:
      */
     virtual void deallocate_group(RHIShaderResourceGroup* group) = 0;
 
+    virtual void dispose() = 0;
+
     /**
      * @brief Retrieves a Shader Resource Group by its internal pool index (e.g., for pre-allocated pools).
      */
     virtual RHIShaderResourceGroup* get_group(size_t pool_index) = 0;
+
+    virtual size_t get_count() = 0;
+
+    virtual size_t get_max_count() = 0;
 
     virtual ~RHIShaderResourceGroupPool() = default;
 };

@@ -335,7 +335,7 @@ void VulkanCommandBuffer::begin_render_pass(const RHIRenderPassBeginInfo& begin_
     VulkanRenderPass* vk_render_pass = static_cast<VulkanRenderPass*>(begin_info.render_pass);
     VulkanFramebuffer* vk_framebuffer = static_cast<VulkanFramebuffer*>(begin_info.framebuffer);
 
-    const auto& rp_desc = vk_render_pass->get_description();
+    const RHIRenderPassDescription& rp_desc = vk_render_pass->get_description();
     uint32 total_attachments = rp_desc.attachment_decriptions.size();
 
     if (total_attachments == 0) {
@@ -351,11 +351,8 @@ void VulkanCommandBuffer::begin_render_pass(const RHIRenderPassBeginInfo& begin_
         begin_info.color.w};
 
     VkClearDepthStencilValue depth_stencil_value = {};
-    depth_stencil_value.depth = 1.0f;
-    depth_stencil_value.stencil = 0;
-
-    VkClearValue clear_depth_value = {};
-    clear_depth_value.depthStencil = depth_stencil_value;
+    depth_stencil_value.depth = begin_info.depth;
+    depth_stencil_value.stencil = begin_info.stencil;
 
     Array<VkClearValue> clear_values(total_attachments + 1);
 
@@ -369,6 +366,9 @@ void VulkanCommandBuffer::begin_render_pass(const RHIRenderPassBeginInfo& begin_
     }
 
     if (has_depth_attachment) {
+        VkClearValue clear_depth_value = {};
+        clear_depth_value.depthStencil = depth_stencil_value;
+
         clear_values.append(clear_depth_value);
     }
 

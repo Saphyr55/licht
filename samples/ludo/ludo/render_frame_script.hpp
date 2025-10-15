@@ -4,6 +4,7 @@
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/platform/window_handle.hpp"
 #include "licht/renderer/renderer.hpp"
+#include "licht/renderer/mesh/attribute.hpp"
 #include "licht/rhi/buffer_pool.hpp"
 #include "licht/rhi/rhi_forwards.hpp"
 #include "licht/rhi/shader_resource.hpp"
@@ -14,6 +15,24 @@
 namespace licht {
 
 class Camera;
+
+struct RenderSubMesh {
+    Array<RHIBuffer*> vertex_buffers;
+
+    RHIBuffer* index_buffer;
+    size_t index_count = 0;
+
+    RHISampler* sampler;
+
+    RHITexture* texture;
+    RHITextureView* texture_view;
+
+    Array<RHIShaderResourceGroup*> shader_groups;
+};
+
+struct RenderMesh {
+    Array<RenderSubMesh> submeshes;
+};
 
 class RenderFrameScript {
 public:
@@ -41,14 +60,7 @@ public:
 private:
     Camera* camera_;
 
-    RHISampler* orange_texture_sampler_;
-    RHITexture* orange_texture_;
-    RHITextureView* orange_texture_view_;
-
-    RHIBuffer* position_buffer_;
-    RHIBuffer* uv_buffer_;
-    RHIBuffer* index_buffer_;
-    CubeMesh cube_mesh_{};
+    Array<RenderMesh> render_model_;
 
     Array<RHIBuffer*> uniform_buffers_;
 
@@ -59,6 +71,8 @@ private:
 
     RHICommandQueueRef graphics_queue_;
     RHICommandQueueRef present_queue_;
+    
+    RHIShaderResourceBinding sampler_binding_;
 
     RHIRenderPass* render_pass_;
     RHIShaderResourceGroupLayout* shader_resource_group_layout_;

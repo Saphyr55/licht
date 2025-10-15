@@ -1,7 +1,12 @@
+add_requires("tinygltf")
 
 target("licht.renderer", function()
     set_kind("shared")
     set_group("engine")
+
+    add_packages("tinygltf", {
+        public = false
+    })
 
     add_deps("licht.core", "licht.rhi")
 

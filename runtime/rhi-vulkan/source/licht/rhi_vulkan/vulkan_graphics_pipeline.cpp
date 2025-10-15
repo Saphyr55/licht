@@ -108,7 +108,6 @@ void VulkanGraphicsPipeline::initialize(const RHIGraphicsPipelineDescription& de
     VkPipelineShaderStageCreateInfo pipeline_shader_state_create_info[] = {vertex_shader_stage_create_info, fragment_shader_stage_create_info};
 
     Array<VkDynamicState> dynamic_states = {
-        VK_DYNAMIC_STATE_LINE_WIDTH,
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_SCISSOR};
 

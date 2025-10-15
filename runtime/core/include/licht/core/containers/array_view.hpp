@@ -117,6 +117,8 @@ public:
     }
 
 public:
+    ArrayView() = default;
+
     ArrayView(ElementType* data, size_type size)
         : data_(data), size_(size) {}
 

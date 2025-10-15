@@ -86,14 +86,14 @@ TEST_CASE("Remove, contains and get_if", "[Array]") {
 
 TEST_CASE("Copy, move, append_all and initializer list", "[Array]") {
     Array<int32> a = {5, 6, 7};
-    Array<int32> b(a);  // copy ctor
+    Array<int32> b(a);  // copy
     REQUIRE(a == b);
 
     Array<int32> c;
     c.append_all(a);
     REQUIRE(c == a);
 
-    Array<int32> d(std::move(a));  // move ctor
+    Array<int32> d(std::move(a));  // move
     REQUIRE(d.size() == 3);
     // a moved-from: safe to use but unspecified contents; we won't assert on a here
 

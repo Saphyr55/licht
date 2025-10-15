@@ -1,7 +1,6 @@
 #pragma once
 
 #include "licht/core/defines.hpp"
-#include "licht/core/function/function_ref.hpp"
 #include "licht/core/platform/display.hpp"
 #include "licht/core/platform/window_handle.hpp"
 #include "licht/renderer/renderer_exports.hpp"

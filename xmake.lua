@@ -14,7 +14,7 @@ if is_mode("debug") then
     add_defines("LDEBUG")
 end
 
-add_requires("libsdl3", "catch2", "vulkan-headers", "lua")
+add_requires("libsdl3", "catch2", "lua")
 
 includes("scripts/xmake/**.lua")
 

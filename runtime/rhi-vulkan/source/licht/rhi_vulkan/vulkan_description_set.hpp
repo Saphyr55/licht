@@ -81,6 +81,16 @@ public:
 
     virtual RHIShaderResourceGroup* get_group(size_t pool_index) override;
 
+    virtual void dispose() override;
+
+    virtual size_t get_count() override {
+        return allocated_groups_.size();
+    }
+
+    virtual size_t get_max_count() override {
+        return max_groups_;
+    }
+
     void initialize(size_t max_sets, const Array<RHIShaderResourceBinding>& total_bindings);
 
     void destroy();

@@ -12,6 +12,5 @@ layout(binding = 1) uniform sampler2D orange_texture;
 
 void main() {
     float depth_value = gl_FragCoord.z;
-
     out_frag_color = texture(orange_texture, in_texture_uv);
 }

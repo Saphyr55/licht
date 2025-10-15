@@ -15,9 +15,10 @@
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/modules/module_registry.hpp"
 #include "licht/core/platform/display.hpp"
-#include "licht/core/platform/window_handle.hpp"
 #include "licht/core/trace/trace.hpp"
 #include "licht/engine/project_settings.hpp"
+#include "licht/renderer/mesh/static_mesh.hpp"
+#include "licht/renderer/mesh/static_mesh_loader.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/command_queue.hpp"
@@ -43,9 +44,6 @@ RenderFrameScript::RenderFrameScript(Camera* camera)
     , cmd_allocator_(nullptr)
     , pause_(false)
     , camera_(camera)
-    , uv_buffer_(nullptr)
-    , position_buffer_(nullptr)
-    , index_buffer_(nullptr)
     , shader_resource_group_layout_(nullptr) {
 }
 
@@ -54,6 +52,10 @@ void RenderFrameScript::on_startup() {
     ProjectSettings& project_settings = ProjectSettings::get_instance();
     ModuleRegistry& registry = ModuleRegistry::get_instance();
     RHIModule* module = registry.get_module<RHIModule>(RHIModule::ModuleName);
+    String projectdir(project_settings.get_name("projectdir"));
+
+    // Platform file system.
+    FileSystem& file_system = FileSystem::get_platform();
 
     // Device.
     device_ = module->get_device();
@@ -90,10 +92,13 @@ void RenderFrameScript::on_startup() {
     renderer_->set_present_queue(present_queue_);
     renderer_->set_window_handle(window_handle_);
     renderer_->set_command_allocator(cmd_allocator_);
-    renderer_->set_on_reset([this]() {
+    renderer_->set_on_reset([this]() -> void {
         reset();
     });
     renderer_->startup();
+
+    float32 width = renderer_->get_swapchain()->get_width();
+    float32 height = renderer_->get_swapchain()->get_height();
 
     // Pools
     buffer_pool_ = device_->create_buffer_pool();
@@ -101,6 +106,11 @@ void RenderFrameScript::on_startup() {
 
     texture_pool_ = device_->create_texture_pool();
     texture_pool_->initialize_pool(&DefaultAllocator::get_instance(), 64);
+    
+    // Model
+    String model_asset_path = projectdir;
+    model_asset_path.append("/assets/models/Sponza/glTF/Sponza.gltf");
+    Array<StaticMesh> model = gltf_static_meshes_load(model_asset_path);
 
     // Render Pass.
     RHIColorAttachmentDescription render_pass_color_attachment = {};
@@ -112,10 +122,10 @@ void RenderFrameScript::on_startup() {
     RHIShaderResourceBinding ubo_binding(
         0, RHIShaderResourceType::Uniform, RHIShaderStage::Fragment | RHIShaderStage::Vertex, 1);
 
-    RHIShaderResourceBinding orange_sampler_binding(
+    sampler_binding_ = RHIShaderResourceBinding(
         1, RHIShaderResourceType::Sampler, RHIShaderStage::Fragment);
 
-    Array<RHIShaderResourceBinding> shader_resource_binding = {ubo_binding, orange_sampler_binding};
+    Array<RHIShaderResourceBinding> shader_resource_binding = {ubo_binding, sampler_binding_};
     shader_resource_group_layout_ = device_->create_shader_resource_layout(shader_resource_binding);
 
     // Bindings and attributes.
@@ -131,11 +141,7 @@ void RenderFrameScript::on_startup() {
     RHIVertexAttributeDescription texture_uv_attribute_description(
         1, 1, RHIFormat::RG32Float);
 
-    float32 width = renderer_->get_swapchain()->get_width();
-    float32 height = renderer_->get_swapchain()->get_height();
-
     // Load shaders binary codes.
-    FileSystem& file_system = FileSystem::get_platform();
 
     FileHandleResult vertex_file_open_error = file_system.open_read("shaders/main.vert.spv");
     LCHECK(vertex_file_open_error.has_value());
@@ -200,54 +206,57 @@ void RenderFrameScript::on_startup() {
         framebuffers_.append(framebuffer);
     }
 
-    // Load images.
-    String projectdir(project_settings.get_name("projectdir"));
-    String orange_asset_path = projectdir;
-    orange_asset_path.append("/assets/prototype_textures/orange_1.png");
-
-    Image* orange_image = Image::load("orange_1", orange_asset_path);
-    RHITextureDescription orange_texture_description;
-    orange_texture_description.format = RHIFormat::RGBA8sRGB;
-    orange_texture_description.memory_usage = RHIMemoryUsage::Device;
-    orange_texture_description.usage = RHITextureUsageFlags::Sampled;
-    orange_texture_description.sharing_mode = RHISharingMode::Shared;
-    orange_texture_description.width = orange_image->get_width();
-    orange_texture_description.height = orange_image->get_heigth();
-
     // Device objects --
     RHIDeviceMemoryUploader uploader(device_, buffer_pool_, texture_pool_);
 
-    // Vertex
-    position_buffer_ = uploader.send_buffer(RHIStagingBufferContext(
-        RHIBufferUsageFlags::Vertex, ArrayView(cube_mesh_.positions)));
+    RenderMesh render_mesh;
 
-    uv_buffer_ = uploader.send_buffer(RHIStagingBufferContext(
-        RHIBufferUsageFlags::Vertex, ArrayView(cube_mesh_.UVs)));
+    for (StaticMesh& mesh : model) {
+        for (StaticSubMesh& submesh : mesh.get_submeshes()) {
+            RenderSubMesh render_submesh;
+            RHIBuffer* vertex_buffers[2];
 
-    index_buffer_ = uploader.send_buffer(RHIStagingBufferContext(
-        RHIBufferUsageFlags::Index, ArrayView(cube_mesh_.indices)));
+            vertex_buffers[0] = uploader.send_buffer(RHIStagingBufferContext(
+                RHIBufferUsageFlags::Vertex, submesh.positions.size(), submesh.positions.data()));
 
-    // Texture
-    orange_texture_ = uploader.send_texture(RHIStagingBufferContext(
-                                                RHIBufferUsageFlags::Storage,
-                                                orange_image->get_size(),
-                                                orange_image->data()),
-                                            orange_texture_description);
+            vertex_buffers[1] = uploader.send_buffer(RHIStagingBufferContext(
+                RHIBufferUsageFlags::Vertex, submesh.uv_textures.size(), submesh.uv_textures.data()));
+
+            RHITextureDescription tex_desc;
+            tex_desc.format = submesh.material.diffuse_texture.format;
+            tex_desc.memory_usage = RHIMemoryUsage::Device;
+            tex_desc.usage = RHITextureUsageFlags::Sampled;
+            tex_desc.sharing_mode = RHISharingMode::Shared;
+            tex_desc.width = submesh.material.diffuse_texture.width;
+            tex_desc.height = submesh.material.diffuse_texture.height;
+
+            render_submesh.vertex_buffers = Array<RHIBuffer*>(vertex_buffers, 2);
+            render_submesh.texture = uploader.send_texture(RHIStagingBufferContext(
+                                                               RHIBufferUsageFlags::Storage,
+                                                               submesh.material.diffuse_texture.data.size(),
+                                                               submesh.material.diffuse_texture.data.data()),
+                                                           tex_desc);
+
+            render_submesh.texture_view = device_->create_texture_view(RHITextureViewDescription{
+                .texture = render_submesh.texture,
+                .format = tex_desc.format,
+                .dimension = RHITextureDimension::Dim2D,
+            });
+
+            render_submesh.sampler = device_->create_sampler(RHISamplerDescription{});
+
+            render_submesh.index_buffer = uploader.send_buffer(
+                RHIStagingBufferContext(RHIBufferUsageFlags::Index, ArrayView(submesh.indices)));
+            render_submesh.index_count = submesh.indices.size();
+            render_mesh.submeshes.append(render_submesh);
+        }
+        render_model_.append(render_mesh);
+    }
 
     uploader.upload();
 
-    // Unload images.
-    Image::unload(orange_image);
-
-    // Texture views.
-    orange_texture_view_ = device_->create_texture_view(RHITextureViewDescription{
-        .texture = orange_texture_,
-        .format = orange_texture_->get_description().format,
-        .dimension = RHITextureDimension::Dim2D,
-    });
-
-    // Samplers
-    orange_texture_sampler_ = device_->create_sampler(RHISamplerDescription{});
+    // Unload models.
+    gltf_static_meshes_unload(model_asset_path);
 
     // -- Uniform Buffers --
     uint32 image_count = renderer_->get_swapchain()->get_texture_views().size();
@@ -262,27 +271,54 @@ void RenderFrameScript::on_startup() {
     }
 
     // -- Shader resource pool --
-    shader_resource_pool_ = device_->create_shader_resource_pool(image_count, shader_resource_binding);
-    for (uint32 i = 0; i < image_count; i++) {
-        RHIShaderResourceGroup* shader_resource_group = shader_resource_pool_->allocate_group(shader_resource_group_layout_);
-
-        RHIBuffer* uniform_buffer = uniform_buffers_[i];
-
-        shader_resource_group->set_buffer(
-            RHIWriteBufferResource(
-                ubo_binding.binding,
-                uniform_buffer,
-                0,
-                uniform_buffer->get_size()));
-
-        shader_resource_group->set_texture_sampler(
-            RHIWriteTextureSamplerResource(
-                orange_sampler_binding.binding,
-                orange_texture_view_,
-                orange_texture_sampler_));
-
-        shader_resource_group->compile();
+    size_t total_submeshes = 0;
+    for (const RenderMesh& mesh : render_model_) {
+        total_submeshes += mesh.submeshes.size();
     }
+
+    size_t total_groups_needed = image_count * (total_submeshes + 1);
+
+    shader_resource_pool_ = device_->create_shader_resource_pool(total_groups_needed, shader_resource_binding);
+    
+    for (uint32 frame = 0; frame < image_count; frame++) {
+        RHIShaderResourceGroup* group = shader_resource_pool_->allocate_group(shader_resource_group_layout_);
+
+        RHIBuffer* uniform_buffer = uniform_buffers_[frame];
+        group->set_buffer(RHIWriteBufferResource(
+            ubo_binding.binding,
+            uniform_buffer,
+            0,
+            uniform_buffer->get_size()));
+
+        group->compile();
+    }
+
+    // Allocate SRG for every submesh * per frame.
+    for (RenderMesh& mesh : render_model_) {
+        for (RenderSubMesh& submesh : mesh.submeshes) {
+            submesh.shader_groups.reserve(image_count);
+
+            for (uint32 frame = 0; frame < image_count; frame++) {
+                RHIShaderResourceGroup* group = shader_resource_pool_->allocate_group(shader_resource_group_layout_);
+
+                RHIBuffer* uniform_buffer = uniform_buffers_[frame];
+                group->set_buffer(RHIWriteBufferResource(
+                    ubo_binding.binding,
+                    uniform_buffer,
+                    0,
+                    uniform_buffer->get_size()));
+
+                group->set_texture_sampler(RHIWriteTextureSamplerResource(
+                    sampler_binding_.binding,
+                    submesh.texture_view,
+                    submesh.sampler));
+
+                group->compile();
+                submesh.shader_groups.append(group);
+            }
+        }
+    }
+
 }
 
 void RenderFrameScript::on_tick(float64 delta_time) {
@@ -319,17 +355,25 @@ void RenderFrameScript::on_tick(float64 delta_time) {
 
             cmd->set_scissors(&scissor, 1);
 
-            cmd->bind_vertex_buffers({position_buffer_, uv_buffer_});
-            cmd->bind_index_buffer(index_buffer_);
+            // Model
+            {
+                for (RenderMesh& mesh : render_model_) {
+                    for (RenderSubMesh& submesh : mesh.submeshes) {
+                        RHIShaderResourceGroup* shader_group = submesh.shader_groups[renderer_->get_current_frame()];
 
-            RHIShaderResourceGroup* shader_resource_group = shader_resource_pool_->get_group(renderer_->get_current_frame());
-            cmd->bind_shader_resource_group(graphics_pipeline_, {shader_resource_group});
+                        cmd->bind_vertex_buffers(submesh.vertex_buffers);
+                        cmd->bind_index_buffer(submesh.index_buffer);
 
-            RHIDrawIndexedCommand draw_indexed_command = {};
-            draw_indexed_command.index_count = cube_mesh_.indices.size();
-            draw_indexed_command.instance_count = 1;
+                        cmd->bind_shader_resource_group(graphics_pipeline_, {shader_group});
 
-            cmd->draw(draw_indexed_command);
+                        RHIDrawIndexedCommand draw_indexed_command = {};
+                        draw_indexed_command.index_count = submesh.index_count;
+                        draw_indexed_command.instance_count = 1;
+
+                        cmd->draw(draw_indexed_command);
+                    }
+                }
+            }
         }
         cmd->end_render_pass();
     }
@@ -345,22 +389,22 @@ void RenderFrameScript::update_uniform(float64 delta_time) {
     rotation_x += delta_time * 30.0f;
     rotation_y += delta_time * 45.0f;
 
-    Quaternion rot_x = Quaternion::from_axis_angle(Vector3f(1.0f, 0.0f, 0.0f), Math::radians(rotation_x));
-    Quaternion rot_y = Quaternion::from_axis_angle(Vector3f(0.0f, 1.0f, 0.0f), Math::radians(rotation_y));
-    Quaternion rotation = rot_x * rot_y;
+    ubo.model = Matrix4f::scale(ubo.model, Vector3f(.009f));
 
-    ubo.model = Quaternion::rotation_matrix(rotation);
+    Quaternion fix = Quaternion::from_axis_angle(Vector3f(1.0f, 0.0f, 0.0f), Math::radians(-180.0f));
+    ubo.model = ubo.model * Quaternion::rotation_matrix(fix);
 
     ubo.view = camera_->view;
 
     float32 aspect_ratio = renderer_->get_swapchain()->get_width() / static_cast<float32>(renderer_->get_swapchain()->get_height());
-    ubo.proj = Matrix4f::perspective(Math::radians(75.0f), aspect_ratio, 0.00001f, 10000.0f);
+    ubo.proj = Matrix4f::perspective(Math::radians(75.0f), aspect_ratio, 0.1f, 10000.0f);
     ubo.proj[1][1] *= -1.0f;
 
     uniform_buffers_[renderer_->get_current_frame()]->update(&ubo, sizeof(UniformBufferObject), 0);
 }
 
 void RenderFrameScript::reset() {
+
     device_->destroy_texture_view(depth_texture_view_);
     texture_pool_->destroy_texture(depth_texture_);
 
@@ -368,7 +412,7 @@ void RenderFrameScript::reset() {
     depth_texture_desc.format = RHIFormat::D24S8;
     depth_texture_desc.usage = RHITextureUsageFlags::DepthStencilAttachment;
     depth_texture_desc.width = renderer_->get_swapchain()->get_width();
-    depth_texture_desc.height = renderer_->get_swapchain()->get_width();
+    depth_texture_desc.height = renderer_->get_swapchain()->get_height();
     depth_texture_ = texture_pool_->create_texture(depth_texture_desc);
 
     RHITextureViewDescription depth_texture_view_desc = {};
@@ -414,9 +458,6 @@ void RenderFrameScript::on_shutdown() {
     device_->destroy_render_pass(render_pass_);
 
     // -- Buffers, samplers and textures --
-    device_->destroy_sampler(orange_texture_sampler_);
-
-    device_->destroy_texture_view(orange_texture_view_);
     device_->destroy_texture_view(depth_texture_view_);
 
     texture_pool_->dispose();
@@ -426,10 +467,7 @@ void RenderFrameScript::on_shutdown() {
     uniform_buffers_.clear();
 
     // SRx
-    for (size_t i = 0; i < renderer_->get_swapchain()->get_texture_views().size(); i++) {
-        RHIShaderResourceGroup* group = shader_resource_pool_->get_group(i);
-        shader_resource_pool_->deallocate_group(group);
-    }
+    shader_resource_pool_->dispose();
     device_->destroy_shader_resource_pool(shader_resource_pool_);
 
     // SwapChain
