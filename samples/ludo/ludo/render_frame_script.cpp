@@ -106,7 +106,7 @@ void RenderFrameScript::on_startup() {
 
     texture_pool_ = device_->create_texture_pool();
     texture_pool_->initialize_pool(&DefaultAllocator::get_instance(), 64);
-    
+
     // Model
     String model_asset_path = projectdir;
     model_asset_path.append("/assets/models/Sponza/glTF/Sponza.gltf");
@@ -185,6 +185,12 @@ void RenderFrameScript::on_startup() {
         .width = width,
         .height = height,
     });
+
+    rhi_transition_texture(device_,
+                           RHITextureBarrier(depth_texture_,
+                                             RHITextureLayout::Undefined,
+                                             RHITextureLayout::DepthStencilAttachment),
+                           graphics_queue_);
 
     depth_texture_view_ = device_->create_texture_view({
         .texture = depth_texture_,
@@ -279,7 +285,7 @@ void RenderFrameScript::on_startup() {
     size_t total_groups_needed = image_count * (total_submeshes + 1);
 
     shader_resource_pool_ = device_->create_shader_resource_pool(total_groups_needed, shader_resource_binding);
-    
+
     for (uint32 frame = 0; frame < image_count; frame++) {
         RHIShaderResourceGroup* group = shader_resource_pool_->allocate_group(shader_resource_group_layout_);
 
@@ -318,7 +324,6 @@ void RenderFrameScript::on_startup() {
             }
         }
     }
-
 }
 
 void RenderFrameScript::on_tick(float64 delta_time) {
@@ -404,7 +409,6 @@ void RenderFrameScript::update_uniform(float64 delta_time) {
 }
 
 void RenderFrameScript::reset() {
-
     device_->destroy_texture_view(depth_texture_view_);
     texture_pool_->destroy_texture(depth_texture_);
 

@@ -9,18 +9,9 @@ const RHITextureDescription& RHITexture::get_description() const {
     return description_;
 }
 
-void rhi_transition_texture(RHIDeviceRef device, const RHITextureBarrier& barrier) {
-    // Fetch transfer queue.
-    const Array<RHICommandQueueRef>& command_queues = device->get_command_queues();
-    RHICommandQueueRef* transfer_queue_ptr = command_queues.get_if([](RHICommandQueueRef queue) {
-        return queue->is_transfer_type();
-    });
-
-    LCHECK_MSG(transfer_queue_ptr, "Found no transfer command queue.");
-    RHICommandQueueRef transfer_queue = *transfer_queue_ptr;
-
+void rhi_transition_texture(RHIDeviceRef device, const RHITextureBarrier& barrier, const RHICommandQueueRef& queue) {
     RHICommandAllocatorDescription transfer_command_allocator_desc = {};
-    transfer_command_allocator_desc.command_queue = transfer_queue;
+    transfer_command_allocator_desc.command_queue = queue;
 
     RHICommandAllocator* transfer_command_allocator = device->create_command_allocator(transfer_command_allocator_desc);
 

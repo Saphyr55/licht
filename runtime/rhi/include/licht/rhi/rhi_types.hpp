@@ -10,7 +10,7 @@ struct Viewport {
     float32 width = 0.0f;
     float32 height = 0.0f;
     float32 min_depth = 0.0f;
-    float32 max_depth = 0.0f;
+    float32 max_depth = 1.0f;
 };
 
 struct Rect2D {

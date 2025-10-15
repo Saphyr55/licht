@@ -70,7 +70,7 @@ static void pick_pipeline_stages_and_access(VkQueueFlags queue_flags,
         out_src_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
         out_dst_stage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
         out_src_access = 0;
-        out_dst_access = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        out_dst_access = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         return;
     }
 

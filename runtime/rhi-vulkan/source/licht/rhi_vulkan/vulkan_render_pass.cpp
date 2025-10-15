@@ -35,7 +35,7 @@ void VulkanRenderPass::initialize() {
     subpass_description.pColorAttachments = &color_attachment_reference;
 
     if (description_.deph_attachement_description.has_value()) {
-        RHIDepthAttachementDescription depth_attachement_desc = description_.deph_attachement_description.unwrap();
+        RHIDepthAttachementDescription& depth_attachement_desc = *description_.deph_attachement_description;
 
         VkImageLayout layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         if (rhi_format_is_depth_stencil(depth_attachement_desc.format)) {
@@ -50,8 +50,8 @@ void VulkanRenderPass::initialize() {
         deph_attachement_description.format = vulkan_format_get(depth_attachement_desc.format);
         deph_attachement_description.samples = VK_SAMPLE_COUNT_1_BIT;
         deph_attachement_description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        deph_attachement_description.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        deph_attachement_description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        deph_attachement_description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        deph_attachement_description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         deph_attachement_description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         deph_attachement_description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         deph_attachement_description.finalLayout = layout;
@@ -72,14 +72,31 @@ void VulkanRenderPass::initialize() {
     subpass_dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     subpass_dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
+    VkSubpassDependency depth_subpass_dependency = {};
+    depth_subpass_dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    depth_subpass_dependency.dstSubpass = 0;
+    depth_subpass_dependency.srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    depth_subpass_dependency.srcAccessMask = 0;
+    depth_subpass_dependency.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    depth_subpass_dependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    Array<VkSubpassDependency> dependencies(attachments.size());
+    for (size_t i = 0; i < attachments.size() - 1; i++) {
+        dependencies.append(subpass_dependency);
+    }
+
+    if (description_.deph_attachement_description.has_value()) {
+        dependencies.append(depth_subpass_dependency);
+    }
+
     VkRenderPassCreateInfo render_pass_info_create_info = {};
     render_pass_info_create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     render_pass_info_create_info.attachmentCount = attachments.size();
     render_pass_info_create_info.pAttachments = attachments.data();
     render_pass_info_create_info.subpassCount = 1;
     render_pass_info_create_info.pSubpasses = &subpass_description;
-    render_pass_info_create_info.dependencyCount = 1;
-    render_pass_info_create_info.pDependencies = &subpass_dependency;
+    render_pass_info_create_info.dependencyCount = dependencies.size();
+    render_pass_info_create_info.pDependencies = dependencies.data();
 
     LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateRenderPass(
         context_.device,

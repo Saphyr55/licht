@@ -8,9 +8,10 @@ layout(location = 1) in vec2 in_texture_uv;
 layout(location = 0) out vec4 out_frag_color;
 
 // Uniforms 
-layout(binding = 1) uniform sampler2D orange_texture;
+layout(set = 0, binding = 1) uniform sampler2D u_main_texture;
 
 void main() {
-    float depth_value = gl_FragCoord.z;
-    out_frag_color = texture(orange_texture, in_texture_uv);
+    out_frag_color = texture(u_main_texture, in_texture_uv);
+    // float depth_value = gl_FragCoord.z;
+    // out_frag_color = vec4(vec3(depth_value), 1.0);
 }

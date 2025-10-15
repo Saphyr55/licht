@@ -58,7 +58,11 @@ public:
         return data_[index];
     }
 
-    inline value_type data() const {
+    inline const value_type* data() const {
+        return data_;
+    }
+
+    inline value_type* data()  {
         return data_;
     }
 

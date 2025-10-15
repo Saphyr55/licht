@@ -1,6 +1,7 @@
 #include "licht/rhi_vulkan/vulkan_graphics_pipeline.hpp"
 
 #include "licht/core/defines.hpp"
+#include "licht/core/containers/fixed_array.hpp"
 #include "licht/rhi/compiled_shader.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
@@ -105,7 +106,7 @@ void VulkanGraphicsPipeline::initialize(const RHIGraphicsPipelineDescription& de
     fragment_shader_stage_create_info.module = fragment_shader_module.handle();
     fragment_shader_stage_create_info.pName = description_.fragment_shader_info.name;
 
-    VkPipelineShaderStageCreateInfo pipeline_shader_state_create_info[] = {vertex_shader_stage_create_info, fragment_shader_stage_create_info};
+    FixedArray<VkPipelineShaderStageCreateInfo, 2> pipeline_shader_state_create_info = {vertex_shader_stage_create_info, fragment_shader_stage_create_info};
 
     Array<VkDynamicState> dynamic_states = {
         VK_DYNAMIC_STATE_VIEWPORT,
@@ -189,10 +190,10 @@ void VulkanGraphicsPipeline::initialize(const RHIGraphicsPipelineDescription& de
 
     VkGraphicsPipelineCreateInfo graphics_pipeline_create_info = {};
     graphics_pipeline_create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    graphics_pipeline_create_info.stageCount = 2;  // TODO: Configurable
+    graphics_pipeline_create_info.stageCount = pipeline_shader_state_create_info.size();
     graphics_pipeline_create_info.pVertexInputState = &vertex_input_state_create_info;
     graphics_pipeline_create_info.pInputAssemblyState = &pipeline_input_assembly_state_create_info;
-    graphics_pipeline_create_info.pStages = pipeline_shader_state_create_info;
+    graphics_pipeline_create_info.pStages = pipeline_shader_state_create_info.data();
     graphics_pipeline_create_info.pViewportState = &pipeline_viewport_state_create_info;
     graphics_pipeline_create_info.pRasterizationState = &pipeline_rasterizer_state_create_info;
     graphics_pipeline_create_info.pMultisampleState = &pipeline_multisampling_state_create_info;

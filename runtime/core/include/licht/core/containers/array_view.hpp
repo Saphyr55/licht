@@ -61,7 +61,7 @@ public:
     }
 
     inline ElementType* data() {
-        return const_cast<ElementType*>(data_);
+        return data_;
     }
 
     bool contains(const ElementType& element) const {
@@ -124,14 +124,14 @@ public:
 
     template <CTypedAllocator<ElementType> AllocatorType = TypedDefaultAllocator<ElementType>>
     ArrayView(const Array<ElementType, AllocatorType>& array)
-        : data_(array.data()), size_(array.size()) {}
+        : data_(const_cast<ElementType*>(array.data())), size_(array.size()) {}
 
     template <size_type Capacity>
     ArrayView(FixedArray<ElementType, Capacity> array)
         : data_(array.data()), size_(array.size()) {}
 
 private:
-    const ElementType* data_;
+    ElementType* data_;
     size_type size_;
 };
 
