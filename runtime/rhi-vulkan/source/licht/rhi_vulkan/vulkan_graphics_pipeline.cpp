@@ -164,13 +164,22 @@ void VulkanGraphicsPipeline::initialize(const RHIGraphicsPipelineDescription& de
 
     VulkanShaderResourceGroupLayout* layout = static_cast<VulkanShaderResourceGroupLayout*>(description_.shader_resource_group_layout);
     LCHECK(layout)
-    
+
+    Array<VkPushConstantRange> push_constant_ranges = description_.push_constant_ranges.map<VkPushConstantRange>(
+        [](const RHIShaderConstantRange& range) -> VkPushConstantRange {
+            VkPushConstantRange vk_range = {};
+            vk_range.stageFlags = vulkan_shader_stage_get(range.stage);
+            vk_range.offset = range.offset;
+            vk_range.size = range.size;
+            return vk_range;
+        });
+
     VkPipelineLayoutCreateInfo pipeline_layout_create_info = {};
     pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipeline_layout_create_info.setLayoutCount = 1;
     pipeline_layout_create_info.pSetLayouts = &layout->get_handle();
-    pipeline_layout_create_info.pushConstantRangeCount = 0;
-    pipeline_layout_create_info.pPushConstantRanges = nullptr;
+    pipeline_layout_create_info.pushConstantRangeCount = push_constant_ranges.size();
+    pipeline_layout_create_info.pPushConstantRanges = push_constant_ranges.data();
 
     LICHT_VULKAN_CHECK(VulkanAPI::lvkCreatePipelineLayout(context.device, &pipeline_layout_create_info, context.allocator, &pipeline_layout_));
 

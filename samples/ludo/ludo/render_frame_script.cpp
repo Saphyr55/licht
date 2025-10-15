@@ -186,6 +186,9 @@ void RenderFrameScript::on_startup() {
                 {position_attribute_description, normal_attribute_description, texture_uv_attribute_description})
             .with_viewport(viewport, scissor)
             .with_shader_resource_group_layout(shader_resource_group_layout_)
+            .with_shader_constant_ranges({
+                RHIShaderConstantRange(RHIShaderStage::Vertex, 0, sizeof(RenderModelConstant)),
+             })
             .with_cull_mode(RHICullModeFlags::Back)
             .build());
 
@@ -227,9 +230,16 @@ void RenderFrameScript::on_startup() {
     // Device objects --
     RHIDeviceMemoryUploader uploader(device_, buffer_pool_, texture_pool_);
 
-    RenderMesh render_mesh;
 
     for (StaticMesh& mesh : model) {
+    
+        RenderMesh render_mesh;
+
+        render_mesh.model_constant.model = Matrix4f::identity();
+        render_mesh.model_constant.model = Matrix4f::scale(render_mesh.model_constant.model, Vector3f(.009f));
+        Quaternion fix = Quaternion::from_axis_angle(Vector3f(1.0f, 0.0f, 0.0f), Math::radians(-180.0f));
+        render_mesh.model_constant.model = render_mesh.model_constant.model * Quaternion::rotation_matrix(fix);
+
         for (StaticSubMesh& submesh : mesh.get_submeshes()) {
             RenderSubMesh render_submesh;
             RHIBuffer* vertex_buffers[3];
@@ -271,6 +281,7 @@ void RenderFrameScript::on_startup() {
             render_submesh.index_count = submesh.indices.size();
             render_mesh.submeshes.append(render_submesh);
         }
+
         render_model_.append(render_mesh);
     }
 
@@ -392,6 +403,13 @@ void RenderFrameScript::on_tick(float64 delta_time) {
             // Model
             {
                 for (RenderMesh& mesh : render_model_) {
+
+                    RHIShaderConstants push_constants = {};
+                    push_constants.size = sizeof(RenderModelConstant);
+                    push_constants.stage = RHIShaderStage::Vertex;
+                    push_constants.data = &mesh.model_constant;
+                    cmd->set_shader_constants(graphics_pipeline_, push_constants);
+
                     for (RenderSubMesh& submesh : mesh.submeshes) {
                         RHIShaderResourceGroup* shader_group = submesh.shader_groups[renderer_->get_current_frame()];
 
@@ -414,7 +432,7 @@ void RenderFrameScript::on_tick(float64 delta_time) {
     renderer_->end_frame();
 }
 
-void RenderFrameScript::update_uniform(float64 delta_time) {
+void RenderFrameScript::update_uniform(const float64 delta_time) {
     UniformBufferObject ubo;
 
     static float32 rotation_x = 0.0f;
@@ -423,16 +441,13 @@ void RenderFrameScript::update_uniform(float64 delta_time) {
     rotation_x += delta_time * 30.0f;
     rotation_y += delta_time * 45.0f;
 
-    ubo.model = Matrix4f::scale(ubo.model, Vector3f(.009f));
-
-    Quaternion fix = Quaternion::from_axis_angle(Vector3f(1.0f, 0.0f, 0.0f), Math::radians(-180.0f));
-    ubo.model = ubo.model * Quaternion::rotation_matrix(fix);
-
     ubo.view = camera_->view;
 
     float32 aspect_ratio = renderer_->get_swapchain()->get_width() / static_cast<float32>(renderer_->get_swapchain()->get_height());
     ubo.proj = Matrix4f::perspective(Math::radians(75.0f), aspect_ratio, 0.1f, 10000.0f);
     ubo.proj[1][1] *= -1.0f;
+
+    ubo.view_proj = ubo.proj * ubo.view;
 
     uniform_buffers_[renderer_->get_current_frame()]->update(&ubo, sizeof(UniformBufferObject), 0);
 }
@@ -495,6 +510,12 @@ void RenderFrameScript::on_shutdown() {
     // -- Buffers, samplers and textures --
     device_->destroy_texture_view(depth_texture_view_);
 
+    for (auto& mesh : render_model_) {
+        for (auto& submesh : mesh.submeshes) {
+            device_->destroy_sampler(submesh.sampler);
+            device_->destroy_texture_view(submesh.texture_view);
+        }
+    }
     texture_pool_->dispose();
 
     buffer_pool_->dispose();

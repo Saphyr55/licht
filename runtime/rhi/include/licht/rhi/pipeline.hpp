@@ -54,6 +54,12 @@ struct RHIGraphicsPipelineVertexBindingInformation {
     Array<RHIVertexAttributeDescription> attributes;
 };
 
+struct RHIShaderConstantRange {
+    RHIShaderStage stage = RHIShaderStage::AllGraphics;
+    uint32 offset = 0;
+    uint32 size = 128;
+};
+
 struct RHIGraphicsPipelineDescription {
     RHICullModeFlags cull_mode = RHICullModeFlags::None;
     RHIGraphicsPipelineShaderStageCreateInfo vertex_shader_info = {};
@@ -61,6 +67,7 @@ struct RHIGraphicsPipelineDescription {
     RHIGraphicsPipelineViewportStateInformation viewport_info = {};
     RHIGraphicsPipelineVertexBindingInformation vertex_binding_info = {};
     RHIShaderResourceGroupLayout* shader_resource_group_layout = nullptr;
+    Array<RHIShaderConstantRange> push_constant_ranges;
     RHIRenderPass* render_pass = nullptr;
 };
 
@@ -105,15 +112,17 @@ public:
         desc_.shader_resource_group_layout = layout;
         return *this;
     }
+    
+    RHIGraphicsPipelineDescriptionBuilder& with_shader_constant_ranges(const Array<RHIShaderConstantRange>& ranges) {
+        desc_.push_constant_ranges = ranges;
+        return *this;
+    }
 
     RHIGraphicsPipelineDescriptionBuilder& with_render_pass(RHIRenderPass* render_pass) {
         desc_.render_pass = render_pass;
         return *this;
     }
 
-    /**
-     * @brief Finalize and return the pipeline description.
-     */
     RHIGraphicsPipelineDescription build() const {
         return desc_;
     }

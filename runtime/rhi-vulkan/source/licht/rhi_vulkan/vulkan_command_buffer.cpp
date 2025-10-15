@@ -147,6 +147,18 @@ void VulkanCommandBuffer::bind_pipeline(RHIGraphicsPipeline* pipeline) {
     VulkanAPI::lvkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, vulkan_graphics_pipeline->get_handle());
 }
 
+void VulkanCommandBuffer::set_shader_constants(RHIGraphicsPipeline* pipeline, const RHIShaderConstants& push_constants) {
+    VulkanGraphicsPipeline* vulkan_graphics_pipeline = static_cast<VulkanGraphicsPipeline*>(pipeline);
+    VkShaderStageFlags stage_flags = vulkan_shader_stage_get(push_constants.stage);
+    VulkanAPI::lvkCmdPushConstants(
+        command_buffer_,
+        vulkan_graphics_pipeline->get_layout(),
+        stage_flags,
+        push_constants.offset,
+        push_constants.size,
+        push_constants.data);
+}
+
 void VulkanCommandBuffer::bind_shader_resource_group(RHIGraphicsPipeline* pipeline, const Array<RHIShaderResourceGroup*>& groups) {
     static constexpr auto mapping_group = [](RHIShaderResourceGroup*& descriptor_set) -> VkDescriptorSet {
         VulkanShaderResourceGroup* vk_descriptor_set = static_cast<VulkanShaderResourceGroup*>(descriptor_set);
@@ -430,7 +442,7 @@ VkCommandPool& RHIVulkanCommandAllocator::get_command_pool() {
 
 void RHIVulkanCommandAllocator::initialize_command_pool() {
     VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    if (queue_type_ == RHIQueueType::Transfer) {
+    if ((queue_type_ & RHIQueueType::Transfer) == RHIQueueType::Transfer) {
         flags |= VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
     }
     VkCommandPoolCreateInfo command_pool_create_info = {};

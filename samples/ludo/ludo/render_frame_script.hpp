@@ -32,6 +32,7 @@ struct RenderSubMesh {
 
 struct RenderMesh {
     Array<RenderSubMesh> submeshes;
+    RenderModelConstant model_constant;
 };
 
 class RenderFrameScript {

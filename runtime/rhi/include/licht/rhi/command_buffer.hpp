@@ -55,6 +55,13 @@ struct RHICopyBufferToTextureCommand : RHICommand {
     uint32_t copy_depth = 1;
 };
 
+struct RHIShaderConstants {
+    RHIShaderStage stage = RHIShaderStage::AllGraphics;
+    uint32 offset = 0;
+    uint32 size = 0;
+    const void* data = nullptr;
+};
+
 /**
  * @brief Information required to begin a render pass.
  */
@@ -100,6 +107,8 @@ public:
     virtual void bind_pipeline(RHIGraphicsPipeline* pipeline) = 0;
 
     virtual void bind_shader_resource_group(RHIGraphicsPipeline* pipeline, const Array<RHIShaderResourceGroup*>& descriptor_sets) = 0;
+
+    virtual void set_shader_constants(RHIGraphicsPipeline* pipeline, const RHIShaderConstants& push_constants) = 0;
 
     /**
      * @brief Bind vertex buffers for rendering.

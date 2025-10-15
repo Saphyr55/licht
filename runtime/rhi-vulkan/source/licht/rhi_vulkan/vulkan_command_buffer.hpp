@@ -26,6 +26,8 @@ public:
     
     virtual void bind_shader_resource_group(RHIGraphicsPipeline* pipeline, const Array<RHIShaderResourceGroup*>& groups) override;
 
+    virtual void set_shader_constants(RHIGraphicsPipeline* pipeline, const RHIShaderConstants& shader_constants) override;
+
     virtual void bind_vertex_buffers(const Array<RHIBuffer*>& buffers) override;
 
     virtual void bind_index_buffer(RHIBuffer* buffer) override;

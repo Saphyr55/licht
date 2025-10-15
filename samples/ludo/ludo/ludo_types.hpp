@@ -6,11 +6,17 @@
 namespace licht {
 
 struct UniformBufferObject {
-    alignas(16) Matrix4f model = Matrix4f::identity();
     alignas(16) Matrix4f view = Matrix4f::identity();
     alignas(16) Matrix4f proj = Matrix4f::identity();
+    // Never forget to update this one.
+    alignas(16) Matrix4f view_proj = proj * view;
 
     UniformBufferObject() = default;
+};
+
+struct RenderModelConstant {
+    alignas(16) Matrix4f model = Matrix4f::identity();
+    RenderModelConstant() = default;
 };
 
 struct RenderCube {
