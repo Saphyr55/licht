@@ -15,6 +15,7 @@ struct StaticSubMesh {
     using Buffer = Array<uint8>;
     Material material;
     Buffer positions;
+    Buffer normals;
     Buffer uv_textures;
     Array<uint32> indices;
 

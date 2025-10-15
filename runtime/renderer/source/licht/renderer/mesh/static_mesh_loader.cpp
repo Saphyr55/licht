@@ -4,8 +4,6 @@
 #include "licht/core/string/format.hpp"
 #include "licht/core/trace/trace.hpp"
 #include "licht/renderer/mesh/static_mesh.hpp"
-#include "licht/rhi/buffer.hpp"
-#include "licht/rhi/buffer_pool.hpp"
 #include "licht/rhi/rhi_types.hpp"
 
 #define TINYGLTF_IMPLEMENTATION
@@ -179,7 +177,7 @@ Array<uint32> gltf_get_indices(tinygltf::Model& model, const tinygltf::Primitive
 
 void gltf_create_primitive(tinygltf::Model& model, const tinygltf::Primitive& primitive, StaticSubMesh& out_submesh) {
     out_submesh.positions = gltf_get_accessor_data(model, primitive.attributes.at("POSITION"));
-        
+
     if (primitive.indices >= 0) {
         out_submesh.indices = gltf_get_indices(model, primitive);
     } else {
@@ -189,9 +187,14 @@ void gltf_create_primitive(tinygltf::Model& model, const tinygltf::Primitive& pr
         }
     }
 
-    auto it = primitive.attributes.find("TEXCOORD_0");
-    if (it != primitive.attributes.end()) {
-        out_submesh.uv_textures = gltf_get_accessor_data(model, it->second);
+    auto normals_it = primitive.attributes.find("NORMAL");
+    if (normals_it != primitive.attributes.end()) {
+        out_submesh.normals = gltf_get_accessor_data(model, normals_it->second);
+    }
+
+    auto texcoord0_it = primitive.attributes.find("TEXCOORD_0");
+    if (texcoord0_it != primitive.attributes.end()) {
+        out_submesh.uv_textures = gltf_get_accessor_data(model, texcoord0_it->second);
     }
 }
 

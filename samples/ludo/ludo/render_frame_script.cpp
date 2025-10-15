@@ -1,7 +1,5 @@
 #include "render_frame_script.hpp"
 
-#include "image.hpp"
-
 #include "licht/core/containers/array_view.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/io/file_handle.hpp"
@@ -116,8 +114,10 @@ void RenderFrameScript::on_startup() {
     RHIColorAttachmentDescription render_pass_color_attachment = {};
     render_pass_color_attachment.format = renderer_->get_swapchain()->get_format();
 
-    render_pass_ = device_->create_render_pass({.attachment_decriptions = {render_pass_color_attachment},
-                                                .deph_attachement_description = RHIDepthAttachementDescription(RHIFormat::D24S8)});
+    render_pass_ = device_->create_render_pass({
+        .attachment_decriptions = {render_pass_color_attachment},
+        .deph_attachement_description = RHIDepthAttachementDescription(RHIFormat::D24S8),
+    });
 
     RHIShaderResourceBinding ubo_binding(
         0, RHIShaderResourceType::Uniform, RHIShaderStage::Fragment | RHIShaderStage::Vertex, 1);
@@ -135,14 +135,19 @@ void RenderFrameScript::on_startup() {
     RHIVertexAttributeDescription position_attribute_description(
         0, 0, RHIFormat::RGB32Float);
 
+    RHIVertexBindingDescription normal_input_binding_description(
+        1, sizeof(Vector3f), RHIVertexInputRate::Vertex);
+
+    RHIVertexAttributeDescription normal_attribute_description(
+        1, 1, RHIFormat::RGB32Float);
+
     RHIVertexBindingDescription texture_uv_input_binding_description(
-        1, sizeof(Vector2f), RHIVertexInputRate::Vertex);
+        2, sizeof(Vector2f), RHIVertexInputRate::Vertex);
 
     RHIVertexAttributeDescription texture_uv_attribute_description(
-        1, 1, RHIFormat::RG32Float);
+        2, 2, RHIFormat::RG32Float);
 
     // Load shaders binary codes.
-
     FileHandleResult vertex_file_open_error = file_system.open_read("shaders/main.vert.spv");
     LCHECK(vertex_file_open_error.has_value());
 
@@ -156,14 +161,19 @@ void RenderFrameScript::on_startup() {
     SPIRVShader fragment_shader(fragment_file_handle->read_all_bytes());
 
     Rect2D scissor = {
+        .x = 0.0f,
+        .y = 0.0f,
         .width = width,
         .height = height,
     };
 
     Viewport viewport = {
+        .x = 0.0f,
+        .y = 0.0f,
         .width = width,
         .height = height,
-    };
+        .min_depth = 0.0f,
+        .max_depth = 1.0f};
 
     // -- Graphics Pipeline --
     graphics_pipeline_ = device_->create_graphics_pipeline(
@@ -172,8 +182,8 @@ void RenderFrameScript::on_startup() {
             .with_vertex_shader(vertex_shader, "main")
             .with_fragment_shader(fragment_shader, "main")
             .with_vertex_bindings(
-                {position_input_binding_description, texture_uv_input_binding_description},
-                {position_attribute_description, texture_uv_attribute_description})
+                {position_input_binding_description, normal_input_binding_description, texture_uv_input_binding_description},
+                {position_attribute_description, normal_attribute_description, texture_uv_attribute_description})
             .with_viewport(viewport, scissor)
             .with_shader_resource_group_layout(shader_resource_group_layout_)
             .with_cull_mode(RHICullModeFlags::Back)
@@ -182,6 +192,8 @@ void RenderFrameScript::on_startup() {
     depth_texture_ = texture_pool_->create_texture({
         .format = RHIFormat::D24S8,
         .usage = RHITextureUsageFlags::DepthStencilAttachment,
+        .sharing_mode = RHISharingMode::Private,
+        .memory_usage = RHIMemoryUsage::Device,
         .width = width,
         .height = height,
     });
@@ -220,12 +232,15 @@ void RenderFrameScript::on_startup() {
     for (StaticMesh& mesh : model) {
         for (StaticSubMesh& submesh : mesh.get_submeshes()) {
             RenderSubMesh render_submesh;
-            RHIBuffer* vertex_buffers[2];
+            RHIBuffer* vertex_buffers[3];
 
             vertex_buffers[0] = uploader.send_buffer(RHIStagingBufferContext(
                 RHIBufferUsageFlags::Vertex, submesh.positions.size(), submesh.positions.data()));
 
             vertex_buffers[1] = uploader.send_buffer(RHIStagingBufferContext(
+                RHIBufferUsageFlags::Vertex, submesh.normals.size(), submesh.normals.data()));
+
+            vertex_buffers[2] = uploader.send_buffer(RHIStagingBufferContext(
                 RHIBufferUsageFlags::Vertex, submesh.uv_textures.size(), submesh.uv_textures.data()));
 
             RHITextureDescription tex_desc;
@@ -236,7 +251,7 @@ void RenderFrameScript::on_startup() {
             tex_desc.width = submesh.material.diffuse_texture.width;
             tex_desc.height = submesh.material.diffuse_texture.height;
 
-            render_submesh.vertex_buffers = Array<RHIBuffer*>(vertex_buffers, 2);
+            render_submesh.vertex_buffers = Array<RHIBuffer*>(vertex_buffers, 3);
             render_submesh.texture = uploader.send_texture(RHIStagingBufferContext(
                                                                RHIBufferUsageFlags::Storage,
                                                                submesh.material.diffuse_texture.data.size(),
@@ -338,26 +353,40 @@ void RenderFrameScript::on_tick(float64 delta_time) {
         RHICommandBuffer* cmd = renderer_->get_current_command_buffer();
         float32 width = static_cast<float32>(renderer_->get_swapchain()->get_width());
         float32 height = static_cast<float32>(renderer_->get_swapchain()->get_height());
+        Rect2D area = {
+            .x = 0.0f,
+            .y = 0.0f,
+            .width = width,
+            .height = height,
+        };
 
         RHIRenderPassBeginInfo render_pass_begin_info = {};
         render_pass_begin_info.render_pass = render_pass_;
         render_pass_begin_info.framebuffer = framebuffers_[renderer_->get_frame_index()];
-        render_pass_begin_info.area = {.width = width, .height = height};
+        render_pass_begin_info.area = area;
         render_pass_begin_info.color = Vector4f(0.01f, 0.01f, 0.01f, 1.0f);
 
         cmd->begin_render_pass(render_pass_begin_info);
         {
             cmd->bind_pipeline(graphics_pipeline_);
 
-            Viewport viewport = {};
-            viewport.width = width;
-            viewport.height = height;
+            Rect2D scissor = {
+                .x = 0.0f,
+                .y = 0.0f,
+                .width = width,
+                .height = height,
+            };
+
+            Viewport viewport = {
+                .x = 0.0f,
+                .y = 0.0f,
+                .width = width,
+                .height = height,
+                .min_depth = 0.0f,
+                .max_depth = 1.0f,
+            };
+
             cmd->set_viewports(&viewport, 1);
-
-            Rect2D scissor = {};
-            scissor.width = width;
-            scissor.height = height;
-
             cmd->set_scissors(&scissor, 1);
 
             // Model
@@ -415,6 +444,8 @@ void RenderFrameScript::reset() {
     RHITextureDescription depth_texture_desc = {};
     depth_texture_desc.format = RHIFormat::D24S8;
     depth_texture_desc.usage = RHITextureUsageFlags::DepthStencilAttachment;
+    depth_texture_desc.sharing_mode = RHISharingMode::Private,
+    depth_texture_desc.memory_usage = RHIMemoryUsage::Device,
     depth_texture_desc.width = renderer_->get_swapchain()->get_width();
     depth_texture_desc.height = renderer_->get_swapchain()->get_height();
     depth_texture_ = texture_pool_->create_texture(depth_texture_desc);
