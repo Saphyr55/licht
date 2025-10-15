@@ -35,8 +35,10 @@ public:
     virtual void set_scissors(const Rect2D* scissors, uint32 count) override;
 
     virtual void set_viewports(const Viewport* viewports, uint32 count) override;
+    
+    virtual void texture_generate_mipmap(const RHITextureLayoutTransition& transition) override;
 
-    virtual void transition_texture(const RHITextureBarrier& barrier) override;
+    virtual void transition_texture_layout(const RHITextureLayoutTransition& transition) override;
 
     virtual void copy_buffer_to_texture(const RHICopyBufferToTextureCommand& command) override;
 

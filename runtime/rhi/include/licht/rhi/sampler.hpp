@@ -10,6 +10,8 @@ struct RHISamplerDescription {
     RHISamplerAddressMode address_mode_u = RHISamplerAddressMode::Repeat;
     RHISamplerAddressMode address_mode_v = RHISamplerAddressMode::Repeat;
     RHISamplerAddressMode address_mode_w = RHISamplerAddressMode::Repeat;
+    float32 max_lod = 0.0f;
+    float32 min_lod = 0.0f;
     bool normalize = false;
 };
 

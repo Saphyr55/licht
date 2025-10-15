@@ -11,10 +11,7 @@ struct RHITextureViewDescription {
     RHITexture* texture = nullptr;
     RHIFormat format = RHIFormat::RGBA8sRGB;
     RHITextureDimension dimension = RHITextureDimension::Dim2D;
-    int32 mip_level = 0;
-    int32 mip_level_count = 1;
-    int32 array_layer = 0;
-    int32 array_layer_count = 1;
+    uint32 mip_levels = 1;
 };
 
 class LICHT_RHI_API RHITextureView : public RHIResource {

@@ -201,19 +201,21 @@ void VulkanCommandBuffer::bind_index_buffer(RHIBuffer* buffer) {
         command_buffer_,
         vkbuffer,
         0,
-        // TODO: Make the type configurable
+        // TODO: Make the index type configurable
         VK_INDEX_TYPE_UINT32);
 }
 
 void VulkanCommandBuffer::set_scissors(const Rect2D* scissors, uint32 count) {
     Array<VkRect2D> vk_scissors;
     vk_scissors.resize(count);
+
     for (size_t i = 0; i < count; i++) {
         vk_scissors[i].offset.x = static_cast<int32>(scissors[i].x);
         vk_scissors[i].offset.y = static_cast<int32>(scissors[i].y);
         vk_scissors[i].extent.width = static_cast<uint32>(scissors[i].width);
         vk_scissors[i].extent.height = static_cast<uint32>(scissors[i].height);
     }
+
     VulkanAPI::lvkCmdSetScissor(
         command_buffer_,
         0,
@@ -224,6 +226,7 @@ void VulkanCommandBuffer::set_scissors(const Rect2D* scissors, uint32 count) {
 void VulkanCommandBuffer::set_viewports(const Viewport* viewports, uint32 count) {
     Array<VkViewport> vk_viewports;
     vk_viewports.resize(count);
+
     for (uint32 i = 0; i < count; i++) {
         vk_viewports[i].x = viewports[i].x;
         vk_viewports[i].y = viewports[i].y;
@@ -232,6 +235,7 @@ void VulkanCommandBuffer::set_viewports(const Viewport* viewports, uint32 count)
         vk_viewports[i].minDepth = viewports[i].min_depth;
         vk_viewports[i].maxDepth = viewports[i].max_depth;
     }
+
     VulkanAPI::lvkCmdSetViewport(
         command_buffer_,
         0,
@@ -239,91 +243,191 @@ void VulkanCommandBuffer::set_viewports(const Viewport* viewports, uint32 count)
         vk_viewports.data());
 }
 
-void VulkanCommandBuffer::transition_texture(const RHITextureBarrier& texture_barrier) {
-    VulkanTexture* texture = static_cast<VulkanTexture*>(texture_barrier.texture);
-    VkImageAspectFlags aspect_mask = vulkan_format_to_image_aspect(
-        texture->get_description().format);
+void VulkanCommandBuffer::texture_generate_mipmap(const RHITextureLayoutTransition& transition) {
+    VulkanTexture* texture = static_cast<VulkanTexture*>(transition.texture);
+    VkFormat format = vulkan_format_get(texture->get_description().format);
+
+    VulkanContext& context = vulkan_context_get();
+    uint32 mip_levels = texture->get_description().mip_levels;
+
+    VkFormatProperties format_properties;
+    VulkanAPI::lvkGetPhysicalDeviceFormatProperties(context.physical_device, format, &format_properties);
+
+    if (!(format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
+        LLOG_ERROR("[Vulkan]", "Texture format does not support linear blitting.");
+        return;
+    }
+
+    RHITextureLayoutTransition initial_transition = transition;
+    initial_transition.new_layout = RHITextureLayout::TransferDst;
+    transition_texture_layout(initial_transition);
+
+    int32 mip_width = static_cast<int32>(texture->get_description().width);
+    int32 mip_height = static_cast<int32>(texture->get_description().height);
+
+    VkImageMemoryBarrier barrier = {};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = texture->get_handle();
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+
+    for (uint32 i = 1; i < mip_levels; i++) {
+        barrier.subresourceRange.baseMipLevel = i - 1;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+        VulkanAPI::lvkCmdPipelineBarrier(command_buffer_,
+                                         VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                         VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                         0,
+                                         0, nullptr,
+                                         0, nullptr,
+                                         1,
+                                         &barrier);
+
+        VkImageBlit blit{};
+        blit.srcOffsets[0] = {0, 0, 0};
+        blit.srcOffsets[1] = {mip_width, mip_height, 1};
+        blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit.srcSubresource.mipLevel = i - 1;
+        blit.srcSubresource.baseArrayLayer = 0;
+        blit.srcSubresource.layerCount = 1;
+        blit.dstOffsets[0] = {0, 0, 0};
+        blit.dstOffsets[1] = {mip_width > 1 ? mip_width / 2 : 1, mip_height > 1 ? mip_height / 2 : 1, 1};
+        blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit.dstSubresource.mipLevel = i;
+        blit.dstSubresource.baseArrayLayer = 0;
+        blit.dstSubresource.layerCount = 1;
+
+        VulkanAPI::lvkCmdBlitImage(command_buffer_,
+                                   texture->get_handle(),
+                                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                   texture->get_handle(),
+                                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                   1,
+                                   &blit,
+                                   VK_FILTER_LINEAR);
+
+        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        VulkanAPI::lvkCmdPipelineBarrier(command_buffer_,
+                                         VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                         0, 0, nullptr, 0, nullptr, 1,
+                                         &barrier);
+
+        if (mip_width > 1) {
+            mip_width /= 2;
+        }
+        if (mip_height > 1) {
+            mip_height /= 2;
+        }
+    }
+
+    barrier.subresourceRange.baseMipLevel = mip_levels - 1;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+    VulkanAPI::lvkCmdPipelineBarrier(command_buffer_,
+                                     VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                     0, 0, nullptr, 0, nullptr, 1,
+                                     &barrier);
+
+    if (transition.new_layout != RHITextureLayout::ShaderReadOnly) {
+        RHITextureLayoutTransition final_transition = transition;
+        final_transition.old_layout = RHITextureLayout::ShaderReadOnly;
+        transition_texture_layout(final_transition);
+    }
+}
+
+void VulkanCommandBuffer::transition_texture_layout(const RHITextureLayoutTransition& transition) {
+    VulkanTexture* texture = static_cast<VulkanTexture*>(transition.texture);
+    VkImageAspectFlags aspect_mask = vulkan_format_to_image_aspect(texture->get_description().format);
 
     VkImageMemoryBarrier image_barrier = {};
     image_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    image_barrier.oldLayout = vulkan_texture_layout_get(texture_barrier.old_layout);
-    image_barrier.newLayout = vulkan_texture_layout_get(texture_barrier.new_layout);
+    image_barrier.oldLayout = vulkan_texture_layout_get(transition.old_layout);
+    image_barrier.newLayout = vulkan_texture_layout_get(transition.new_layout);
     image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     image_barrier.image = texture->get_handle();
     image_barrier.subresourceRange.aspectMask = aspect_mask;
     image_barrier.subresourceRange.baseMipLevel = 0;
-    image_barrier.subresourceRange.levelCount = 1;
+    image_barrier.subresourceRange.levelCount = texture->get_description().mip_levels;
     image_barrier.subresourceRange.baseArrayLayer = 0;
     image_barrier.subresourceRange.layerCount = 1;
 
     VkPipelineStageFlags source_stage = 0;
     VkPipelineStageFlags destination_stage = 0;
-    VkAccessFlags srcAccess = 0;
-    VkAccessFlags dstAccess = 0;
+    VkAccessFlags source_access = 0;
+    VkAccessFlags destination_access = 0;
 
-    pick_pipeline_stages_and_access(
-        vulkan_queue_type_get(queue_type_),
-        image_barrier.oldLayout,
-        image_barrier.newLayout,
-        source_stage,
-        destination_stage,
-        srcAccess,
-        dstAccess);
+    pick_pipeline_stages_and_access(vulkan_queue_type_get(queue_type_),
+                                    image_barrier.oldLayout,
+                                    image_barrier.newLayout,
+                                    source_stage,
+                                    destination_stage,
+                                    source_access,
+                                    destination_access);
 
-    image_barrier.srcAccessMask = srcAccess;
-    image_barrier.dstAccessMask = dstAccess;
+    image_barrier.srcAccessMask = source_access;
+    image_barrier.dstAccessMask = destination_access;
 
-    VulkanAPI::lvkCmdPipelineBarrier(
-        command_buffer_,
-        source_stage,
-        destination_stage,
-        0,
-        0, nullptr,
-        0, nullptr,
-        1, &image_barrier);
+    VulkanAPI::lvkCmdPipelineBarrier(command_buffer_,
+                                     source_stage,
+                                     destination_stage,
+                                     0,
+                                     0, nullptr,
+                                     0, nullptr,
+                                     1, &image_barrier);
 }
 
 void VulkanCommandBuffer::copy_buffer_to_texture(const RHICopyBufferToTextureCommand& command) {
-    VkBuffer vk_source_buffer = static_cast<VulkanBuffer*>(command.source)->get_handle();
+    VulkanBuffer* vulkan_source = static_cast<VulkanBuffer*>(command.source);
     VulkanTexture* vulkan_texture = static_cast<VulkanTexture*>(command.destination);
 
     VkImage vk_destination_image = vulkan_texture->get_handle();
 
-    uint32_t mip_level_factor = 1u << command.mip_level;
+    VkImageAspectFlags aspect = vulkan_format_to_image_aspect(vulkan_texture->get_description().format);
 
-    uint32_t final_width = (command.copy_width > 0)
-                               ? command.copy_width
-                               : vulkan_texture->get_description().width / mip_level_factor;
-
-    uint32_t final_height = (command.copy_height > 0)
-                                ? command.copy_height
-                                : vulkan_texture->get_description().height / mip_level_factor;
-
-    uint32_t final_depth = command.copy_depth;
-
-    VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT;  // TODO:
-
+    uint32 width = vulkan_texture->get_description().width;
+    uint32 height = vulkan_texture->get_description().height;
+    
     VkBufferImageCopy region = {};
-    region.bufferOffset = command.buffer_offset;
+    region.bufferOffset = 0;
     region.bufferRowLength = 0;
     region.bufferImageHeight = 0;
     // Image Subresource
     region.imageSubresource.aspectMask = aspect;
-    region.imageSubresource.mipLevel = command.mip_level;
-    region.imageSubresource.baseArrayLayer = command.base_array_layer;
-    region.imageSubresource.layerCount = command.layer_count;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount = 1;
     // Image Region
-    region.imageOffset = {command.dest_x_offset, command.dest_y_offset, command.dest_z_offset};
-    region.imageExtent = {final_width, final_height, final_depth};
-
-    VulkanAPI::lvkCmdCopyBufferToImage(
-        command_buffer_,
-        vk_source_buffer,
-        vk_destination_image,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {
+        width,
+        height,
         1,
-        &region);
+    };
+
+    VulkanAPI::lvkCmdCopyBufferToImage(command_buffer_,
+                                       vulkan_source->get_handle(),
+                                       vk_destination_image,
+                                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                       1,
+                                       &region);
 }
 
 void VulkanCommandBuffer::copy_buffer(const RHICopyBufferCommand& command) {
@@ -335,12 +439,11 @@ void VulkanCommandBuffer::copy_buffer(const RHICopyBufferCommand& command) {
     buffer_copy.dstOffset = command.destination_offset;
     buffer_copy.size = command.size;
 
-    VulkanAPI::lvkCmdCopyBuffer(
-        command_buffer_,
-        vksource->get_handle(),
-        vkdestination->get_handle(),
-        1,
-        &buffer_copy);
+    VulkanAPI::lvkCmdCopyBuffer(command_buffer_,
+                                vksource->get_handle(),
+                                vkdestination->get_handle(),
+                                1,
+                                &buffer_copy);
 }
 
 void VulkanCommandBuffer::begin_render_pass(const RHIRenderPassBeginInfo& begin_info) {
@@ -360,7 +463,8 @@ void VulkanCommandBuffer::begin_render_pass(const RHIRenderPassBeginInfo& begin_
         begin_info.color.x,
         begin_info.color.y,
         begin_info.color.z,
-        begin_info.color.w};
+        begin_info.color.w,
+    };
 
     VkClearDepthStencilValue depth_stencil_value = {};
     depth_stencil_value.depth = begin_info.depth;
@@ -398,10 +502,9 @@ void VulkanCommandBuffer::begin_render_pass(const RHIRenderPassBeginInfo& begin_
     render_pass_begin_info.clearValueCount = clear_values.size();
     render_pass_begin_info.pClearValues = clear_values.data();
 
-    VulkanAPI::lvkCmdBeginRenderPass(
-        command_buffer_,
-        &render_pass_begin_info,
-        VK_SUBPASS_CONTENTS_INLINE);
+    VulkanAPI::lvkCmdBeginRenderPass(command_buffer_,
+                                     &render_pass_begin_info,
+                                     VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void VulkanCommandBuffer::end_render_pass() {
@@ -409,22 +512,20 @@ void VulkanCommandBuffer::end_render_pass() {
 }
 
 void VulkanCommandBuffer::draw(const RHIDrawCommand& command) {
-    VulkanAPI::lvkCmdDraw(
-        command_buffer_,
-        command.vertex_count,
-        command.instance_count,
-        command.first_vertex,
-        command.first_instance);
+    VulkanAPI::lvkCmdDraw(command_buffer_,
+                          command.vertex_count,
+                          command.instance_count,
+                          command.first_vertex,
+                          command.first_instance);
 }
 
 void VulkanCommandBuffer::draw(const RHIDrawIndexedCommand& command) {
-    VulkanAPI::lvkCmdDrawIndexed(
-        command_buffer_,
-        command.index_count,
-        command.instance_count,
-        command.first_index,
-        command.vertex_offset,
-        command.first_instance);
+    VulkanAPI::lvkCmdDrawIndexed(command_buffer_,
+                                 command.index_count,
+                                 command.instance_count,
+                                 command.first_index,
+                                 command.vertex_offset,
+                                 command.first_instance);
 }
 
 RHICommandBuffer* RHIVulkanCommandAllocator::open(uint32 index) {
@@ -445,16 +546,16 @@ void RHIVulkanCommandAllocator::initialize_command_pool() {
     if ((queue_type_ & RHIQueueType::Transfer) == RHIQueueType::Transfer) {
         flags |= VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
     }
+
     VkCommandPoolCreateInfo command_pool_create_info = {};
     command_pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     command_pool_create_info.flags = flags;
     command_pool_create_info.queueFamilyIndex = queue_family_index_;
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateCommandPool(
-        context_.device,
-        &command_pool_create_info,
-        context_.allocator,
-        &command_pool_));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateCommandPool(context_.device,
+                                                       &command_pool_create_info,
+                                                       context_.allocator,
+                                                       &command_pool_));
 }
 
 void RHIVulkanCommandAllocator::allocate_command_buffers() {
@@ -464,15 +565,13 @@ void RHIVulkanCommandAllocator::allocate_command_buffers() {
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     command_buffer_allocate_info.commandBufferCount = count_;
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkAllocateCommandBuffers(
-        context_.device,
-        &command_buffer_allocate_info,
-        command_buffers_.data()));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkAllocateCommandBuffers(context_.device,
+                                                            &command_buffer_allocate_info,
+                                                            command_buffers_.data()));
 
     for (size_t i = 0; i < count_; i++) {
-        upper_command_buffers_[i] = lnew(
-            upper_command_buffer_allocator_,
-            VulkanCommandBuffer(command_buffers_[i], queue_type_));
+        upper_command_buffers_[i] = lnew(upper_command_buffer_allocator_,
+                                         VulkanCommandBuffer(command_buffers_[i], queue_type_));
     }
 }
 
@@ -495,8 +594,7 @@ RHIVulkanCommandAllocator::RHIVulkanCommandAllocator(VulkanContext& context, con
     upper_command_buffers_.resize(count_);
 
     upper_command_buffer_allocator_.initialize(count_ * sizeof(VulkanCommandBuffer));
-    queue_family_index_ = static_ref_cast<VulkanCommandQueue>(description.command_queue)
-                              ->get_queue_family_index();
+    queue_family_index_ = static_ref_cast<VulkanCommandQueue>(description.command_queue)->get_queue_family_index();
 }
 
 }  //namespace licht

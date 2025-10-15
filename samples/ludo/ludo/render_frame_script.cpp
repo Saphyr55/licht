@@ -202,7 +202,7 @@ void RenderFrameScript::on_startup() {
     });
 
     rhi_transition_texture(device_,
-                           RHITextureBarrier(depth_texture_,
+                           RHITextureLayoutTransition(depth_texture_,
                                              RHITextureLayout::Undefined,
                                              RHITextureLayout::DepthStencilAttachment),
                            graphics_queue_);
@@ -229,7 +229,6 @@ void RenderFrameScript::on_startup() {
 
     // Device objects --
     RHIDeviceMemoryUploader uploader(device_, buffer_pool_, texture_pool_);
-
 
     for (StaticMesh& mesh : model) {
     
@@ -260,6 +259,7 @@ void RenderFrameScript::on_startup() {
             tex_desc.sharing_mode = RHISharingMode::Shared;
             tex_desc.width = submesh.material.diffuse_texture.width;
             tex_desc.height = submesh.material.diffuse_texture.height;
+            tex_desc.mip_levels = Math::floor(Math::log2(Math::max(tex_desc.width, tex_desc.height))) + 1;
 
             render_submesh.vertex_buffers = Array<RHIBuffer*>(vertex_buffers, 3);
             render_submesh.texture = uploader.send_texture(RHIStagingBufferContext(
@@ -272,9 +272,12 @@ void RenderFrameScript::on_startup() {
                 .texture = render_submesh.texture,
                 .format = tex_desc.format,
                 .dimension = RHITextureDimension::Dim2D,
+                .mip_levels = tex_desc.mip_levels,
             });
 
-            render_submesh.sampler = device_->create_sampler(RHISamplerDescription{});
+            render_submesh.sampler = device_->create_sampler(RHISamplerDescription{
+                .max_lod = static_cast<float32>(tex_desc.mip_levels),
+            });
 
             render_submesh.index_buffer = uploader.send_buffer(
                 RHIStagingBufferContext(RHIBufferUsageFlags::Index, ArrayView(submesh.indices)));
@@ -285,7 +288,7 @@ void RenderFrameScript::on_startup() {
         render_model_.append(render_mesh);
     }
 
-    uploader.upload();
+    uploader.upload(graphics_queue_);
 
     // Unload models.
     gltf_static_meshes_unload(model_asset_path);

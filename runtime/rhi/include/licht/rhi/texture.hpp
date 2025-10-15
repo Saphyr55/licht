@@ -7,7 +7,7 @@
 
 namespace licht {
 
-struct RHITextureBarrier {
+struct RHITextureLayoutTransition {
     RHITexture* texture = nullptr;
     RHITextureLayout old_layout = RHITextureLayout::Undefined;
     RHITextureLayout new_layout = RHITextureLayout::Undefined;
@@ -22,7 +22,7 @@ struct RHITextureDescription {
     float32 width = 8;
     float32 height = 8;
     size_t depth = 1;
-    size_t mip_levels = 1;
+    uint32 mip_levels = 1;
     size_t array_layers = 1;
 };
 
@@ -42,7 +42,7 @@ protected:
 };
 
 LICHT_RHI_API void rhi_transition_texture(RHIDeviceRef device, 
-                                          const RHITextureBarrier& barrier, 
+                                          const RHITextureLayoutTransition& barrier, 
                                           const RHICommandQueueRef& queue);
 
 }  //namespace licht

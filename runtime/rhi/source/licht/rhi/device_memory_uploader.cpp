@@ -45,7 +45,7 @@ RHITexture* RHIDeviceMemoryUploader::send_texture(const RHIStagingBufferContext&
 
     staging_buffer->update(context.data, context.size);
 
-    description.usage = description.usage | RHITextureUsageFlags::TransferDst;
+    description.usage = description.usage | RHITextureUsageFlags::TransferDst | RHITextureUsageFlags::TransferSrc;
     description.memory_usage = RHIMemoryUsage::Device;
     RHITexture* texture = texture_pool_->create_texture(description);
 
@@ -69,19 +69,10 @@ RHIBuffer* RHIDeviceMemoryUploader::send_buffer(const RHIStagingBufferContext& c
 }
 
 // Upload Data from Standing Buffers to Device Buffers
-void RHIDeviceMemoryUploader::upload() {
-    // Fetch transfer queue.
-    const Array<RHICommandQueueRef>& command_queues = device_->get_command_queues();
-    RHICommandQueueRef* transfer_queue_ptr = command_queues.get_if([](RHICommandQueueRef queue) {
-        return queue->is_transfer_type();
-    });
-
-    LCHECK_MSG(transfer_queue_ptr, "Found no transfer command queue.");
-    RHICommandQueueRef transfer_queue = *transfer_queue_ptr;
-
+void RHIDeviceMemoryUploader::upload(RHICommandQueueRef& queue) {
     RHICommandAllocatorDescription transfer_command_allocator_desc = {};
     transfer_command_allocator_desc.count = 1;  // One command buffer allocated.
-    transfer_command_allocator_desc.command_queue = transfer_queue;
+    transfer_command_allocator_desc.command_queue = queue;
 
     RHICommandAllocator* transfer_command_allocator = device_->create_command_allocator(transfer_command_allocator_desc);
 
@@ -102,23 +93,28 @@ void RHIDeviceMemoryUploader::upload() {
         for (auto& entry : texture_entries_) {
             RHITexture* texture = entry.texture;
 
-            RHITextureBarrier barrier_to_copy = {};
+            RHITextureLayoutTransition barrier_to_copy = {};
             barrier_to_copy.texture = texture;
             barrier_to_copy.old_layout = RHITextureLayout::Undefined;
             barrier_to_copy.new_layout = RHITextureLayout::TransferDst;
-            transfer_cmd->transition_texture(barrier_to_copy);
+            transfer_cmd->transition_texture_layout(barrier_to_copy);
 
             RHICopyBufferToTextureCommand copy_cmd = {};
             copy_cmd.source = entry.staging;
             copy_cmd.destination = texture;
             transfer_cmd->copy_buffer_to_texture(copy_cmd);
 
-            RHITextureBarrier barrier_to_final = {};
-            barrier_to_final.texture = texture;
-            barrier_to_final.old_layout = RHITextureLayout::TransferDst;
-            barrier_to_final.new_layout = RHITextureLayout::ShaderReadOnly;
+            RHITextureLayoutTransition mipmap_transition = {};
+            mipmap_transition.texture = texture;
+            mipmap_transition.old_layout = RHITextureLayout::TransferDst;
+            mipmap_transition.new_layout = RHITextureLayout::ShaderReadOnly;
 
-            transfer_cmd->transition_texture(barrier_to_final);
+            if (texture->get_description().mip_levels > 1) {
+                transfer_cmd->texture_generate_mipmap(mipmap_transition);
+            } else {
+                transfer_cmd->transition_texture_layout(mipmap_transition);
+            }
+
         }
     }
     transfer_cmd->end();
@@ -126,7 +122,7 @@ void RHIDeviceMemoryUploader::upload() {
     // Submit and wait for transfer to complete
     RHIFence* upload_fence = device_->create_fence();
     device_->reset_fence(upload_fence);
-    transfer_queue->submit({transfer_cmd}, {}, {}, upload_fence);
+    queue->submit({transfer_cmd}, {}, {}, upload_fence);
 
     device_->wait_fence(upload_fence);
     device_->destroy_fence(upload_fence);

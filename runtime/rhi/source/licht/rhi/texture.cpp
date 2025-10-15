@@ -9,7 +9,7 @@ const RHITextureDescription& RHITexture::get_description() const {
     return description_;
 }
 
-void rhi_transition_texture(RHIDeviceRef device, const RHITextureBarrier& barrier, const RHICommandQueueRef& queue) {
+void rhi_transition_texture(RHIDeviceRef device, const RHITextureLayoutTransition& barrier, const RHICommandQueueRef& queue) {
     RHICommandAllocatorDescription transfer_command_allocator_desc = {};
     transfer_command_allocator_desc.command_queue = queue;
 
@@ -21,7 +21,7 @@ void rhi_transition_texture(RHIDeviceRef device, const RHITextureBarrier& barrie
 
     transfer_cmd->begin();
     {
-        transfer_cmd->transition_texture(barrier);
+        transfer_cmd->transition_texture_layout(barrier);
     }
     transfer_cmd->end();
 }

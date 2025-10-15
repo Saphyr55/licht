@@ -43,16 +43,6 @@ struct RHICopyBufferCommand : RHICommand {
 struct RHICopyBufferToTextureCommand : RHICommand {
     RHIBuffer* source;
     RHITexture* destination;
-    uint64_t buffer_offset = 0;
-    uint32_t mip_level = 0;
-    uint32_t base_array_layer = 0;
-    uint32_t layer_count = 1;
-    int32_t dest_x_offset = 0;
-    int32_t dest_y_offset = 0;
-    int32_t dest_z_offset = 0;
-    uint32_t copy_width = 0;
-    uint32_t copy_height = 0;
-    uint32_t copy_depth = 1;
 };
 
 struct RHIShaderConstants {
@@ -132,7 +122,8 @@ public:
      */
     virtual void set_viewports(const Viewport* viewports, uint32 count) = 0;
 
-    virtual void transition_texture(const RHITextureBarrier& barrier) = 0;
+    virtual void texture_generate_mipmap(const RHITextureLayoutTransition& transition) = 0;
+    virtual void transition_texture_layout(const RHITextureLayoutTransition& transition) = 0;
 
     virtual void copy_buffer(const RHICopyBufferCommand& command) = 0;
     virtual void copy_buffer_to_texture(const RHICopyBufferToTextureCommand& command) = 0;

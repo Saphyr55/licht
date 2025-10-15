@@ -26,8 +26,8 @@ void VulkanSampler::initialize(const RHISamplerDescription& description) {
     sampler_info_create_info.compareOp = VK_COMPARE_OP_ALWAYS;
     sampler_info_create_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
     sampler_info_create_info.mipLodBias = 0.0f;
-    sampler_info_create_info.minLod = 0.0f;
-    sampler_info_create_info.maxLod = 0.0f;
+    sampler_info_create_info.minLod = description_.min_lod;
+    sampler_info_create_info.maxLod = description_.max_lod;
 
     LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateSampler(
         context.device,

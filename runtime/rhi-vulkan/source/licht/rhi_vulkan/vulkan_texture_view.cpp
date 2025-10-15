@@ -41,10 +41,10 @@ void VulkanTextureView::initialize(const RHITextureViewDescription& description)
     image_view_create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
     image_view_create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
     image_view_create_info.subresourceRange.aspectMask = vulkan_format_to_image_aspect(description_.format);
-    image_view_create_info.subresourceRange.baseMipLevel = description_.mip_level;
-    image_view_create_info.subresourceRange.levelCount = description_.mip_level_count;
-    image_view_create_info.subresourceRange.baseArrayLayer = description_.array_layer;
-    image_view_create_info.subresourceRange.layerCount = description_.array_layer_count;
+    image_view_create_info.subresourceRange.baseMipLevel = 0;
+    image_view_create_info.subresourceRange.levelCount = description_.mip_levels;
+    image_view_create_info.subresourceRange.baseArrayLayer = 0;
+    image_view_create_info.subresourceRange.layerCount = 1;
 
     LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateImageView(
         context.device,

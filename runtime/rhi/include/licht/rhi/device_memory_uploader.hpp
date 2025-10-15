@@ -36,7 +36,7 @@ public:
 
     RHITexture* send_texture(const RHIStagingBufferContext& context, RHITextureDescription& description);
 
-    void upload();
+    void upload(RHICommandQueueRef& queue);
 
     RHIDeviceMemoryUploader(RHIDeviceRef device,
                             RHIBufferPoolRef buffer_pool,

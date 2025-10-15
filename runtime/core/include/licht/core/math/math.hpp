@@ -74,6 +74,21 @@ public:
         return std::asin(value);
     }
 
+    static constexpr inline auto floor(const Real auto& value) -> auto {
+        return std::floor(value);
+    }
+
+    static constexpr inline auto ceil(const Real auto& value) -> auto {
+        return std::ceil(value);
+    }
+
+    static constexpr inline auto log(const Real auto& value) -> auto {
+        return std::log(value);
+    }
+
+    static constexpr inline auto log2(const Real auto& value) -> auto {
+        return std::log2(value);
+    }
     static constexpr inline auto min(const auto& value, const auto& min) -> auto {
         return (value < min) ? min : value;
     }
