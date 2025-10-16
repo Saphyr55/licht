@@ -2,7 +2,6 @@
 
 #include "licht/core/containers/array_view.hpp"
 #include "licht/core/defines.hpp"
-#include "licht/core/io/file_handle.hpp"
 #include "licht/core/io/file_system.hpp"
 #include "licht/core/math/math.hpp"
 #include "licht/core/math/matrix4.hpp"
@@ -17,69 +16,58 @@
 #include "licht/engine/project_settings.hpp"
 #include "licht/renderer/mesh/static_mesh.hpp"
 #include "licht/renderer/mesh/static_mesh_loader.hpp"
+#include "licht/renderer/render_item.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/command_queue.hpp"
 #include "licht/rhi/device_memory_uploader.hpp"
+#include "licht/rhi/pipeline.hpp"
 #include "licht/rhi/rhi_forwards.hpp"
 #include "licht/rhi/rhi_module.hpp"
 #include "licht/rhi/rhi_types.hpp"
 #include "licht/rhi/sampler.hpp"
-#include "licht/rhi/shader_resource.hpp"
 #include "licht/rhi/texture.hpp"
 #include "licht/rhi/texture_pool.hpp"
 #include "licht/rhi/texture_view.hpp"
 #include "licht/scene/camera.hpp"
+#include "ludo_types.hpp"
+#include "material_graphics_pipeline.hpp"
 
 namespace licht {
 
 RenderFrameScript::RenderFrameScript(Camera* camera)
     : window_handle_(Display::InvalidWindowHandle)
     , device_(nullptr)
-    , render_pass_(nullptr)
-    , graphics_pipeline_(nullptr)
     , framebuffers_(3)
     , cmd_allocator_(nullptr)
     , pause_(false)
-    , camera_(camera)
-    , shader_resource_group_layout_(nullptr) {
+    , camera_(camera) {
 }
 
 void RenderFrameScript::on_startup() {
-    // RHI Module.
     ProjectSettings& project_settings = ProjectSettings::get_instance();
     ModuleRegistry& registry = ModuleRegistry::get_instance();
     RHIModule* module = registry.get_module<RHIModule>(RHIModule::ModuleName);
     String projectdir(project_settings.get_name("projectdir"));
 
-    // Platform file system.
     FileSystem& file_system = FileSystem::get_platform();
 
-    // Device.
     device_ = module->get_device();
 
-    // Window Handle.
     window_handle_ = module->get_window_handle();
     LLOG_FATAL_WHEN(
         !Display::get_default().is_valid(window_handle_),
         "[RHIModule]",
         "Failed to retrieve a valid window handle. Ensure a window is created before initializing the RHI Module.");
 
-    // Renderer
     renderer_ = new_ref<Renderer>();
+    material_graphics_pipeline_ = new_ref<MaterialGraphicsPipeline>();
 
-    // Queues.
-    const Array<RHICommandQueueRef>& command_queues = device_->get_command_queues();
-
-    graphics_queue_ = *command_queues.get_if([](RHICommandQueueRef command_queue) {
-        return command_queue->is_graphics_type();
-    });
-
-    present_queue_ = *command_queues.get_if([&](RHICommandQueueRef command_queue) {
+    graphics_queue_ = device_->get_graphics_queue();
+    present_queue_ = device_->get_queue_if([&](RHICommandQueueRef command_queue) -> bool {
         return command_queue->is_graphics_type() && command_queue->is_present_mode() && graphics_queue_ != present_queue_;
     });
 
-    // Command Allocators
     cmd_allocator_ = device_->create_command_allocator({
         .command_queue = graphics_queue_,
         .count = renderer_->get_frame_count(),
@@ -90,9 +78,7 @@ void RenderFrameScript::on_startup() {
     renderer_->set_present_queue(present_queue_);
     renderer_->set_window_handle(window_handle_);
     renderer_->set_command_allocator(cmd_allocator_);
-    renderer_->set_on_reset([this]() -> void {
-        reset();
-    });
+    renderer_->set_on_reset([this]() -> void { reset(); });
     renderer_->startup();
 
     float32 width = renderer_->get_swapchain()->get_width();
@@ -110,88 +96,6 @@ void RenderFrameScript::on_startup() {
     model_asset_path.append("/assets/models/Sponza/glTF/Sponza.gltf");
     Array<StaticMesh> model = gltf_static_meshes_load(model_asset_path);
 
-    // Render Pass.
-    RHIColorAttachmentDescription render_pass_color_attachment = {};
-    render_pass_color_attachment.format = renderer_->get_swapchain()->get_format();
-
-    render_pass_ = device_->create_render_pass({
-        .attachment_decriptions = {render_pass_color_attachment},
-        .deph_attachement_description = RHIDepthAttachementDescription(RHIFormat::D24S8),
-    });
-
-    RHIShaderResourceBinding ubo_binding(
-        0, RHIShaderResourceType::Uniform, RHIShaderStage::Fragment | RHIShaderStage::Vertex, 1);
-
-    sampler_binding_ = RHIShaderResourceBinding(
-        1, RHIShaderResourceType::Sampler, RHIShaderStage::Fragment);
-
-    Array<RHIShaderResourceBinding> shader_resource_binding = {ubo_binding, sampler_binding_};
-    shader_resource_group_layout_ = device_->create_shader_resource_layout(shader_resource_binding);
-
-    // Bindings and attributes.
-    RHIVertexBindingDescription position_input_binding_description(
-        0, sizeof(Vector3f), RHIVertexInputRate::Vertex);
-
-    RHIVertexAttributeDescription position_attribute_description(
-        0, 0, RHIFormat::RGB32Float);
-
-    RHIVertexBindingDescription normal_input_binding_description(
-        1, sizeof(Vector3f), RHIVertexInputRate::Vertex);
-
-    RHIVertexAttributeDescription normal_attribute_description(
-        1, 1, RHIFormat::RGB32Float);
-
-    RHIVertexBindingDescription texture_uv_input_binding_description(
-        2, sizeof(Vector2f), RHIVertexInputRate::Vertex);
-
-    RHIVertexAttributeDescription texture_uv_attribute_description(
-        2, 2, RHIFormat::RG32Float);
-
-    // Load shaders binary codes.
-    FileHandleResult vertex_file_open_error = file_system.open_read("shaders/main.vert.spv");
-    LCHECK(vertex_file_open_error.has_value());
-
-    SharedRef<FileHandle> vertex_file_handle = vertex_file_open_error.value();
-    SPIRVShader vertex_shader(vertex_file_handle->read_all_bytes());
-
-    FileHandleResult fragment_file_open_error = file_system.open_read("shaders/main.frag.spv");
-    LCHECK(fragment_file_open_error.has_value());
-
-    SharedRef<FileHandle> fragment_file_handle = fragment_file_open_error.value();
-    SPIRVShader fragment_shader(fragment_file_handle->read_all_bytes());
-
-    Rect2D scissor = {
-        .x = 0.0f,
-        .y = 0.0f,
-        .width = width,
-        .height = height,
-    };
-
-    Viewport viewport = {
-        .x = 0.0f,
-        .y = 0.0f,
-        .width = width,
-        .height = height,
-        .min_depth = 0.0f,
-        .max_depth = 1.0f};
-
-    // -- Graphics Pipeline --
-    graphics_pipeline_ = device_->create_graphics_pipeline(
-        RHIGraphicsPipeline::description_builder()
-            .with_render_pass(render_pass_)
-            .with_vertex_shader(vertex_shader, "main")
-            .with_fragment_shader(fragment_shader, "main")
-            .with_vertex_bindings(
-                {position_input_binding_description, normal_input_binding_description, texture_uv_input_binding_description},
-                {position_attribute_description, normal_attribute_description, texture_uv_attribute_description})
-            .with_viewport(viewport, scissor)
-            .with_shader_resource_group_layout(shader_resource_group_layout_)
-            .with_shader_constant_ranges({
-                RHIShaderConstantRange(RHIShaderStage::Vertex, 0, sizeof(RenderModelConstant)),
-             })
-            .with_cull_mode(RHICullModeFlags::Back)
-            .build());
-
     depth_texture_ = texture_pool_->create_texture({
         .format = RHIFormat::D24S8,
         .usage = RHITextureUsageFlags::DepthStencilAttachment,
@@ -203,8 +107,8 @@ void RenderFrameScript::on_startup() {
 
     rhi_transition_texture(device_,
                            RHITextureLayoutTransition(depth_texture_,
-                                             RHITextureLayout::Undefined,
-                                             RHITextureLayout::DepthStencilAttachment),
+                                                      RHITextureLayout::Undefined,
+                                                      RHITextureLayout::DepthStencilAttachment),
                            graphics_queue_);
 
     depth_texture_view_ = device_->create_texture_view({
@@ -212,11 +116,13 @@ void RenderFrameScript::on_startup() {
         .format = depth_texture_->get_description().format,
     });
 
+    material_graphics_pipeline_->initiliaze(device_, renderer_, buffer_pool_);
+
     // -- Framebuffers --
     framebuffers_.reserve(renderer_->get_swapchain()->get_texture_views().size());
     for (RHITextureView* texture : renderer_->get_swapchain()->get_texture_views()) {
         RHIFramebufferDescription description = {
-            .render_pass = render_pass_,
+            .render_pass = material_graphics_pipeline_->get_render_pass(),
             .attachments = {texture, depth_texture_view_},
             .width = width,
             .height = height,
@@ -231,16 +137,16 @@ void RenderFrameScript::on_startup() {
     RHIDeviceMemoryUploader uploader(device_, buffer_pool_, texture_pool_);
 
     for (StaticMesh& mesh : model) {
-    
-        RenderMesh render_mesh;
-
-        render_mesh.model_constant.model = Matrix4f::identity();
-        render_mesh.model_constant.model = Matrix4f::scale(render_mesh.model_constant.model, Vector3f(.009f));
-        Quaternion fix = Quaternion::from_axis_angle(Vector3f(1.0f, 0.0f, 0.0f), Math::radians(-180.0f));
-        render_mesh.model_constant.model = render_mesh.model_constant.model * Quaternion::rotation_matrix(fix);
+        RenderPacket packet;
 
         for (StaticSubMesh& submesh : mesh.get_submeshes()) {
-            RenderSubMesh render_submesh;
+            RenderItem item;
+
+            item.model_constant.model = Matrix4f::identity();
+            item.model_constant.model = Matrix4f::scale(item.model_constant.model, Vector3f(.009f));
+            Quaternion fix = Quaternion::from_axis_angle(Vector3f(1.0f, 0.0f, 0.0f), Math::radians(-180.0f));
+            item.model_constant.model = item.model_constant.model * Quaternion::rotation_matrix(fix);
+
             RHIBuffer* vertex_buffers[3];
 
             vertex_buffers[0] = uploader.send_buffer(RHIStagingBufferContext(
@@ -261,98 +167,40 @@ void RenderFrameScript::on_startup() {
             tex_desc.height = submesh.material.diffuse_texture.height;
             tex_desc.mip_levels = Math::floor(Math::log2(Math::max(tex_desc.width, tex_desc.height))) + 1;
 
-            render_submesh.vertex_buffers = Array<RHIBuffer*>(vertex_buffers, 3);
-            render_submesh.texture = uploader.send_texture(RHIStagingBufferContext(
-                                                               RHIBufferUsageFlags::Storage,
-                                                               submesh.material.diffuse_texture.data.size(),
-                                                               submesh.material.diffuse_texture.data.data()),
-                                                           tex_desc);
+            item.vertex_buffers = Array<RHIBuffer*>(vertex_buffers, 3);
+            item.texture = uploader.send_texture(RHIStagingBufferContext(
+                                                     RHIBufferUsageFlags::Storage,
+                                                     submesh.material.diffuse_texture.data.size(),
+                                                     submesh.material.diffuse_texture.data.data()),
+                                                 tex_desc);
 
-            render_submesh.texture_view = device_->create_texture_view(RHITextureViewDescription{
-                .texture = render_submesh.texture,
+            item.texture_view = device_->create_texture_view(RHITextureViewDescription{
+                .texture = item.texture,
                 .format = tex_desc.format,
                 .dimension = RHITextureDimension::Dim2D,
                 .mip_levels = tex_desc.mip_levels,
             });
 
-            render_submesh.sampler = device_->create_sampler(RHISamplerDescription{
+            item.sampler = device_->create_sampler(RHISamplerDescription{
                 .max_lod = static_cast<float32>(tex_desc.mip_levels),
             });
 
-            render_submesh.index_buffer = uploader.send_buffer(
+            item.index_buffer = uploader.send_buffer(
                 RHIStagingBufferContext(RHIBufferUsageFlags::Index, ArrayView(submesh.indices)));
-            render_submesh.index_count = submesh.indices.size();
-            render_mesh.submeshes.append(render_submesh);
+            item.index_count = submesh.indices.size();
+            packet.items.append(item);
         }
 
-        render_model_.append(render_mesh);
+        render_model_.append(packet);
     }
 
     uploader.upload(graphics_queue_);
 
     // Unload models.
+    // FIXME: This funtionc does nothing, model unloaded when the statement ended.
     gltf_static_meshes_unload(model_asset_path);
 
-    // -- Uniform Buffers --
-    uint32 image_count = renderer_->get_swapchain()->get_texture_views().size();
-    uniform_buffers_.reserve(image_count);
-    for (uint32 i = 0; i < image_count; i++) {
-        RHIBufferDescription uniform_buffer_desc(
-            sizeof(UniformBufferObject),
-            RHIBufferUsageFlags::Uniform,
-            RHIMemoryUsage::Host,
-            RHISharingMode::Private);
-        uniform_buffers_.append(buffer_pool_->create_buffer(uniform_buffer_desc));
-    }
-
-    // -- Shader resource pool --
-    size_t total_submeshes = 0;
-    for (const RenderMesh& mesh : render_model_) {
-        total_submeshes += mesh.submeshes.size();
-    }
-
-    size_t total_groups_needed = image_count * (total_submeshes + 1);
-
-    shader_resource_pool_ = device_->create_shader_resource_pool(total_groups_needed, shader_resource_binding);
-
-    for (uint32 frame = 0; frame < image_count; frame++) {
-        RHIShaderResourceGroup* group = shader_resource_pool_->allocate_group(shader_resource_group_layout_);
-
-        RHIBuffer* uniform_buffer = uniform_buffers_[frame];
-        group->set_buffer(RHIWriteBufferResource(
-            ubo_binding.binding,
-            uniform_buffer,
-            0,
-            uniform_buffer->get_size()));
-
-        group->compile();
-    }
-
-    // Allocate SRG for every submesh * per frame.
-    for (RenderMesh& mesh : render_model_) {
-        for (RenderSubMesh& submesh : mesh.submeshes) {
-            submesh.shader_groups.reserve(image_count);
-
-            for (uint32 frame = 0; frame < image_count; frame++) {
-                RHIShaderResourceGroup* group = shader_resource_pool_->allocate_group(shader_resource_group_layout_);
-
-                RHIBuffer* uniform_buffer = uniform_buffers_[frame];
-                group->set_buffer(RHIWriteBufferResource(
-                    ubo_binding.binding,
-                    uniform_buffer,
-                    0,
-                    uniform_buffer->get_size()));
-
-                group->set_texture_sampler(RHIWriteTextureSamplerResource(
-                    sampler_binding_.binding,
-                    submesh.texture_view,
-                    submesh.sampler));
-
-                group->compile();
-                submesh.shader_groups.append(group);
-            }
-        }
-    }
+    material_graphics_pipeline_->compile(render_model_);
 }
 
 void RenderFrameScript::on_tick(float64 delta_time) {
@@ -375,14 +223,15 @@ void RenderFrameScript::on_tick(float64 delta_time) {
         };
 
         RHIRenderPassBeginInfo render_pass_begin_info = {};
-        render_pass_begin_info.render_pass = render_pass_;
+        render_pass_begin_info.render_pass = material_graphics_pipeline_->get_render_pass();
         render_pass_begin_info.framebuffer = framebuffers_[renderer_->get_frame_index()];
         render_pass_begin_info.area = area;
         render_pass_begin_info.color = Vector4f(0.01f, 0.01f, 0.01f, 1.0f);
 
         cmd->begin_render_pass(render_pass_begin_info);
         {
-            cmd->bind_pipeline(graphics_pipeline_);
+            RHIGraphicsPipeline* graphics_pipeline = material_graphics_pipeline_->get_graphics_pipeline_handle();
+            cmd->bind_graphics_pipeline(graphics_pipeline);
 
             Rect2D scissor = {
                 .x = 0.0f,
@@ -403,30 +252,24 @@ void RenderFrameScript::on_tick(float64 delta_time) {
             cmd->set_viewports(&viewport, 1);
             cmd->set_scissors(&scissor, 1);
 
-            // Model
-            {
-                for (RenderMesh& mesh : render_model_) {
+            // Render Packets / Model
+            for (RenderPacket& packet : render_model_) {
+                for (RenderItem& item : packet.items) {
+                    cmd->set_shader_constants(graphics_pipeline, 
+                        RHIShaderConstants(&item.model_constant, sizeof(RenderModelConstant), 0, RHIShaderStage::Vertex));
 
-                    RHIShaderConstants push_constants = {};
-                    push_constants.size = sizeof(RenderModelConstant);
-                    push_constants.stage = RHIShaderStage::Vertex;
-                    push_constants.data = &mesh.model_constant;
-                    cmd->set_shader_constants(graphics_pipeline_, push_constants);
+                    RHIShaderResourceGroup* shader_group = item.shader_groups[renderer_->get_current_frame()];
 
-                    for (RenderSubMesh& submesh : mesh.submeshes) {
-                        RHIShaderResourceGroup* shader_group = submesh.shader_groups[renderer_->get_current_frame()];
+                    cmd->bind_vertex_buffers(item.vertex_buffers);
+                    cmd->bind_index_buffer(item.index_buffer);
 
-                        cmd->bind_vertex_buffers(submesh.vertex_buffers);
-                        cmd->bind_index_buffer(submesh.index_buffer);
+                    cmd->bind_shader_resource_group(graphics_pipeline, {shader_group});
 
-                        cmd->bind_shader_resource_group(graphics_pipeline_, {shader_group});
+                    RHIDrawIndexedCommand draw_indexed_command = {};
+                    draw_indexed_command.index_count = item.index_count;
+                    draw_indexed_command.instance_count = 1;
 
-                        RHIDrawIndexedCommand draw_indexed_command = {};
-                        draw_indexed_command.index_count = submesh.index_count;
-                        draw_indexed_command.instance_count = 1;
-
-                        cmd->draw(draw_indexed_command);
-                    }
+                    cmd->draw(draw_indexed_command);
                 }
             }
         }
@@ -452,7 +295,7 @@ void RenderFrameScript::update_uniform(const float64 delta_time) {
 
     ubo.view_proj = ubo.proj * ubo.view;
 
-    uniform_buffers_[renderer_->get_current_frame()]->update(&ubo, sizeof(UniformBufferObject), 0);
+    material_graphics_pipeline_->update(ubo);
 }
 
 void RenderFrameScript::reset() {
@@ -485,7 +328,7 @@ void RenderFrameScript::reset() {
         RHIFramebufferDescription description = {};
         description.height = renderer_->get_swapchain()->get_height();
         description.width = renderer_->get_swapchain()->get_width();
-        description.render_pass = render_pass_;
+        description.render_pass = material_graphics_pipeline_->get_render_pass();
         description.attachments = {texture_view, depth_texture_view_};
         description.layers = 1;
 
@@ -506,28 +349,21 @@ void RenderFrameScript::on_shutdown() {
     }
     framebuffers_.clear();
 
-    device_->destroy_graphics_pipeline(graphics_pipeline_);
-
-    device_->destroy_render_pass(render_pass_);
+    material_graphics_pipeline_->destroy();
 
     // -- Buffers, samplers and textures --
     device_->destroy_texture_view(depth_texture_view_);
 
-    for (auto& mesh : render_model_) {
-        for (auto& submesh : mesh.submeshes) {
-            device_->destroy_sampler(submesh.sampler);
-            device_->destroy_texture_view(submesh.texture_view);
+    for (RenderPacket& packet : render_model_) {
+        for (RenderItem& item : packet.items) {
+            device_->destroy_sampler(item.sampler);
+            device_->destroy_texture_view(item.texture_view);
         }
     }
+
     texture_pool_->dispose();
 
     buffer_pool_->dispose();
-
-    uniform_buffers_.clear();
-
-    // SRx
-    shader_resource_pool_->dispose();
-    device_->destroy_shader_resource_pool(shader_resource_pool_);
 
     // SwapChain
     device_->destroy_swapchain(renderer_->get_swapchain());

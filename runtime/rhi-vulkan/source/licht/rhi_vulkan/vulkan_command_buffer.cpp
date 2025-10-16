@@ -142,7 +142,7 @@ void VulkanCommandBuffer::end() {
     LICHT_VULKAN_CHECK(VulkanAPI::lvkEndCommandBuffer(command_buffer_));
 }
 
-void VulkanCommandBuffer::bind_pipeline(RHIGraphicsPipeline* pipeline) {
+void VulkanCommandBuffer::bind_graphics_pipeline(RHIGraphicsPipeline* pipeline) {
     VulkanGraphicsPipeline* vulkan_graphics_pipeline = static_cast<VulkanGraphicsPipeline*>(pipeline);
     VulkanAPI::lvkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, vulkan_graphics_pipeline->get_handle());
 }

@@ -1,8 +1,10 @@
 #include "licht/renderer/mesh/static_mesh_loader.hpp"
 #include "licht/core/containers/array.hpp"
 #include "licht/core/defines.hpp"
+#include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/string/format.hpp"
 #include "licht/core/trace/trace.hpp"
+#include "licht/renderer/material/material.hpp"
 #include "licht/renderer/mesh/static_mesh.hpp"
 #include "licht/rhi/rhi_types.hpp"
 
@@ -20,7 +22,7 @@ void dbgModel(tinygltf::Model& model) {
     for (tinygltf::Mesh& mesh : model.meshes) {
         std::cout << "mesh : " << mesh.name << std::endl;
         for (tinygltf::Primitive& primitive : mesh.primitives) {
-            const tinygltf::Accessor& indexAccessor =  model.accessors[primitive.indices];
+            const tinygltf::Accessor& indexAccessor = model.accessors[primitive.indices];
 
             std::cout << "index_accessor: count " << indexAccessor.count << ", type " << indexAccessor.componentType << std::endl;
 
@@ -119,12 +121,12 @@ StaticSubMesh::Buffer gltf_get_accessor_data(tinygltf::Model& model, int32 acces
     const tinygltf::Accessor& accessor = model.accessors[accessor_index];
     if (accessor.bufferView < 0 || accessor.bufferView >= model.bufferViews.size()) {
         return StaticSubMesh::Buffer();
-    } 
+    }
 
     const tinygltf::BufferView& buffer_view = model.bufferViews[accessor.bufferView];
     if (buffer_view.buffer < 0 || buffer_view.buffer > model.buffers.size()) {
         return StaticSubMesh::Buffer();
-    } 
+    }
 
     tinygltf::Buffer& buffer = model.buffers[buffer_view.buffer];
     size_t size_in_bytes = accessor.count * accessor.ByteStride(buffer_view);
@@ -132,7 +134,7 @@ StaticSubMesh::Buffer gltf_get_accessor_data(tinygltf::Model& model, int32 acces
     return StaticSubMesh::Buffer(buffer.data.data() + buffer_view.byteOffset + accessor.byteOffset, size_in_bytes);
 }
 
-template<typename T>
+template <typename T>
 Array<uint32> gltf_get_indices_type(tinygltf::Model& model, int32 accessor_index) {
     StaticSubMesh::Buffer index_bytes = gltf_get_accessor_data(model, accessor_index);
 
@@ -178,6 +180,8 @@ Array<uint32> gltf_get_indices(tinygltf::Model& model, const tinygltf::Primitive
 void gltf_create_primitive(tinygltf::Model& model, const tinygltf::Primitive& primitive, StaticSubMesh& out_submesh) {
     out_submesh.positions = gltf_get_accessor_data(model, primitive.attributes.at("POSITION"));
 
+    using attributes_type = decltype(primitive.attributes);
+
     if (primitive.indices >= 0) {
         out_submesh.indices = gltf_get_indices(model, primitive);
     } else {
@@ -187,17 +191,16 @@ void gltf_create_primitive(tinygltf::Model& model, const tinygltf::Primitive& pr
         }
     }
 
-    auto normals_it = primitive.attributes.find("NORMAL");
+    attributes_type::const_iterator normals_it = primitive.attributes.find("NORMAL");
     if (normals_it != primitive.attributes.end()) {
         out_submesh.normals = gltf_get_accessor_data(model, normals_it->second);
     }
 
-    auto texcoord0_it = primitive.attributes.find("TEXCOORD_0");
+    attributes_type::const_iterator texcoord0_it = primitive.attributes.find("TEXCOORD_0");
     if (texcoord0_it != primitive.attributes.end()) {
         out_submesh.uv_textures = gltf_get_accessor_data(model, texcoord0_it->second);
     }
 }
-
 
 void gltf_create_meshes(tinygltf::Model& model, Array<StaticMesh>& out_meshes) {
     out_meshes.reserve(model.meshes.size());
@@ -210,12 +213,23 @@ void gltf_create_meshes(tinygltf::Model& model, Array<StaticMesh>& out_meshes) {
 
             if (primitive.material >= 0 && primitive.material < model.materials.size()) {
                 tinygltf::Material& gltf_material = model.materials[primitive.material];
-                tinygltf::Texture& base_color_texture = model.textures[gltf_material.pbrMetallicRoughness.baseColorTexture.index];
-                tinygltf::Image& image = model.images[base_color_texture.source];
-                submesh.material.diffuse_texture.data = Array<uint8>(image.image.data(), image.image.size());
-                submesh.material.diffuse_texture.format = find_format(image);
-                submesh.material.diffuse_texture.width = image.width; 
-                submesh.material.diffuse_texture.height = image.height;
+                tinygltf::PbrMetallicRoughness& pbr = gltf_material.pbrMetallicRoughness;
+                tinygltf::Texture& base_color_texture = model.textures[pbr.baseColorTexture.index];
+                tinygltf::Image& base_color_image = model.images[base_color_texture.source];
+
+                submesh.material.diffuse_texture.data = Array<uint8>(base_color_image.image.data(), base_color_image.image.size());
+                submesh.material.diffuse_texture.format = find_format(base_color_image);
+                submesh.material.diffuse_texture.width = base_color_image.width;
+                submesh.material.diffuse_texture.height = base_color_image.height;
+                
+                if (gltf_material.normalTexture.index >= 0) {
+                    tinygltf::Texture& normal_texture = model.textures[gltf_material.normalTexture.index];
+                    tinygltf::Image& normal_image = model.images[normal_texture.source];
+                    submesh.material.normal_texture.data = Array<uint8>(normal_image.image.data(), normal_image.image.size());
+                    submesh.material.normal_texture.format = find_format(normal_image);
+                    submesh.material.normal_texture.width = normal_image.width;
+                    submesh.material.normal_texture.height = normal_image.height;
+                }
             }
 
             mesh.append_submesh(submesh);
@@ -232,7 +246,7 @@ Array<StaticMesh> gltf_static_meshes_load(StringRef filepath) {
     std::string err;
     std::string warn;
     bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, filepath.data());
-    
+
     gltf_create_meshes(model, meshes);
 
     return meshes;

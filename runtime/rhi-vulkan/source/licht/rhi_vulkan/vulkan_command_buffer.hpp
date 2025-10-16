@@ -22,7 +22,7 @@ public:
 
     virtual void end_render_pass() override;
 
-    virtual void bind_pipeline(RHIGraphicsPipeline* pipeline) override;
+    virtual void bind_graphics_pipeline(RHIGraphicsPipeline* pipeline) override;
     
     virtual void bind_shader_resource_group(RHIGraphicsPipeline* pipeline, const Array<RHIShaderResourceGroup*>& groups) override;
 

@@ -1,14 +1,17 @@
 #pragma once
 
 #include "licht/core/defines.hpp"
+#include "licht/core/memory/shared_ref.hpp"
 #include "licht/rhi/command_buffer.hpp"
+#include "licht/rhi/command_queue.hpp"
 #include "licht/rhi/framebuffer.hpp"
 #include "licht/rhi/pipeline.hpp"
-#include "licht/rhi/rhi_forwards.hpp"
-#include "licht/rhi/shader_resource.hpp"
-#include "licht/rhi/sampler.hpp"
-#include "licht/rhi/texture_view.hpp"
 #include "licht/rhi/render_pass.hpp"
+#include "licht/rhi/rhi_forwards.hpp"
+#include "licht/rhi/sampler.hpp"
+#include "licht/rhi/shader_resource.hpp"
+#include "licht/rhi/texture_view.hpp"
+
 
 namespace licht {
 
@@ -25,7 +28,7 @@ public:
     virtual RHIShaderResourceGroupLayout* create_shader_resource_layout(const Array<RHIShaderResourceBinding>& bindings) = 0;
     virtual void destroy_shader_resource_layout(RHIShaderResourceGroupLayout* layout) = 0;
 
-    virtual RHIShaderResourceGroupPool* create_shader_resource_pool(size_t max_sets, const Array<RHIShaderResourceBinding>& total_bindings) = 0;
+    virtual RHIShaderResourceGroupPool* create_shader_resource_pool(size_t max_group, const Array<RHIShaderResourceBinding>& total_bindings) = 0;
     virtual void destroy_shader_resource_pool(RHIShaderResourceGroupPool* group_pool) = 0;
 
     virtual RHICommandAllocator* create_command_allocator(const RHICommandAllocatorDescription& description) = 0;
@@ -56,7 +59,23 @@ public:
     virtual RHIFence* create_fence() = 0;
     virtual void destroy_fence(RHIFence* fence) = 0;
 
-    virtual Array<RHICommandQueueRef> get_command_queues() = 0;
+    virtual Array<SharedRef<RHICommandQueue>> get_command_queues() = 0;
+
+    inline SharedRef<RHICommandQueue> get_graphics_queue() {
+        return *get_command_queues().get_if([](SharedRef<RHICommandQueue> command_queue) -> bool {
+            return command_queue->is_graphics_type();
+        });
+    }
+
+    inline SharedRef<RHICommandQueue> get_present_queue() {
+        return *get_command_queues().get_if([](SharedRef<RHICommandQueue> command_queue) -> bool {
+            return command_queue->is_present_mode();
+        });
+    }
+
+    inline SharedRef<RHICommandQueue> get_queue_if(auto&& predicate) {
+        return *get_command_queues().get_if(predicate);
+    }
 };
 
 }  //namespace licht

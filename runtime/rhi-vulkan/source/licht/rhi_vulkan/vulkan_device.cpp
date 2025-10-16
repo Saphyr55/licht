@@ -76,9 +76,9 @@ void VulkanDevice::destroy_shader_resource_layout(RHIShaderResourceGroupLayout* 
     ldelete(allocator_, vklayout);
 }
 
-RHIShaderResourceGroupPool* VulkanDevice::create_shader_resource_pool(size_t max_sets, const Array<RHIShaderResourceBinding>& total_bindings) {
+RHIShaderResourceGroupPool* VulkanDevice::create_shader_resource_pool(size_t max, const Array<RHIShaderResourceBinding>& total_bindings) {
     VulkanShaderResourceGroupPool* vk_descriptor_pool = lnew(allocator_, VulkanShaderResourceGroupPool());
-    vk_descriptor_pool->initialize(max_sets, total_bindings);
+    vk_descriptor_pool->initialize(max, total_bindings);
     return vk_descriptor_pool;
 }
 

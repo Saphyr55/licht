@@ -46,10 +46,17 @@ struct RHICopyBufferToTextureCommand : RHICommand {
 };
 
 struct RHIShaderConstants {
-    RHIShaderStage stage = RHIShaderStage::AllGraphics;
-    uint32 offset = 0;
-    uint32 size = 0;
     const void* data = nullptr;
+    uint32 size = 0;
+    uint32 offset = 0;
+    RHIShaderStage stage = RHIShaderStage::AllGraphics;
+
+    RHIShaderConstants() = default;
+    RHIShaderConstants(const void* in_data, uint32 in_size, uint32 in_offset = 0, RHIShaderStage in_stage = RHIShaderStage::AllGraphics)
+        : data(in_data)
+        , size(in_size)
+        , offset(in_offset)
+        , stage(in_stage) {}
 };
 
 /**
@@ -94,7 +101,7 @@ public:
      * @brief Bind a graphics pipeline for subsequent draw calls.
      * @param pipeline Handle to the pipeline to bind.
      */
-    virtual void bind_pipeline(RHIGraphicsPipeline* pipeline) = 0;
+    virtual void bind_graphics_pipeline(RHIGraphicsPipeline* pipeline) = 0;
 
     virtual void bind_shader_resource_group(RHIGraphicsPipeline* pipeline, const Array<RHIShaderResourceGroup*>& descriptor_sets) = 0;
 

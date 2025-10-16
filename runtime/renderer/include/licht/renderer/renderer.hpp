@@ -46,6 +46,10 @@ public:
         return command_allocator_;
     }
 
+    const RHICommandAllocator* get_command_allocator() const {
+        return command_allocator_;
+    }
+
     void set_command_allocator(RHICommandAllocator* cmd_allocator) {
         command_allocator_ = cmd_allocator;
     }
@@ -60,23 +64,31 @@ public:
         on_reset_ = on_reset;
     } 
 
-    uint32 get_frame_count() {
+    uint32 get_frame_count() const {
         return frame_context_.frame_count;
     }    
     
-    uint32 get_current_frame() {
+    uint32 get_current_frame() const {
         return frame_context_.current_frame;
     }
 
-    uint32 get_frame_index() {
+    uint32 get_frame_index() const {
         return frame_context_.frame_index;
     }
-
+    
     RHICommandQueueRef get_present_queue() {
         return present_queue_;
     }
 
     RHICommandQueueRef get_graphics_queue() {
+        return graphics_queue_;
+    }
+
+    const RHICommandQueueRef& get_present_queue() const {
+        return present_queue_;
+    }
+
+    const RHICommandQueueRef& get_graphics_queue() const {
         return graphics_queue_;
     }
 
@@ -89,6 +101,10 @@ public:
     }
 
     RHICommandBuffer* get_current_command_buffer() {
+        return current_cmd_;
+    }
+
+    const RHICommandBuffer* get_current_command_buffer() const {
         return current_cmd_;
     }
 

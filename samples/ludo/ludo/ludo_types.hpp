@@ -14,13 +14,7 @@ struct UniformBufferObject {
     UniformBufferObject() = default;
 };
 
-struct RenderModelConstant {
-    alignas(16) Matrix4f model = Matrix4f::identity();
-    RenderModelConstant() = default;
-};
-
 struct RenderCube {
-    
     Array<Vector3f> positions = {
         Vector3f(-0.5f, -0.5f, 0.5f),  // 0
         Vector3f(0.5f, -0.5f, 0.5f),   // 1
@@ -100,4 +94,4 @@ struct RenderCube {
         20, 21, 22, 22, 23, 20};
 };
 
-}
+}  //namespace licht
