@@ -27,10 +27,21 @@ layout(set = 0, binding = 1) uniform ULight {
 layout(set = 1, binding = 0) uniform sampler2D u_diffuse_map;
 layout(set = 1, binding = 1) uniform sampler2D u_normal_map;
 
+float inverse_square_curve_windowing(float light_distance, float max_distance) {
+    float value = 1.0 - pow(light_distance / max_distance, 4);
+    float clamped_value = clamp(value, 0.0, value);
+    return clamped_value * clamped_value;
+}
+
+float inverse_square_light_attenuation(float light_distance, float fixed_distance, float epsilon) {
+    return (fixed_distance * fixed_distance) / ((light_distance * light_distance) + epsilon);
+}
+
 // Source: Real-Time Rendering Fourth Edition, Chapter 5.3
 vec3 lit(vec3 light_direction, vec3 normal, vec3 view_direction, vec3 cwarm, vec3 highlight) {
-    vec3 direction_reflect = reflect(-light_direction, normal);
-    float s = clamp(100.0 * dot(direction_reflect, view_direction) - 97.0, 0.0, 1.0);
+    vec3 reflect_direction = reflect(-light_direction, normal);
+    vec3 halfway_direction =  normalize(view_direction + light_direction);
+    float s = pow(max(dot(reflect_direction, halfway_direction), 0.0), 32.0);
     return mix(cwarm, highlight, s); // Interpolation
 }
 
@@ -47,16 +58,23 @@ void main() {
     
     vec3 view_direction = normalize(u_ubo.eye_position - in_position);
 
-    vec3 highlight = vec3(2.0, 2.0, 2.0);
+    vec3 highlight = vec3(0.8);
     vec3 diffuse_cool = vec3(0.0, 0.0, 0.50) + 0.25 * diffuse.rgb;
     vec3 diffuse_warm = vec3(0.33, 0.33, 0.0) + 0.25 * diffuse.rgb;
 
     vec3 light_direction = normalize(u_light.punctual_light.position - in_position);
-    
-    float geometric_term = clamp(dot(normal, light_direction), 0.0, 1.0);
-    
-    vec3 fcolor = unlit(normal, view_direction, diffuse_cool);
-    fcolor += geometric_term * u_light.punctual_light.color * lit(light_direction, normal, view_direction, diffuse_warm, highlight);
+    float light_distance = sqrt(dot(light_direction, light_direction)); // r
+    float light_attenuation_factor = 
+        inverse_square_curve_windowing(light_distance, 50.0f) * 
+        inverse_square_light_attenuation(light_distance, 1.0f, 1.0f);
 
+    vec3 fcolor = unlit(normal, view_direction, diffuse_cool);
+    
+    if (light_attenuation_factor > 0.0f) {
+        vec3 light_color = u_light.punctual_light.color * light_attenuation_factor;
+        float geometric_term = clamp(dot(normal, light_direction), 0.0, 1.0);
+        fcolor += geometric_term * light_color * lit(light_direction, normal, view_direction, diffuse_warm, highlight);
+    }
+    
     out_frag_color = vec4(fcolor, 1.0); 
 }
