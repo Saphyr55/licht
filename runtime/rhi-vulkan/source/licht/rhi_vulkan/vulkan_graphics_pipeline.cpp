@@ -7,6 +7,7 @@
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
 #include "licht/rhi_vulkan/vulkan_render_pass.hpp"
+#include "licht/rhi_vulkan/vulkan_shader_module.hpp"
 #include "vulkan_description_set.hpp"
 
 #include <vulkan/vulkan_core.h>

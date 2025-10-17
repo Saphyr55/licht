@@ -59,8 +59,8 @@ void main() {
     vec3 view_direction = normalize(u_ubo.eye_position - in_position);
 
     vec3 highlight = vec3(0.8);
-    vec3 diffuse_cool = vec3(0.0, 0.0, 0.50) + 0.25 * diffuse.rgb;
-    vec3 diffuse_warm = vec3(0.33, 0.33, 0.0) + 0.25 * diffuse.rgb;
+    vec3 diffuse_cool = vec3(0.0, 0.0, 0.11) + 0.25 * diffuse.rgb;
+    vec3 diffuse_warm = vec3(0.05, 0.05, 0.0) + 0.25 * diffuse.rgb;
 
     vec3 light_direction = normalize(u_light.punctual_light.position - in_position);
     float light_distance = sqrt(dot(light_direction, light_direction)); // r

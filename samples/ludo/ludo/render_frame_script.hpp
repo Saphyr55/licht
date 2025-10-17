@@ -3,7 +3,7 @@
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/platform/window_handle.hpp"
 #include "licht/renderer/render_item.hpp"
-#include "licht/renderer/renderer.hpp"
+#include "licht/renderer/render_context.hpp"
 #include "licht/rhi/rhi_forwards.hpp"
 #include "licht/rhi/texture.hpp"
 #include "material_graphics_pipeline.hpp"
@@ -54,7 +54,7 @@ private:
 
     RHICommandAllocator* cmd_allocator_;
 
-    SharedRef<Renderer> renderer_;
+    SharedRef<RenderContext> renderer_;
     SharedRef<MaterialGraphicsPipeline> material_graphics_pipeline_;
 
     bool pause_ = false;

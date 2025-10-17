@@ -1,4 +1,4 @@
-#include "licht/renderer/renderer.hpp"
+#include "licht/renderer/render_context.hpp"
 #include "licht/core/modules/module_registry.hpp"
 #include "licht/core/platform/display.hpp"
 #include "licht/rhi/device.hpp"
@@ -8,7 +8,7 @@
 
 namespace licht {
 
-void Renderer::startup() {
+void RenderContext::startup() {
     ModuleRegistry& registry = ModuleRegistry::get_instance();
     RHIModule* module = registry.get_module<RHIModule>(RHIModule::ModuleName);
 
@@ -39,7 +39,7 @@ void Renderer::startup() {
     }
 }
 
-void Renderer::shutdown() {
+void RenderContext::shutdown() {
     device_->wait_idle();
 
     for (uint32 i = 0; i < frame_context_.frame_count; i++) {
@@ -53,7 +53,7 @@ void Renderer::shutdown() {
     frame_context_.frame_in_flight_fences.clear();
 }
 
-RenderResult Renderer::begin_frame() {
+RenderResult RenderContext::begin_frame() {
     swapchain_->acquire_next_frame(frame_context_);
 
     if (frame_context_.out_of_date) {
@@ -69,7 +69,7 @@ RenderResult Renderer::begin_frame() {
     return RenderResult::Success;
 }
 
-RenderResult Renderer::end_frame() {
+RenderResult RenderContext::end_frame() {
     current_cmd_->end();
 
     frame_context_.frame_in_flight_fences[frame_context_.frame_index] =
@@ -99,18 +99,18 @@ RenderResult Renderer::end_frame() {
     return RenderResult::Success;
 }
 
-void Renderer::reset() {
+void RenderContext::reset() {
     device_->wait_idle();
     device_->recreate_swapchain(swapchain_, frame_context_.frame_width, frame_context_.frame_height);
 
     on_reset_();
 }
 
-RHISwapchain* Renderer::get_swapchain() {
+RHISwapchain* RenderContext::get_swapchain() {
     return swapchain_;
 }
 
-RHIDeviceRef Renderer::get_device() {
+RHIDeviceRef RenderContext::get_device() {
     return device_;
 }
 

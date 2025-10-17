@@ -1,6 +1,4 @@
 #include "material_graphics_pipeline.hpp"
-#include "licht/core/containers/index_range.hpp"
-#include "licht/core/function/functors.hpp"
 #include "licht/core/io/file_handle.hpp"
 #include "licht/core/io/file_system.hpp"
 #include "licht/core/memory/shared_ref.hpp"
@@ -15,7 +13,7 @@
 namespace licht {
 
 void MaterialGraphicsPipeline::initialize(const SharedRef<RHIDevice>& device,
-                                          const SharedRef<Renderer>& renderer,
+                                          const SharedRef<RenderContext>& renderer,
                                           const SharedRef<RHIBufferPool>& buffer_pool,
                                           const SharedRef<RHITexturePool>& texture_pool) {
     renderer_ = renderer;

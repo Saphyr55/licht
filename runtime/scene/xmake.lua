@@ -3,7 +3,7 @@ target("licht.scene", function()
     set_kind("shared")
     set_group("engine")
 
-    add_deps("licht.core")
+    add_deps("licht.core", "licht.renderer")
 
     target_files_default({
         public = true

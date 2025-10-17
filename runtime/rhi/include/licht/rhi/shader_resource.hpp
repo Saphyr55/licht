@@ -17,6 +17,7 @@ struct RHIShaderResourceBinding {
     RHIShaderStage stage = RHIShaderStage::AllGraphics;
 
     RHIShaderResourceBinding() = default;
+
     RHIShaderResourceBinding(uint32 in_binding,
                              RHIShaderResourceType in_type,
                              RHIShaderStage in_stage = RHIShaderStage::AllGraphics,
@@ -25,6 +26,18 @@ struct RHIShaderResourceBinding {
         , count(in_count)
         , type(in_type)
         , stage(in_stage) {}
+};
+
+class Builder {
+public:
+    Builder();
+
+    Builder& with_stage(RHIShaderStage stage) {
+        return *this;
+    }
+
+private:
+    RHIShaderResourceBinding binding;
 };
 
 /**
@@ -37,6 +50,7 @@ struct RHIWriteBufferResource {
     size_t range = 0;
 
     RHIWriteBufferResource() = default;
+
     RHIWriteBufferResource(uint32 in_binding,
                            RHIBuffer* in_buffer,
                            size_t in_offset = 0,
@@ -55,6 +69,7 @@ struct RHIWriteSamplerResource {
     uint32 binding = 0;
 
     RHIWriteSamplerResource() = default;
+
     RHIWriteSamplerResource(uint32 in_binding, RHISampler* in_sampler)
         : sampler(in_sampler)
         , binding(in_binding) {}
@@ -69,6 +84,7 @@ struct RHIWriteTextureSamplerResource {
     uint32 binding = 0;
 
     RHIWriteTextureSamplerResource() = default;
+
     RHIWriteTextureSamplerResource(uint32 in_binding,
                                    RHITextureView* in_texture_view,
                                    RHISampler* in_sampler)
@@ -86,6 +102,7 @@ struct RHIWriteTextureResource {
     uint32 binding = 0;
 
     RHIWriteTextureResource() = default;
+
     RHIWriteTextureResource(uint32 in_binding, RHITextureView* in_texture_view)
         : texture_view(in_texture_view)
         , binding(in_binding) {}

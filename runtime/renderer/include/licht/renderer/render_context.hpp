@@ -16,7 +16,7 @@ enum class RenderResult {
     Unknown,
 };
 
-class LICHT_RENDERER_API Renderer {
+class LICHT_RENDERER_API RenderContext {
 public:
     void startup();
 
@@ -112,7 +112,7 @@ private:
     void reset();
 
 public:
-    Renderer()
+    RenderContext()
         : window_handle_(Display::InvalidWindowHandle) {}
 
 private:

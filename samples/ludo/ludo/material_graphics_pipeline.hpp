@@ -1,7 +1,7 @@
 #pragma once
 
 #include "licht/core/memory/shared_ref.hpp"
-#include "licht/renderer/renderer.hpp"
+#include "licht/renderer/render_context.hpp"
 #include "licht/renderer/render_item.hpp"
 #include "licht/rhi/shader_resource.hpp"
 #include "ludo_types.hpp"
@@ -11,7 +11,7 @@ namespace licht {
 class MaterialGraphicsPipeline {
 public:
     void initialize(const SharedRef<RHIDevice>& device,
-                    const SharedRef<Renderer>& renderer,
+                    const SharedRef<RenderContext>& renderer,
                     const SharedRef<RHIBufferPool>& buffer_pool,
                     const SharedRef<RHITexturePool>& texture_pool);
 
@@ -31,7 +31,7 @@ public:
     inline RHIRenderPass* get_render_pass() {
         return render_pass_;
     }
-
+    
     inline RHIShaderResourceGroupLayout* get_global_shader_resource_layout() {
         return global_shader_resource_layout_;
     }
@@ -45,7 +45,7 @@ public:
 
 private:
     SharedRef<RHIDevice> device_ = nullptr;
-    SharedRef<Renderer> renderer_ = nullptr;
+    SharedRef<RenderContext> renderer_ = nullptr;
     SharedRef<RHIBufferPool> buffer_pool_ = nullptr;
     SharedRef<RHITexturePool> texture_pool_ = nullptr;
     RHIGraphicsPipeline* graphics_pipeline_ = nullptr;

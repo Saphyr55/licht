@@ -22,7 +22,7 @@
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/command_queue.hpp"
 #include "licht/rhi/device_memory_uploader.hpp"
-#include "licht/rhi/pipeline.hpp"
+#include "licht/rhi/graphics_pipeline.hpp"
 #include "licht/rhi/rhi_forwards.hpp"
 #include "licht/rhi/rhi_module.hpp"
 #include "licht/rhi/rhi_types.hpp"
@@ -61,7 +61,7 @@ void RenderFrameScript::on_startup() {
         "[RHIModule]",
         "Failed to retrieve a valid window handle. Ensure a window is created before initializing the RHI Module.");
 
-    renderer_ = new_ref<Renderer>();
+    renderer_ = new_ref<RenderContext>();
     material_graphics_pipeline_ = new_ref<MaterialGraphicsPipeline>();
 
     graphics_queue_ = device_->get_graphics_queue();
@@ -210,10 +210,6 @@ void RenderFrameScript::on_startup() {
     };
 
     uploader.upload(graphics_queue_);
-
-    // Unload models.
-    // FIXME: This function does nothing, model unloaded when the statement ended.
-    gltf_static_meshes_unload(model_asset_path);
 
     material_graphics_pipeline_->initialize_shader_resource_pool(packet_.items.size());
     material_graphics_pipeline_->compile(packet_);

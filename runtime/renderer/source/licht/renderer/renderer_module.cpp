@@ -7,19 +7,19 @@ namespace licht {
 LICHT_REGISTER_MODULE(RendererModule, "licht.renderer")
 
 void RendererModule::on_load() {
-    LLOG_INFO("[RendererModule]", "Renderer module loaded.");
+    LLOG_INFO("[RendererModule]", "RenderContext module loaded.");
 }
 
 void RendererModule::on_startup() {
-    LLOG_INFO("[RendererModule]", "Renderer module started.");
+    LLOG_INFO("[RendererModule]", "RenderContext module started.");
 }
 
 void RendererModule::on_shutdown() {
-    LLOG_INFO("[RendererModule]", "Renderer module stopped.");
+    LLOG_INFO("[RendererModule]", "RenderContext module stopped.");
 }
 
 void RendererModule::on_unload() {
-    LLOG_INFO("[RendererModule]", "Renderer module unloaded.");
+    LLOG_INFO("[RendererModule]", "RenderContext module unloaded.");
 }
 
 

@@ -7,7 +7,7 @@
 namespace licht {
 
 struct RenderModelConstant {
-    alignas(16) Matrix4f model = Matrix4f::identity();
+    alignas(64) Matrix4f model = Matrix4f::identity();
 
     RenderModelConstant() = default;
 };
@@ -19,14 +19,12 @@ struct RenderPunctualLight {
 
 struct RenderItem {
     Array<RHIBuffer*> vertex_buffers;
-
     RHIBuffer* index_buffer;
     size_t index_count = 0;
 
     Array<RHISampler*> samplers;
     Array<RHITexture*> textures;
     Array<RHITextureView*> texture_views;
-
 
     Array<RHIShaderResourceGroup*> shader_groups;
 

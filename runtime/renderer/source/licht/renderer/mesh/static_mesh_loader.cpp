@@ -107,12 +107,6 @@ static RHIFormat find_format(const tinygltf::Image& image) {
     return format;
 }
 
-static HashMap<String, SharedRef<tinygltf::Model>> registry;
-
-void gltf_static_meshes_unload(StringRef filepath) {
-    registry.remove(String(filepath));
-}
-
 StaticSubMesh::Buffer gltf_get_accessor_data(tinygltf::Model& model, int32 accessor_index) {
     if (accessor_index < 0 || accessor_index >= model.accessors.size()) {
         return StaticSubMesh::Buffer();

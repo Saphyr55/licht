@@ -2,8 +2,7 @@
 
 #include <vulkan/vulkan_core.h>
 
-#include "licht/rhi/pipeline.hpp"
-#include "licht/rhi_vulkan/vulkan_shader_module.hpp"
+#include "licht/rhi/graphics_pipeline.hpp"
 
 namespace licht {
 
