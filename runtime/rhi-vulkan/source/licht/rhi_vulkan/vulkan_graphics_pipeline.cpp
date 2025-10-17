@@ -1,8 +1,9 @@
 #include "licht/rhi_vulkan/vulkan_graphics_pipeline.hpp"
 
-#include "licht/core/defines.hpp"
 #include "licht/core/containers/fixed_array.hpp"
+#include "licht/core/defines.hpp"
 #include "licht/rhi/compiled_shader.hpp"
+#include "licht/rhi/shader_resource.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
 #include "licht/rhi_vulkan/vulkan_render_pass.hpp"
@@ -79,7 +80,7 @@ void VulkanGraphicsPipeline::initialize(const RHIGraphicsPipelineDescription& de
     }
 
     pipeline_rasterizer_state_create_info.cullMode = cull_mode;
-    pipeline_rasterizer_state_create_info.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    pipeline_rasterizer_state_create_info.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     pipeline_rasterizer_state_create_info.depthBiasEnable = VK_FALSE;
     pipeline_rasterizer_state_create_info.depthBiasConstantFactor = 0.0f;  // Optional
     pipeline_rasterizer_state_create_info.depthBiasClamp = 0.0f;           // Optional
@@ -162,8 +163,10 @@ void VulkanGraphicsPipeline::initialize(const RHIGraphicsPipelineDescription& de
     pipeline_color_blend_state_create_info.blendConstants[2] = 0.0f;  // Optional
     pipeline_color_blend_state_create_info.blendConstants[3] = 0.0f;  // Optional
 
-    VulkanShaderResourceGroupLayout* layout = static_cast<VulkanShaderResourceGroupLayout*>(description_.shader_resource_group_layout);
-    LCHECK(layout)
+    Array<VkDescriptorSetLayout> layouts = description_.layouts.map<VkDescriptorSetLayout>(
+        [](RHIShaderResourceGroupLayout* l) -> VkDescriptorSetLayout {
+            return static_cast<VulkanShaderResourceGroupLayout*>(l)->get_handle();
+        });
 
     Array<VkPushConstantRange> push_constant_ranges = description_.push_constant_ranges.map<VkPushConstantRange>(
         [](const RHIShaderConstantRange& range) -> VkPushConstantRange {
@@ -176,8 +179,8 @@ void VulkanGraphicsPipeline::initialize(const RHIGraphicsPipelineDescription& de
 
     VkPipelineLayoutCreateInfo pipeline_layout_create_info = {};
     pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_create_info.setLayoutCount = 1;
-    pipeline_layout_create_info.pSetLayouts = &layout->get_handle();
+    pipeline_layout_create_info.setLayoutCount = layouts.size();
+    pipeline_layout_create_info.pSetLayouts = layouts.data();
     pipeline_layout_create_info.pushConstantRangeCount = push_constant_ranges.size();
     pipeline_layout_create_info.pPushConstantRanges = push_constant_ranges.data();
 
@@ -195,7 +198,7 @@ void VulkanGraphicsPipeline::initialize(const RHIGraphicsPipelineDescription& de
     depth_stencil.maxDepthBounds = 1.0f;
     depth_stencil.stencilTestEnable = VK_FALSE;
     depth_stencil.front = {};
-    depth_stencil.back = {}; 
+    depth_stencil.back = {};
 
     VkGraphicsPipelineCreateInfo graphics_pipeline_create_info = {};
     graphics_pipeline_create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -223,11 +226,13 @@ void VulkanGraphicsPipeline::initialize(const RHIGraphicsPipelineDescription& de
 
 void VulkanGraphicsPipeline::destroy() {
     VulkanContext& context = vulkan_context_get();
-    VulkanShaderResourceGroupLayout* layout = static_cast<VulkanShaderResourceGroupLayout*>(description_.shader_resource_group_layout);
 
     VulkanAPI::lvkDestroyPipeline(context.device, pipeline_, context.allocator);
     VulkanAPI::lvkDestroyPipelineLayout(context.device, pipeline_layout_, context.allocator);
-    VulkanAPI::lvkDestroyDescriptorSetLayout(context.device, layout->get_handle(), context.allocator);
+    for (RHIShaderResourceGroupLayout* layout : description_.layouts) {
+        VulkanShaderResourceGroupLayout* vklayout = static_cast<VulkanShaderResourceGroupLayout*>(layout);
+        VulkanAPI::lvkDestroyDescriptorSetLayout(context.device, vklayout->get_handle(), context.allocator);
+    }
 }
 
 }  //namespace licht

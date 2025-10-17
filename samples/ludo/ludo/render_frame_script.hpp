@@ -38,7 +38,7 @@ public:
 private:
     Camera* camera_;
 
-    Array<RenderPacket> render_model_;
+    RenderPacket packet_;
 
     WindowHandle window_handle_;
     RHIDeviceRef device_;

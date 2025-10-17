@@ -69,7 +69,7 @@ RHIBuffer* RHIDeviceMemoryUploader::send_buffer(const RHIStagingBufferContext& c
 }
 
 // Upload Data from Standing Buffers to Device Buffers
-void RHIDeviceMemoryUploader::upload(RHICommandQueueRef& queue) {
+void RHIDeviceMemoryUploader::upload(const RHICommandQueueRef& queue) {
     RHICommandAllocatorDescription transfer_command_allocator_desc = {};
     transfer_command_allocator_desc.count = 1;  // One command buffer allocated.
     transfer_command_allocator_desc.command_queue = queue;

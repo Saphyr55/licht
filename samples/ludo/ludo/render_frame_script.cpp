@@ -1,6 +1,7 @@
 #include "render_frame_script.hpp"
 
 #include "licht/core/containers/array_view.hpp"
+#include "licht/core/containers/index_range.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/io/file_system.hpp"
 #include "licht/core/math/math.hpp"
@@ -116,7 +117,7 @@ void RenderFrameScript::on_startup() {
         .format = depth_texture_->get_description().format,
     });
 
-    material_graphics_pipeline_->initiliaze(device_, renderer_, buffer_pool_);
+    material_graphics_pipeline_->initialize(device_, renderer_, buffer_pool_, texture_pool_);
 
     // -- Framebuffers --
     framebuffers_.reserve(renderer_->get_swapchain()->get_texture_views().size());
@@ -137,17 +138,14 @@ void RenderFrameScript::on_startup() {
     RHIDeviceMemoryUploader uploader(device_, buffer_pool_, texture_pool_);
 
     for (StaticMesh& mesh : model) {
-        RenderPacket packet;
-
         for (StaticSubMesh& submesh : mesh.get_submeshes()) {
             RenderItem item;
 
             item.model_constant.model = Matrix4f::identity();
             item.model_constant.model = Matrix4f::scale(item.model_constant.model, Vector3f(.009f));
-            Quaternion fix = Quaternion::from_axis_angle(Vector3f(1.0f, 0.0f, 0.0f), Math::radians(-180.0f));
-            item.model_constant.model = item.model_constant.model * Quaternion::rotation_matrix(fix);
 
-            RHIBuffer* vertex_buffers[3];
+            constexpr size_t vertex_buffer_size = 3;
+            RHIBuffer* vertex_buffers[vertex_buffer_size];
 
             vertex_buffers[0] = uploader.send_buffer(RHIStagingBufferContext(
                 RHIBufferUsageFlags::Vertex, submesh.positions.size(), submesh.positions.data()));
@@ -158,57 +156,73 @@ void RenderFrameScript::on_startup() {
             vertex_buffers[2] = uploader.send_buffer(RHIStagingBufferContext(
                 RHIBufferUsageFlags::Vertex, submesh.uv_textures.size(), submesh.uv_textures.data()));
 
-            RHITextureDescription tex_desc;
-            tex_desc.format = submesh.material.diffuse_texture.format;
-            tex_desc.memory_usage = RHIMemoryUsage::Device;
-            tex_desc.usage = RHITextureUsageFlags::Sampled;
-            tex_desc.sharing_mode = RHISharingMode::Shared;
-            tex_desc.width = submesh.material.diffuse_texture.width;
-            tex_desc.height = submesh.material.diffuse_texture.height;
-            tex_desc.mip_levels = Math::floor(Math::log2(Math::max(tex_desc.width, tex_desc.height))) + 1;
+            FixedArray<TextureBuffer*, 2> textures = {
+                &submesh.material.diffuse_texture,
+                &submesh.material.normal_texture,
+            };
 
-            item.vertex_buffers = Array<RHIBuffer*>(vertex_buffers, 3);
-            item.texture = uploader.send_texture(RHIStagingBufferContext(
-                                                     RHIBufferUsageFlags::Storage,
-                                                     submesh.material.diffuse_texture.data.size(),
-                                                     submesh.material.diffuse_texture.data.data()),
-                                                 tex_desc);
+            for (size_t texture = 0; texture < textures.size(); texture++) {
+                TextureBuffer& texture_buffer = *textures[texture];
+                if (texture_buffer.data.empty()) {
+                    item.textures.append(nullptr);
+                    item.texture_views.append(nullptr);
+                    item.samplers.append(nullptr);
+                    continue;
+                }
 
-            item.texture_view = device_->create_texture_view(RHITextureViewDescription{
-                .texture = item.texture,
-                .format = tex_desc.format,
-                .dimension = RHITextureDimension::Dim2D,
-                .mip_levels = tex_desc.mip_levels,
-            });
+                RHITextureDescription tex_desc = {};
+                tex_desc.format = texture_buffer.format;
+                tex_desc.memory_usage = RHIMemoryUsage::Device;
+                tex_desc.usage = RHITextureUsageFlags::Sampled;
+                tex_desc.sharing_mode = RHISharingMode::Shared;
+                tex_desc.width = texture_buffer.width;
+                tex_desc.height = texture_buffer.height;
+                tex_desc.mip_levels = Math::floor(Math::log2(Math::max(tex_desc.width, tex_desc.height))) + 1;
 
-            item.sampler = device_->create_sampler(RHISamplerDescription{
-                .max_lod = static_cast<float32>(tex_desc.mip_levels),
-            });
+                item.vertex_buffers = Array<RHIBuffer*>(vertex_buffers, vertex_buffer_size);
+                item.textures.append(uploader.send_texture(RHIStagingBufferContext(
+                                                               RHIBufferUsageFlags::Storage, texture_buffer.data.size(), texture_buffer.data.data()),
+                                                           tex_desc));
+
+                item.texture_views.append(device_->create_texture_view(RHITextureViewDescription{
+                    .texture = item.textures[texture],
+                    .format = tex_desc.format,
+                    .dimension = RHITextureDimension::Dim2D,
+                    .mip_levels = tex_desc.mip_levels,
+                }));
+
+                item.samplers.append(device_->create_sampler(RHISamplerDescription{
+                    .max_lod = static_cast<float32>(tex_desc.mip_levels),
+                }));
+            }
 
             item.index_buffer = uploader.send_buffer(
                 RHIStagingBufferContext(RHIBufferUsageFlags::Index, ArrayView(submesh.indices)));
-            item.index_count = submesh.indices.size();
-            packet.items.append(item);
-        }
 
-        render_model_.append(packet);
+            item.index_count = submesh.indices.size();
+            packet_.items.append(item);
+        }
     }
+
+    packet_.light = RenderPunctualLight{
+        .position = Vector3f(0.0f, 10.0f, 0.0f),
+        .color = Vector3f(1.0f, 0.5f, 0.2f),
+    };
 
     uploader.upload(graphics_queue_);
 
     // Unload models.
-    // FIXME: This funtionc does nothing, model unloaded when the statement ended.
+    // FIXME: This function does nothing, model unloaded when the statement ended.
     gltf_static_meshes_unload(model_asset_path);
 
-    material_graphics_pipeline_->compile(render_model_);
+    material_graphics_pipeline_->initialize_shader_resource_pool(packet_.items.size());
+    material_graphics_pipeline_->compile(packet_);
 }
 
 void RenderFrameScript::on_tick(float64 delta_time) {
     if (pause_) {
         return;
     }
-
-    update_uniform(delta_time);
 
     renderer_->begin_frame();
     {
@@ -231,6 +245,7 @@ void RenderFrameScript::on_tick(float64 delta_time) {
         cmd->begin_render_pass(render_pass_begin_info);
         {
             RHIGraphicsPipeline* graphics_pipeline = material_graphics_pipeline_->get_graphics_pipeline_handle();
+
             cmd->bind_graphics_pipeline(graphics_pipeline);
 
             Rect2D scissor = {
@@ -252,28 +267,36 @@ void RenderFrameScript::on_tick(float64 delta_time) {
             cmd->set_viewports(&viewport, 1);
             cmd->set_scissors(&scissor, 1);
 
-            // Render Packets / Model
-            for (RenderPacket& packet : render_model_) {
-                for (RenderItem& item : packet.items) {
-                    cmd->set_shader_constants(graphics_pipeline, 
-                        RHIShaderConstants(&item.model_constant, sizeof(RenderModelConstant), 0, RHIShaderStage::Vertex));
+            // Render Packet
+            for (RenderItem& item : packet_.items) {
+                RHIShaderResourceGroup* global_group = material_graphics_pipeline_
+                                                           ->get_global_shader_resource_pool()
+                                                           ->get_group(renderer_->get_current_frame());
 
-                    RHIShaderResourceGroup* shader_group = item.shader_groups[renderer_->get_current_frame()];
+                cmd->bind_shader_resource_group(graphics_pipeline, {global_group}, 0);
 
-                    cmd->bind_vertex_buffers(item.vertex_buffers);
-                    cmd->bind_index_buffer(item.index_buffer);
+                cmd->set_shader_constants(graphics_pipeline, RHIShaderConstants(&item.model_constant,
+                                                                                sizeof(RenderModelConstant),
+                                                                                0,
+                                                                                RHIShaderStage::Vertex));
 
-                    cmd->bind_shader_resource_group(graphics_pipeline, {shader_group});
+                RHIShaderResourceGroup* shader_group = item.shader_groups[renderer_->get_current_frame()];
 
-                    RHIDrawIndexedCommand draw_indexed_command = {};
-                    draw_indexed_command.index_count = item.index_count;
-                    draw_indexed_command.instance_count = 1;
+                cmd->bind_vertex_buffers(item.vertex_buffers);
+                cmd->bind_index_buffer(item.index_buffer);
 
-                    cmd->draw(draw_indexed_command);
-                }
+                cmd->bind_shader_resource_group(graphics_pipeline, {shader_group}, 1);
+
+                RHIDrawIndexedCommand draw_indexed_command = {};
+                draw_indexed_command.index_count = item.index_count;
+                draw_indexed_command.instance_count = 1;
+
+                cmd->draw(draw_indexed_command);
             }
         }
         cmd->end_render_pass();
+
+        update_uniform(delta_time);
     }
     renderer_->end_frame();
 }
@@ -291,11 +314,13 @@ void RenderFrameScript::update_uniform(const float64 delta_time) {
 
     float32 aspect_ratio = renderer_->get_swapchain()->get_width() / static_cast<float32>(renderer_->get_swapchain()->get_height());
     ubo.proj = Matrix4f::perspective(Math::radians(75.0f), aspect_ratio, 0.1f, 10000.0f);
-    ubo.proj[1][1] *= -1.0f;
 
     ubo.view_proj = ubo.proj * ubo.view;
 
+    ubo.eye_position = camera_->position;
+
     material_graphics_pipeline_->update(ubo);
+    material_graphics_pipeline_->update(packet_.light);
 }
 
 void RenderFrameScript::reset() {
@@ -340,10 +365,8 @@ void RenderFrameScript::reset() {
 void RenderFrameScript::on_shutdown() {
     renderer_->shutdown();
 
-    // -- Allocators
     device_->destroy_command_allocator(cmd_allocator_);
 
-    // -- Framebuffers --
     for (RHIFramebuffer* framebuffer : framebuffers_) {
         device_->destroy_framebuffer(framebuffer);
     }
@@ -351,13 +374,14 @@ void RenderFrameScript::on_shutdown() {
 
     material_graphics_pipeline_->destroy();
 
-    // -- Buffers, samplers and textures --
     device_->destroy_texture_view(depth_texture_view_);
 
-    for (RenderPacket& packet : render_model_) {
-        for (RenderItem& item : packet.items) {
-            device_->destroy_sampler(item.sampler);
-            device_->destroy_texture_view(item.texture_view);
+    for (RenderItem& item : packet_.items) {
+        for (size_t i : IndexRange(0, item.samplers.size())) {
+            if (item.samplers[i]) {
+                device_->destroy_sampler(item.samplers[i]);
+                device_->destroy_texture_view(item.texture_views[i]);
+            }
         }
     }
 
@@ -365,7 +389,6 @@ void RenderFrameScript::on_shutdown() {
 
     buffer_pool_->dispose();
 
-    // SwapChain
     device_->destroy_swapchain(renderer_->get_swapchain());
 }
 

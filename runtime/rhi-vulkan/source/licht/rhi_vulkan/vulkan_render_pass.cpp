@@ -11,8 +11,8 @@
 namespace licht {
 
 void VulkanRenderPass::initialize() {
-    Array<VkAttachmentDescription> attachments(description_.attachment_decriptions.size() + 1);
-    for (const RHIColorAttachmentDescription& attachment_description : description_.attachment_decriptions) {
+    Array<VkAttachmentDescription> attachments(description_.color_attachment_decriptions.size() + 1);
+    for (const RHIColorAttachmentDescription& attachment_description : description_.color_attachment_decriptions) {
         VkAttachmentDescription color_attachment_description = {};
         color_attachment_description.format = vulkan_format_get(attachment_description.format);
         color_attachment_description.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -41,7 +41,7 @@ void VulkanRenderPass::initialize() {
         if (rhi_format_is_depth_stencil(depth_attachement_desc.format)) {
             layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         } else if (rhi_format_is_depth(depth_attachement_desc.format)) {
-            layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;            
+            layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
         } else {
             LCRASH("Not supported format for depth or depth-stencil.");
         }
@@ -98,11 +98,10 @@ void VulkanRenderPass::initialize() {
     render_pass_info_create_info.dependencyCount = dependencies.size();
     render_pass_info_create_info.pDependencies = dependencies.data();
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateRenderPass(
-        context_.device,
-        &render_pass_info_create_info,
-        context_.allocator,
-        &render_pass_))
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateRenderPass(context_.device,
+                                                      &render_pass_info_create_info,
+                                                      context_.allocator,
+                                                      &render_pass_));
 }
 
 void VulkanRenderPass::destroy() {

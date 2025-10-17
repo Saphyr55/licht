@@ -167,7 +167,7 @@ public:
     /**
      * @brief Retrieves a Shader Resource Group by its internal pool index (e.g., for pre-allocated pools).
      */
-    virtual RHIShaderResourceGroup* get_group(size_t pool_index) = 0;
+    virtual RHIShaderResourceGroup* get_group(size_t group_index) = 0;
 
     virtual size_t get_count() = 0;
 

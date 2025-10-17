@@ -18,11 +18,6 @@ struct StaticSubMesh {
     Buffer normals;
     Buffer uv_textures;
     Array<uint32> indices;
-
-    ArrayView<Vector3f> view_positions() {
-        return ArrayView<Vector3f>(reinterpret_cast<Vector3f*>(positions.data()), positions.size() / sizeof(Vector3f)); 
-    }
-
 };
 
 class LICHT_RENDERER_API StaticMesh {
@@ -30,6 +25,7 @@ public:
     void append_submesh(const StaticSubMesh& submesh);
 
     const Array<StaticSubMesh>& get_submeshes() const { return submeshes_; }
+
     Array<StaticSubMesh>& get_submeshes() { return submeshes_; }
 
     StaticMesh() = default;

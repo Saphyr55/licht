@@ -27,7 +27,7 @@ void VulkanCommandQueue::wait_idle() {
 void VulkanCommandQueue::submit(const Array<RHICommandBuffer*>& command_buffers,
                                 const Array<RHISemaphore*>& wait_semaphores,
                                 const Array<RHISemaphore*>& signal_semaphores,
-                                const RHIFence* fence) {
+                                const RHIFence* fence) const {
 
     VkSubmitInfo submit_info = {};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -75,7 +75,7 @@ void VulkanCommandQueue::submit(const Array<RHICommandBuffer*>& command_buffers,
     LICHT_VULKAN_CHECK(VulkanAPI::lvkQueueSubmit(queue_, 1, &submit_info, vkfence));
 }
 
-void VulkanCommandQueue::present(RHISwapchain* swapchain, RHIFrameContext& frame_context) {
+void VulkanCommandQueue::present(RHISwapchain* swapchain, RHIFrameContext& frame_context) const {
     VulkanSwapchain* vk_swapchain = static_cast<VulkanSwapchain*>(swapchain);
     RHIVulkanSemaphore* vk_sem_ref = static_cast<RHIVulkanSemaphore*>(frame_context.current_render_finished_semaphore());
     VkSemaphore vksemaphore = vk_sem_ref->get_handle();

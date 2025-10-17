@@ -20,11 +20,11 @@
 constexpr float64 TargetFPS = 144.0;
 constexpr float64 TargetFrameRate = 1.0 / TargetFPS;
 
-static Camera initial_camera = []() {
-    Camera camera(Vector3f(0.0f, 0.0f, 2.0f));
+static Camera initial_camera = []() -> Camera&& {
+    Camera camera(Vector3f(0.0f, 5.0f, 0.0f));
     camera.look_at(Vector3f(0.0f));
     camera.movement_speed = 10.0f;
-    return camera;
+    return std::move(camera);
 }();
 
 void LudoAppRunner::camera_on_tick(Camera& camera, float64 delta_time) {
@@ -47,11 +47,11 @@ void LudoAppRunner::camera_on_tick(Camera& camera, float64 delta_time) {
     }
 
     if (Input::key_is_down(VirtualKey::Space)) {
-        direction -= camera.world_up;
+        direction += camera.world_up;
     }
 
     if (Input::key_is_down(VirtualKey::LeftShift)) {
-        direction += camera.world_up;
+        direction -= camera.world_up;
     }
 
     if (Vector3f::length(direction) > 0.0f) {
@@ -88,7 +88,7 @@ void LudoAppRunner::on_run_delegate() {
 
     Input::on_mouse_move.connect([&camera](const MouseMove& mouse_move) -> void {
         if (Input::button_is_down(Button::Left)) {
-            camera.look_around(mouse_move.pos_rel_x, mouse_move.pos_rel_y);
+            camera.look_around(mouse_move.pos_rel_x, -mouse_move.pos_rel_y);
         }
     });
 
@@ -110,7 +110,7 @@ void LudoAppRunner::on_run_delegate() {
     DeltaTimer timer;
     FrameRateMonitor frame_monitor;
 
-    bool unlimited_frame_rate = true;
+    bool unlimited_frame_rate = false;
 
     // Main loop
     while (g_is_app_running) {

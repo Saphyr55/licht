@@ -9,23 +9,23 @@
 
 namespace licht {
 
-template <std::integral IntegerType = size_t>
-class LICHT_CORE_API IndexRange {
+template <std::integral IndexType = size_t>
+class IndexRange {
 public:
     class Iterator {
     public:
         using iterator_category = std::forward_iterator_tag;
-        using value_type = IntegerType;
-        using difference_type = IntegerType;
-        using pointer = IntegerType*;
-        using reference = IntegerType&;
+        using value_type = IndexType;
+        using difference_type = IndexType;
+        using pointer = IndexType*;
+        using reference = IndexType&;
 
-        constexpr explicit Iterator(IntegerType index)
+        constexpr explicit Iterator(IndexType index)
             : index_(index) {}
 
-        constexpr IntegerType operator*() const { return index_; }
+        constexpr value_type operator*() const { return index_; }
 
-        constexpr Iterator& operator++() {
+        constexpr Iterator operator++() {
             ++index_;
             return *this;
         }
@@ -45,11 +45,16 @@ public:
         }
 
     private:
-        IntegerType index_;
+        IndexType index_;
     };
 
-    constexpr IndexRange(IntegerType start, IntegerType end)
+    constexpr IndexRange(IndexType start, IndexType end)
         : start_(start), end_(end) {
+        LCHECK(start <= end)
+    }
+
+    constexpr IndexRange(const auto& start, const auto& end)
+        : start_(static_cast<IndexType>(start)), end_(static_cast<IndexType>(end)) {
         LCHECK(start <= end)
     }
 
@@ -61,11 +66,12 @@ public:
 
     constexpr const Iterator cend() const noexcept { return end(); }
 
-    constexpr size_t Size() const noexcept { return end_ - start_; }
+    constexpr IndexType Size() const noexcept { return end_ - start_; }
 
 private:
-    IntegerType start_;
-    IntegerType end_;
+    IndexType start_;
+    IndexType end_;
 };
+
 
 }  // namespace licht

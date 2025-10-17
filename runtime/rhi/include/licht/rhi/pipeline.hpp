@@ -66,7 +66,7 @@ struct RHIGraphicsPipelineDescription {
     RHIGraphicsPipelineShaderStageCreateInfo fragment_shader_info = {};
     RHIGraphicsPipelineViewportStateInformation viewport_info = {};
     RHIGraphicsPipelineVertexBindingInformation vertex_binding_info = {};
-    RHIShaderResourceGroupLayout* shader_resource_group_layout = nullptr;
+    Array<RHIShaderResourceGroupLayout*> layouts;
     Array<RHIShaderConstantRange> push_constant_ranges;
     RHIRenderPass* render_pass = nullptr;
 };
@@ -108,8 +108,8 @@ public:
         return *this;
     }
 
-    RHIGraphicsPipelineDescriptionBuilder& with_shader_resource_group_layout(RHIShaderResourceGroupLayout* layout) {
-        desc_.shader_resource_group_layout = layout;
+    RHIGraphicsPipelineDescriptionBuilder& with_shader_resource_group_layout(const Array<RHIShaderResourceGroupLayout*>& layouts) {
+        desc_.layouts = layouts;
         return *this;
     }
     

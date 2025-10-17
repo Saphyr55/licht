@@ -19,14 +19,14 @@ public:
     virtual void submit(const Array<RHICommandBuffer*>& command_buffers,
                         const Array<RHISemaphore*>& wait_semaphores,
                         const Array<RHISemaphore*>& signal_semaphores,
-                        const RHIFence* fence) = 0;
+                        const RHIFence* fence) const = 0;
 
     /**
      * @brief Present the current image to a swapchain.
      * @param swapchain Swapchain handle to present into.
      * @param context Frame context used for synchronization and per-frame resources.
      */
-    virtual void present(RHISwapchain* swapchain, RHIFrameContext& context) = 0;
+    virtual void present(RHISwapchain* swapchain, RHIFrameContext& context) const = 0;
 
     /**
      * @brief Get the type of this queue.

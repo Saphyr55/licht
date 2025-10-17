@@ -103,7 +103,7 @@ public:
      */
     virtual void bind_graphics_pipeline(RHIGraphicsPipeline* pipeline) = 0;
 
-    virtual void bind_shader_resource_group(RHIGraphicsPipeline* pipeline, const Array<RHIShaderResourceGroup*>& descriptor_sets) = 0;
+    virtual void bind_shader_resource_group(RHIGraphicsPipeline* pipeline, const Array<RHIShaderResourceGroup*>& groups, size_t group_index) = 0;
 
     virtual void set_shader_constants(RHIGraphicsPipeline* pipeline, const RHIShaderConstants& push_constants) = 0;
 

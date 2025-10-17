@@ -150,16 +150,15 @@ void VulkanCommandBuffer::bind_graphics_pipeline(RHIGraphicsPipeline* pipeline) 
 void VulkanCommandBuffer::set_shader_constants(RHIGraphicsPipeline* pipeline, const RHIShaderConstants& push_constants) {
     VulkanGraphicsPipeline* vulkan_graphics_pipeline = static_cast<VulkanGraphicsPipeline*>(pipeline);
     VkShaderStageFlags stage_flags = vulkan_shader_stage_get(push_constants.stage);
-    VulkanAPI::lvkCmdPushConstants(
-        command_buffer_,
-        vulkan_graphics_pipeline->get_layout(),
-        stage_flags,
-        push_constants.offset,
-        push_constants.size,
-        push_constants.data);
+    VulkanAPI::lvkCmdPushConstants(command_buffer_,
+                                   vulkan_graphics_pipeline->get_layout(),
+                                   stage_flags,
+                                   push_constants.offset,
+                                   push_constants.size,
+                                   push_constants.data);
 }
 
-void VulkanCommandBuffer::bind_shader_resource_group(RHIGraphicsPipeline* pipeline, const Array<RHIShaderResourceGroup*>& groups) {
+void VulkanCommandBuffer::bind_shader_resource_group(RHIGraphicsPipeline* pipeline, const Array<RHIShaderResourceGroup*>& groups, size_t group_index) {
     static constexpr auto mapping_group = [](RHIShaderResourceGroup*& descriptor_set) -> VkDescriptorSet {
         VulkanShaderResourceGroup* vk_descriptor_set = static_cast<VulkanShaderResourceGroup*>(descriptor_set);
         return vk_descriptor_set->get_handle();
@@ -168,15 +167,14 @@ void VulkanCommandBuffer::bind_shader_resource_group(RHIGraphicsPipeline* pipeli
     Array<VkDescriptorSet> vk_descriptor_sets = groups.map<VkDescriptorSet>(mapping_group);
     VulkanGraphicsPipeline* vk_pipeline = static_cast<VulkanGraphicsPipeline*>(pipeline);
 
-    VulkanAPI::lvkCmdBindDescriptorSets(
-        command_buffer_,
-        VK_PIPELINE_BIND_POINT_GRAPHICS,
-        vk_pipeline->get_layout(),
-        0,
-        vk_descriptor_sets.size(),
-        vk_descriptor_sets.data(),
-        0,
-        nullptr);
+    VulkanAPI::lvkCmdBindDescriptorSets(command_buffer_,
+                                        VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                        vk_pipeline->get_layout(),
+                                        group_index,
+                                        vk_descriptor_sets.size(),
+                                        vk_descriptor_sets.data(),
+                                        0,
+                                        nullptr);
 }
 
 void VulkanCommandBuffer::bind_vertex_buffers(const Array<RHIBuffer*>& buffers) {
@@ -187,12 +185,11 @@ void VulkanCommandBuffer::bind_vertex_buffers(const Array<RHIBuffer*>& buffers) 
         return static_cast<VulkanBuffer*>(buffer_handle)->get_handle();
     });
 
-    VulkanAPI::lvkCmdBindVertexBuffers(
-        command_buffer_,
-        0,
-        buffers.size(),
-        vk_buffers.data(),
-        offsets.data());
+    VulkanAPI::lvkCmdBindVertexBuffers(command_buffer_,
+                                       0,
+                                       buffers.size(),
+                                       vk_buffers.data(),
+                                       offsets.data());
 }
 
 void VulkanCommandBuffer::bind_index_buffer(RHIBuffer* buffer) {
@@ -216,11 +213,10 @@ void VulkanCommandBuffer::set_scissors(const Rect2D* scissors, uint32 count) {
         vk_scissors[i].extent.height = static_cast<uint32>(scissors[i].height);
     }
 
-    VulkanAPI::lvkCmdSetScissor(
-        command_buffer_,
-        0,
-        count,
-        vk_scissors.data());
+    VulkanAPI::lvkCmdSetScissor(command_buffer_,
+                                0,
+                                count,
+                                vk_scissors.data());
 }
 
 void VulkanCommandBuffer::set_viewports(const Viewport* viewports, uint32 count) {
@@ -236,11 +232,10 @@ void VulkanCommandBuffer::set_viewports(const Viewport* viewports, uint32 count)
         vk_viewports[i].maxDepth = viewports[i].max_depth;
     }
 
-    VulkanAPI::lvkCmdSetViewport(
-        command_buffer_,
-        0,
-        count,
-        vk_viewports.data());
+    VulkanAPI::lvkCmdSetViewport(command_buffer_,
+                                 0,
+                                 count,
+                                 vk_viewports.data());
 }
 
 void VulkanCommandBuffer::texture_generate_mipmap(const RHITextureLayoutTransition& transition) {
@@ -451,7 +446,7 @@ void VulkanCommandBuffer::begin_render_pass(const RHIRenderPassBeginInfo& begin_
     VulkanFramebuffer* vk_framebuffer = static_cast<VulkanFramebuffer*>(begin_info.framebuffer);
 
     const RHIRenderPassDescription& rp_desc = vk_render_pass->get_description();
-    uint32 total_attachments = rp_desc.attachment_decriptions.size();
+    uint32 total_attachments = rp_desc.color_attachment_decriptions.size();
 
     if (total_attachments == 0) {
         VkRenderPassBeginInfo render_pass_begin_info = {};

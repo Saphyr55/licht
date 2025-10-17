@@ -1,7 +1,7 @@
 #pragma once
 
-#include "buffer_pool.hpp"
 #include "licht/core/containers/array_view.hpp"
+#include "licht/core/containers/fixed_array.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/buffer_pool.hpp"
 #include "licht/rhi/rhi_exports.hpp"
@@ -36,7 +36,7 @@ public:
 
     RHITexture* send_texture(const RHIStagingBufferContext& context, RHITextureDescription& description);
 
-    void upload(RHICommandQueueRef& queue);
+    void upload(const RHICommandQueueRef& queue);
 
     RHIDeviceMemoryUploader(RHIDeviceRef device,
                             RHIBufferPoolRef buffer_pool,

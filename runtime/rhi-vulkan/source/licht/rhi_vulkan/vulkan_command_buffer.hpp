@@ -24,7 +24,7 @@ public:
 
     virtual void bind_graphics_pipeline(RHIGraphicsPipeline* pipeline) override;
     
-    virtual void bind_shader_resource_group(RHIGraphicsPipeline* pipeline, const Array<RHIShaderResourceGroup*>& groups) override;
+    virtual void bind_shader_resource_group(RHIGraphicsPipeline* pipeline, const Array<RHIShaderResourceGroup*>& groups, size_t group_index) override;
 
     virtual void set_shader_constants(RHIGraphicsPipeline* pipeline, const RHIShaderConstants& shader_constants) override;
 

@@ -117,12 +117,11 @@ void VulkanShaderResourceGroup::compile() {
         }
     }
 
-    VulkanAPI::lvkUpdateDescriptorSets(
-        context.device,
-        descriptor_writes_.size(),
-        descriptor_writes_.data(),
-        0, // No copy.
-        nullptr);
+    VulkanAPI::lvkUpdateDescriptorSets(context.device,
+                                       descriptor_writes_.size(),
+                                       descriptor_writes_.data(),
+                                       0,  // No copy.
+                                       nullptr);
 
     descriptor_writes_.clear();
     buffer_infos_.clear();
@@ -150,11 +149,10 @@ void VulkanShaderResourceGroupLayout::initialize(const Array<RHIShaderResourceBi
     descriptor_pool_layout_create_info.bindingCount = layout_bindings.size();
     descriptor_pool_layout_create_info.pBindings = layout_bindings.data();
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateDescriptorSetLayout(
-        context.device,
-        &descriptor_pool_layout_create_info,
-        context.allocator,
-        &handle_));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateDescriptorSetLayout(context.device,
+                                                               &descriptor_pool_layout_create_info,
+                                                               context.allocator,
+                                                               &handle_));
 }
 
 void VulkanShaderResourceGroupLayout::destroy() {
@@ -191,10 +189,9 @@ RHIShaderResourceGroup* VulkanShaderResourceGroupPool::allocate_group(RHIShaderR
     VulkanShaderResourceGroup* new_group = &allocated_groups_[group_index];
     new_group->initialize(group_index, layout);
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkAllocateDescriptorSets(
-        context.device,
-        &descriptor_set_allocation_info,
-        &new_group->get_handle()));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkAllocateDescriptorSets(context.device,
+                                                            &descriptor_set_allocation_info,
+                                                            &new_group->get_handle()));
 
     return new_group;
 }
@@ -216,11 +213,10 @@ void VulkanShaderResourceGroupPool::deallocate_group(RHIShaderResourceGroup* gro
 
     free_groups_.add(vk_group->get_index_pool());
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkFreeDescriptorSets(
-        context.device,
-        descriptor_pool_,
-        1,
-        &descriptor_set));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkFreeDescriptorSets(context.device,
+                                                        descriptor_pool_,
+                                                        1,
+                                                        &descriptor_set));
 
     vk_group->reset();
 }
@@ -236,7 +232,7 @@ void VulkanShaderResourceGroupPool::dispose() {
 void VulkanShaderResourceGroupPool::initialize(size_t max_groups, const Array<RHIShaderResourceBinding>& total_bindings) {
     max_groups_ = max_groups;
 
-    // free_groups_ doesn't need resize; its size is determined by the number of elements added.
+    // free_groups_ doesn't need to be resize; its size is determined by the number of elements added.
     // next_index_to_allocate_ is implicitly 0 at start.
     next_index_to_allocate_ = 0;
     allocated_groups_.resize(max_groups);
@@ -259,16 +255,15 @@ void VulkanShaderResourceGroupPool::initialize(size_t max_groups, const Array<RH
 
     VkDescriptorPoolCreateInfo descriptor_pool_create_info = {};
     descriptor_pool_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    descriptor_pool_create_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     descriptor_pool_create_info.poolSizeCount = pool_sizes.size();
     descriptor_pool_create_info.pPoolSizes = pool_sizes.data();
     descriptor_pool_create_info.maxSets = static_cast<uint32>(max_groups);
-    descriptor_pool_create_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateDescriptorPool(
-        context.device,
-        &descriptor_pool_create_info,
-        context.allocator,
-        &descriptor_pool_));
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateDescriptorPool(context.device,
+                                                          &descriptor_pool_create_info,
+                                                          context.allocator,
+                                                          &descriptor_pool_));
 }
 
 void VulkanShaderResourceGroupPool::destroy() {

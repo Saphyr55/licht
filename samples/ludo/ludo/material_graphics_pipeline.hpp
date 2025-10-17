@@ -10,14 +10,18 @@ namespace licht {
 
 class MaterialGraphicsPipeline {
 public:
-    void initiliaze(const SharedRef<RHIDevice>& device,
+    void initialize(const SharedRef<RHIDevice>& device,
                     const SharedRef<Renderer>& renderer,
-                    const SharedRef<RHIBufferPool>& buffer_pool);
+                    const SharedRef<RHIBufferPool>& buffer_pool,
+                    const SharedRef<RHITexturePool>& texture_pool);
+
+    void initialize_shader_resource_pool(size_t item_count);
 
     void destroy();
 
-    void compile(const Array<RenderPacket>& packets);
+    void compile(const RenderPacket& packet);
 
+    void update(const RenderPunctualLight& light);
     void update(const UniformBufferObject& ubo);
 
     inline RHIGraphicsPipeline* get_graphics_pipeline_handle() {
@@ -28,28 +32,39 @@ public:
         return render_pass_;
     }
 
-    inline RHIShaderResourceGroupLayout* get_shader_resource_layout() {
-        return shader_resource_layout_;
+    inline RHIShaderResourceGroupLayout* get_global_shader_resource_layout() {
+        return global_shader_resource_layout_;
     }
 
-    inline RHIShaderResourceGroupPool* get_shader_resource_pool() {
-        return shader_resource_pool_;
+    inline RHIShaderResourceGroupPool* get_global_shader_resource_pool() {
+        return global_shader_resource_pool_;
     }
 
     MaterialGraphicsPipeline() = default;
     ~MaterialGraphicsPipeline() = default;
 
 private:
-    SharedRef<RHIDevice> device_;
-    SharedRef<Renderer> renderer_;
-    SharedRef<RHIBufferPool> buffer_pool_;
-    RHIRenderPass* render_pass_;
-    RHIShaderResourceBinding ubo_binding_;
-    RHIShaderResourceBinding sampler_binding_;
-    RHIGraphicsPipeline* graphics_pipeline_;
-    RHIShaderResourceGroupLayout* shader_resource_layout_;
-    RHIShaderResourceGroupPool* shader_resource_pool_;
+    SharedRef<RHIDevice> device_ = nullptr;
+    SharedRef<Renderer> renderer_ = nullptr;
+    SharedRef<RHIBufferPool> buffer_pool_ = nullptr;
+    SharedRef<RHITexturePool> texture_pool_ = nullptr;
+    RHIGraphicsPipeline* graphics_pipeline_ = nullptr;
+    RHIRenderPass* render_pass_ = nullptr;
+
+    Array<RHIShaderResourceBinding> global_bindings_;
+    RHIShaderResourceGroupLayout* global_shader_resource_layout_ = nullptr ;
+    RHIShaderResourceGroupPool* global_shader_resource_pool_ = nullptr;
+
     Array<RHIBuffer*> uniform_buffers_;
+    Array<RHIBuffer*> light_buffers_;
+
+    Array<RHIShaderResourceBinding> texture_bindings_;
+    RHIShaderResourceGroupLayout* texture_shader_resource_layout_ = nullptr;
+    RHIShaderResourceGroupPool* texture_shader_resource_pool_ = nullptr;
+    
+    RHITexture* default_texture_ = nullptr;
+    RHITextureView* default_texture_view_ = nullptr;
+    RHISampler* default_sampler_ = nullptr;
 };
 
 }  //namespace licht
