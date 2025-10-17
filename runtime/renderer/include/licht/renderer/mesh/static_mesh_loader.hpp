@@ -11,6 +11,4 @@ class RHIBufferPool;
 
 LICHT_RENDERER_API Array<StaticMesh> gltf_static_meshes_load(StringRef filepath);
 
-LICHT_RENDERER_API void gltf_static_meshes_unload(StringRef filepath);
-
 }

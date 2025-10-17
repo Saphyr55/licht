@@ -17,6 +17,7 @@ class RHIFramebuffer;
 class RHIRenderPass;
 class RHIShaderResourceGroup;
 class RHIShaderResourceGroupPool;
+class RHIShaderResourceGroupLayout;
 class RHICommandAllocator;
 class RHIGraphicsPipeline;
 class RHISampler;

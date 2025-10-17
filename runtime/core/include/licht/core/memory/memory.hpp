@@ -163,7 +163,7 @@ inline T* lnew_args(licht::CAlignedAllocator auto& allocator, Args&&... args) no
 
 template <typename T>
 inline void ldelete(licht::CAlignedAllocator auto& allocator, T* ptr) noexcept {
-    LCHECK(ptr)
+    LCHECK(ptr);
 
     if constexpr (std::is_destructible_v<T>) {
         ptr->~T();

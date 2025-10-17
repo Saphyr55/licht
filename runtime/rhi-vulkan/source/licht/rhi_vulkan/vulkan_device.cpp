@@ -70,7 +70,7 @@ RHIShaderResourceGroupLayout* VulkanDevice::create_shader_resource_layout(const 
 }
 
 void VulkanDevice::destroy_shader_resource_layout(RHIShaderResourceGroupLayout* layout) {
-    LCHECK(layout)
+    LCHECK(layout);
     VulkanShaderResourceGroupLayout* vklayout = static_cast<VulkanShaderResourceGroupLayout*>(layout);
     vklayout->destroy();
     ldelete(allocator_, vklayout);
@@ -83,7 +83,7 @@ RHIShaderResourceGroupPool* VulkanDevice::create_shader_resource_pool(size_t max
 }
 
 void VulkanDevice::destroy_shader_resource_pool(RHIShaderResourceGroupPool* desc) {
-    LCHECK(desc)
+    LCHECK(desc);
 
     VulkanShaderResourceGroupPool* vkdesc = static_cast<VulkanShaderResourceGroupPool*>(desc);
     vkdesc->destroy();
@@ -102,7 +102,7 @@ RHICommandAllocator* VulkanDevice::create_command_allocator(const RHICommandAllo
 }
 
 void VulkanDevice::destroy_command_allocator(RHICommandAllocator* command_allocator) {
-    LCHECK(command_allocator)
+    LCHECK(command_allocator);
 
     RHIVulkanCommandAllocator* vulkan_command_allocator = static_cast<RHIVulkanCommandAllocator*>(command_allocator);
     vulkan_command_allocator->destroy();
@@ -129,7 +129,7 @@ RHITextureView* VulkanDevice::create_texture_view(const RHITextureViewDescriptio
 }
 
 void VulkanDevice::destroy_texture_view(RHITextureView* texture_view) {
-    LCHECK(texture_view)
+    LCHECK(texture_view);
 
     VulkanTextureView* vk_texture_view = static_cast<VulkanTextureView*>(texture_view);
     VulkanAPI::lvkDestroyImageView(context_.device, vk_texture_view->get_handle(), context_.allocator);
@@ -144,7 +144,7 @@ RHISampler* VulkanDevice::create_sampler(const RHISamplerDescription& descriptio
 }
 
 void VulkanDevice::destroy_sampler(RHISampler* sampler) {
-    LCHECK(sampler)
+    LCHECK(sampler);
 
     VulkanSampler* vksampler = static_cast<VulkanSampler*>(sampler);
     vksampler->destroy();
@@ -159,7 +159,7 @@ RHIRenderPass* VulkanDevice::create_render_pass(const RHIRenderPassDescription& 
 }
 
 void VulkanDevice::destroy_render_pass(RHIRenderPass* render_pass) {
-    LCHECK(render_pass)
+    LCHECK(render_pass);
 
     VulkanRenderPass* vulkan_render_pass = static_cast<VulkanRenderPass*>(render_pass);
     vulkan_render_pass->destroy();

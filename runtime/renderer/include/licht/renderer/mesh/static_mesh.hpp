@@ -1,9 +1,7 @@
 #pragma once
 
 #include "licht/core/containers/array.hpp"
-#include "licht/core/containers/array_view.hpp"
 #include "licht/core/defines.hpp"
-#include "licht/core/math/vector3.hpp"
 #include "licht/renderer/material/material.hpp"
 #include "licht/renderer/renderer_exports.hpp"
 

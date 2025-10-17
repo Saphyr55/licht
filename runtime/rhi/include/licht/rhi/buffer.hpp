@@ -88,6 +88,5 @@ public:
     virtual ~RHIBuffer() = default;
 };
 
-using RHIBufferHandle = RHIResourceHandle<RHIBuffer>;
 
 }  //namespace licht

@@ -164,7 +164,7 @@ void VulkanShaderResourceGroupLayout::destroy() {
 }
 
 RHIShaderResourceGroup* VulkanShaderResourceGroupPool::allocate_group(RHIShaderResourceGroupLayout* layout) {
-    LCHECK(layout)
+    LCHECK(layout);
 
     VulkanContext& context = vulkan_context_get();
 
@@ -205,7 +205,7 @@ RHIShaderResourceGroup* VulkanShaderResourceGroupPool::get_group(size_t pool_ind
 }
 
 void VulkanShaderResourceGroupPool::deallocate_group(RHIShaderResourceGroup* group) {
-    LCHECK(group)
+    LCHECK(group);
 
     VulkanContext& context = vulkan_context_get();
     VulkanShaderResourceGroup* vk_group = static_cast<VulkanShaderResourceGroup*>(group);

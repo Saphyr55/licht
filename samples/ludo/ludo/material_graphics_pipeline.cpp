@@ -140,7 +140,7 @@ void MaterialGraphicsPipeline::initialize(const SharedRef<RHIDevice>& device,
 
     // -- Graphics Pipeline --
     graphics_pipeline_ = device_->create_graphics_pipeline(
-        RHIGraphicsPipeline::description_builder()
+        RHIGraphicsPipelineDescriptionBuilder()
             .with_render_pass(render_pass_)
             .with_vertex_shader(vertex_shader, "main")
             .with_fragment_shader(fragment_shader, "main")

@@ -4,6 +4,7 @@
 #include "licht/rhi/compiled_shader.hpp"
 #include "licht/rhi/rhi_types.hpp"
 #include "licht/rhi/shader_resource.hpp"
+#include "pipeline.hpp"
 
 namespace licht {
 
@@ -131,12 +132,8 @@ private:
     RHIGraphicsPipelineDescription desc_ = {};
 };
 
-class RHIGraphicsPipeline {
+class RHIGraphicsPipeline : public RHIPipeline {
 public:
-    static RHIGraphicsPipelineDescriptionBuilder description_builder() {
-        return RHIGraphicsPipelineDescriptionBuilder();
-    }
-
     virtual ~RHIGraphicsPipeline() = default;
 };
 

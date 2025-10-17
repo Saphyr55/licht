@@ -5,12 +5,12 @@
 namespace licht {
 
 size_t string_length(const char* cstr) {
-    LCHECK(cstr)
+    LCHECK(cstr);
     return ::strlen(cstr);
 }
 
 size_t string_length(const wchar_t* wcstr) {
-    LCHECK(wcstr)
+    LCHECK(wcstr);
     return ::wcslen(wcstr);
 }
 

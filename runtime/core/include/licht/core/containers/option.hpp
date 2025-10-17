@@ -50,7 +50,7 @@ public:
     constexpr bool has_value() const { return is_some_; }
 
     constexpr T unwrap() const {
-        LCHECK(has_value())
+        LCHECK(has_value());
         return *data();
     }
 
@@ -59,12 +59,12 @@ public:
     }
 
     const T& operator*() const {
-        LCHECK(has_value())
+        LCHECK(has_value());
         return *data();
     }
 
     T& operator*() {
-        LCHECK(has_value())
+        LCHECK(has_value());
         return *data();
     }
 

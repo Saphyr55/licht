@@ -41,10 +41,12 @@ using float64 = double;
  *
  */
 #ifdef LDEBUG
-#define LCHECK(expr)   \
-    if (!(expr)) {     \
-        LDEBUGBREAK(); \
-    }
+#define LCHECK(expr)                  \
+    do {                              \
+        if (!(expr)) {                \
+            LDEBUGBREAK();            \
+        }                             \
+    } while (false)
 #else
 #define LCHECK(expr)
 #endif
@@ -54,11 +56,13 @@ using float64 = double;
  */
 // TODO: Remove std::cout ...
 #ifdef LDEBUG
-#define LCHECK_MSG(expr, msg)       \
-    if (!(expr)) {                  \
-        ::std::cout << msg << "\n"; \
-        LDEBUGBREAK();              \
-    }
+#define LCHECK_MSG(expr, msg)             \
+    do {                                  \
+        if (!(expr)) {                    \
+            ::std::cout << msg << "\n";   \
+            LDEBUGBREAK();                \
+        }                                 \
+    } while (false)
 #else
 #define LCHECK_MSG(expr, msg)
 #endif

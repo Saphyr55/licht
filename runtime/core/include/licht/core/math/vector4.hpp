@@ -87,7 +87,7 @@ constexpr Vector4f Vector4<R>::normalize(Vector4 vec) {
 
 template <Real R>
 constexpr R& Vector4<R>::operator[](const size_t i) {
-    LCHECK(i < 4)
+    LCHECK(i < 4);
     switch (i) {
         case 0:
             return x;
@@ -105,7 +105,7 @@ constexpr R& Vector4<R>::operator[](const size_t i) {
 
 template <Real R>
 constexpr const R& Vector4<R>::operator[](size_t i) const {
-    LCHECK(i < 4)
+    LCHECK(i < 4);
     switch (i) {
         case 0:
             return x;

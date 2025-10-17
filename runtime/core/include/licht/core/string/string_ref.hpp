@@ -33,7 +33,7 @@ public:
     constexpr StringRefBase& operator=(const StringRefBase& other) = default;
 
     constexpr const CharType& operator[](size_t index) const {
-        LCHECK(index < size())
+        LCHECK(index < size());
         return data_[index];
     }
 

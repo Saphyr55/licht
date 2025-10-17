@@ -1,6 +1,5 @@
 #pragma once
 
-#include "licht/core/core_exports.hpp"
 #include "licht/core/defines.hpp"
 
 #include <concepts>
@@ -50,12 +49,12 @@ public:
 
     constexpr IndexRange(IndexType start, IndexType end)
         : start_(start), end_(end) {
-        LCHECK(start <= end)
+        LCHECK(start <= end);
     }
 
     constexpr IndexRange(const auto& start, const auto& end)
         : start_(static_cast<IndexType>(start)), end_(static_cast<IndexType>(end)) {
-        LCHECK(start <= end)
+        LCHECK(start <= end);
     }
 
     constexpr Iterator begin() const noexcept { return Iterator(start_); }

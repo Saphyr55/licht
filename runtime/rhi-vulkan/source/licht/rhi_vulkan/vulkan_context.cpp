@@ -26,7 +26,7 @@ void vulkan_device_initialize(VulkanContext& context, VulkanPhysicalDeviceSelect
     physical_device_selector.select_physical_device();
     context.physical_device_info = physical_device_selector.get_info();
 
-    LCHECK_MSG(context.physical_device_info.is_suitable, "Physical device is not suitable for Vulkan operations.")
+    LCHECK_MSG(context.physical_device_info.is_suitable, "Physical device is not suitable for Vulkan operations.");
 
     float32 queue_priority = 1.0f;  // [0.0, 1.0]
 
