@@ -1,12 +1,11 @@
 #pragma once
 
-#include <cstdint>
-#include <functional>
-
-#include "licht/core/containers/array.hpp"
 #include "licht/core/core_exports.hpp"
+#include "licht/core/defines.hpp"
+#include "licht/core/containers/array.hpp"
 #include "licht/core/string/string_ref.hpp"
 #include "licht/core/containers/hash_map.hpp"
+#include "licht/core/function/function.hpp"
 
 namespace licht {
 
@@ -71,7 +70,7 @@ struct LICHT_CORE_API LogMessage {
  * @typedef LogFn
  * @brief Function type for logging callbacks.
  */
-using LogFn = std::function<void(const LogMessage& message)>;
+using LogFn = Function<void(const LogMessage& message)>;
 
 /**
  * @class Logger

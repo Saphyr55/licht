@@ -1,6 +1,5 @@
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
 
-#include "licht/core/defines.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/platform/dynamic_library.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"

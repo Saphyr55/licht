@@ -60,7 +60,7 @@ public:
         frame_context_.frame_height = height;
     }
 
-    void set_on_reset(std::function<void()>&& on_reset) {
+    void set_on_reset(Function<void()>&& on_reset) {
         on_reset_ = on_reset;
     } 
 
@@ -116,7 +116,7 @@ public:
         : window_handle_(Display::InvalidWindowHandle) {}
 
 private:
-    std::function<void()> on_reset_;
+    Function<void()> on_reset_;
     WindowHandle window_handle_;
     RHIFrameContext frame_context_;
     RHIDeviceRef device_;

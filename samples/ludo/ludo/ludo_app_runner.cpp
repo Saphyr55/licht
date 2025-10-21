@@ -20,7 +20,7 @@
 constexpr float64 TargetFPS = 144.0;
 constexpr float64 TargetFrameRate = 1.0 / TargetFPS;
 
-static Camera initial_camera = []() -> Camera&& {
+static Camera initial_camera = []() -> Camera {
     Camera camera(Vector3f(0.0f, 5.0f, 0.0f));
     camera.look_at(Vector3f(0.0f));
     camera.movement_speed = 10.0f;

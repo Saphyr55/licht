@@ -52,7 +52,7 @@ private:
 
 private:
     size_t next_id_ = 1;
-    HashMap<size_t, std::function<void(ArgumentTypes...)>> handlers_;
+    HashMap<size_t, Function<void(ArgumentTypes...)>> handlers_;
     Array<size_t> pending_removals_;
     bool emitting_ = false;
 };

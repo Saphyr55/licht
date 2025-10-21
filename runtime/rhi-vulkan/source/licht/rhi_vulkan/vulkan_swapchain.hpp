@@ -27,7 +27,7 @@ public:
 
     virtual RHIFormat get_format() override;
 
-    virtual const Array<RHITextureView*>& get_texture_views() override {
+    virtual const Array<RHITextureView*>& get_texture_views() const override {
         return texture_views_;
     }
 

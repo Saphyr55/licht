@@ -51,7 +51,7 @@ void VulkanBuffer::initialize(const RHIBufferDescription& description) {
     buffer_create_info.size = description_.size;
     buffer_create_info.usage = vulkan_buffer_usage_get(description_.usage);
     buffer_create_info.sharingMode = vulkan_sharing_mode_get(description_.sharing_mode);
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateBuffer(context_.device, &buffer_create_info, context_.allocator, &buffer_))
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkCreateBuffer(context_.device, &buffer_create_info, context_.allocator, &buffer_));
 
     VkMemoryRequirements memory_requirements = get_memory_requirements();
     VkMemoryPropertyFlags properties = vulkan_memory_usage_get(description_.memory_usage);
@@ -62,7 +62,7 @@ void VulkanBuffer::initialize(const RHIBufferDescription& description) {
     memory_allocate_info.allocationSize = memory_requirements.size;
     memory_allocate_info.memoryTypeIndex = vulkan_find_memory_type(context_, memory_requirements.memoryTypeBits, properties);
 
-    LICHT_VULKAN_CHECK(VulkanAPI::lvkAllocateMemory(context_.device, &memory_allocate_info, context_.allocator, &memory_))
+    LICHT_VULKAN_CHECK(VulkanAPI::lvkAllocateMemory(context_.device, &memory_allocate_info, context_.allocator, &memory_));
 
     bind();
 }

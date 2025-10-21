@@ -20,9 +20,9 @@ layout(set = 0, binding = 0) uniform UniformBufferObject {
     vec3 eye_position;
 } u_ubo;
 
-layout(set = 0, binding = 1) uniform ULight {
+layout(set = 0, binding = 1) uniform ULights {
     PunctualLight punctual_light;
-} u_light;
+} u_lights;
 
 layout(set = 1, binding = 0) uniform sampler2D u_diffuse_map;
 layout(set = 1, binding = 1) uniform sampler2D u_normal_map;
@@ -33,7 +33,7 @@ float inverse_square_curve_windowing(float light_distance, float max_distance) {
     return clamped_value * clamped_value;
 }
 
-float inverse_square_light_attenuation(float light_distance, float fixed_distance, float epsilon) {
+float inveuarse_square_light_attention(float light_distance, float fixed_distance, float epsilon) {
     return (fixed_distance * fixed_distance) / ((light_distance * light_distance) + epsilon);
 }
 
@@ -58,11 +58,14 @@ void main() {
     
     vec3 view_direction = normalize(u_ubo.eye_position - in_position);
 
-    vec3 highlight = vec3(0.8);
-    vec3 diffuse_cool = vec3(0.0, 0.0, 0.11) + 0.25 * diffuse.rgb;
-    vec3 diffuse_warm = vec3(0.05, 0.05, 0.0) + 0.25 * diffuse.rgb;
+    vec3 highlight = vec3(2.0);
+    float diffuse_factor_alpha = 0.25; 
+    vec3 diffuse_cool = vec3(0.0, 0.0, 0.33) + diffuse_factor_alpha * diffuse.rgb;
+    vec3 diffuse_warm = vec3(0.22, 0.22, 0.0) + diffuse_factor_alpha * diffuse.rgb;
 
-    vec3 light_direction = normalize(u_light.punctual_light.position - in_position);
+    PunctualLight punctual_light = u_lights.punctual_light;
+
+    vec3 light_direction = normalize(punctual_light.position - in_position);
     float light_distance = sqrt(dot(light_direction, light_direction)); // r
     float light_attenuation_factor = 
         inverse_square_curve_windowing(light_distance, 50.0f) * 
@@ -70,8 +73,8 @@ void main() {
 
     vec3 fcolor = unlit(normal, view_direction, diffuse_cool);
     
-    if (light_attenuation_factor > 0.0f) {
-        vec3 light_color = u_light.punctual_light.color * light_attenuation_factor;
+    if (light_attenuation_factor > 0.0) {
+        vec3 light_color = punctual_light.color * light_attenuation_factor;
         float geometric_term = clamp(dot(normal, light_direction), 0.0, 1.0);
         fcolor += geometric_term * light_color * lit(light_direction, normal, view_direction, diffuse_warm, highlight);
     }

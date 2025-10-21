@@ -46,7 +46,7 @@ void VulkanDevice::wait_fence(RHIFence* fence) {
             return;
         }
         default: {
-            LICHT_VULKAN_CHECK(result_wait)
+            LICHT_VULKAN_CHECK(result_wait);
             break;
         }
     }

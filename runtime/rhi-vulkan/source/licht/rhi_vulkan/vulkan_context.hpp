@@ -13,10 +13,10 @@
 #include <vulkan/vulkan_core.h>
 
 #define LICHT_VULKAN_CHECK(Expr)                                                                                                                                     \
-    {                                                                                                                                                                \
+    do {                                                                                                                                                             \
         VkResult __licht_vulkan_result__ = (Expr);                                                                                                                   \
         LLOG_FATAL_WHEN(__licht_vulkan_result__ != VK_SUCCESS, "[Vulkan]", vformat("Failed with the result '%s'", vulkan_string_of_result(__licht_vulkan_result__))) \
-    }
+    } while (false)
 
 namespace licht {
 
@@ -289,16 +289,16 @@ inline VkShaderStageFlags vulkan_shader_stage_get(RHIShaderStage stage) {
     if ((stage & RHIShaderStage::Vertex) == RHIShaderStage::Vertex) {
         flags |= VK_SHADER_STAGE_VERTEX_BIT;
     }
-    
+
     if ((stage & RHIShaderStage::Fragment) == RHIShaderStage::Fragment) {
         flags |= VK_SHADER_STAGE_FRAGMENT_BIT;
     }
-    
+
     if ((stage & RHIShaderStage::Tesselation) == RHIShaderStage::Tesselation) {
         flags |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
         flags |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
     }
-    
+
     if ((stage & RHIShaderStage::Geometry) == RHIShaderStage::Geometry) {
         flags |= VK_SHADER_STAGE_GEOMETRY_BIT;
     }
@@ -306,7 +306,7 @@ inline VkShaderStageFlags vulkan_shader_stage_get(RHIShaderStage stage) {
     if ((stage & RHIShaderStage::Compute) == RHIShaderStage::Compute) {
         flags |= VK_SHADER_STAGE_COMPUTE_BIT;
     }
-    
+
     if (RHIShaderStage::AllGraphics == (stage & RHIShaderStage::AllGraphics)) {
         flags |= VK_SHADER_STAGE_ALL_GRAPHICS;
     }
@@ -316,20 +316,28 @@ inline VkShaderStageFlags vulkan_shader_stage_get(RHIShaderStage stage) {
 
 inline VkFilter vulkan_filter_get(RHIFilter filter) {
     switch (filter) {
-        case RHIFilter::Nearest: return VK_FILTER_NEAREST;
-        case RHIFilter::Linear:  return VK_FILTER_LINEAR;
-        default:                 return VK_FILTER_NEAREST;
+        case RHIFilter::Nearest:
+            return VK_FILTER_NEAREST;
+        case RHIFilter::Linear:
+            return VK_FILTER_LINEAR;
+        default:
+            return VK_FILTER_NEAREST;
     }
     return VK_FILTER_NEAREST;
 }
 
 inline VkSamplerAddressMode vulkan_address_mode_get(RHISamplerAddressMode mode) {
     switch (mode) {
-        case RHISamplerAddressMode::Repeat:          return VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        case RHISamplerAddressMode::MirroredRepeat:  return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-        case RHISamplerAddressMode::ClampToEdge:     return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        case RHISamplerAddressMode::ClampToBorder:   return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-        default:                                     return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        case RHISamplerAddressMode::Repeat:
+            return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        case RHISamplerAddressMode::MirroredRepeat:
+            return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+        case RHISamplerAddressMode::ClampToEdge:
+            return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        case RHISamplerAddressMode::ClampToBorder:
+            return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        default:
+            return VK_SAMPLER_ADDRESS_MODE_REPEAT;
     }
     return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 }
@@ -344,7 +352,7 @@ inline VkImageAspectFlags vulkan_format_to_image_aspect(RHIFormat format) {
         case RHIFormat::D32S8:
             return (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
         case RHIFormat::Undefined:
-            return VK_IMAGE_ASPECT_NONE; 
+            return VK_IMAGE_ASPECT_NONE;
         default:
             return VK_IMAGE_ASPECT_COLOR_BIT;
     }

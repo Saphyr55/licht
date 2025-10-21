@@ -1,6 +1,7 @@
 #pragma once
 
 #include "licht/core/containers/hash_map.hpp"
+#include "licht/core/function/function.hpp"
 #include "licht/core/memory/default_allocator.hpp"
 #include "licht/core/memory/memory.hpp"
 #include "licht/core/memory/shared_ref.hpp"
@@ -12,7 +13,7 @@ namespace licht {
 
 class LICHT_CORE_API ModuleRegistry {
 public:
-    using ModuleInitializerFunc = std::function<Module*()>;
+    using ModuleInitializerFunc = Function<Module*()>;
 
     static ModuleRegistry& get_instance();
 
