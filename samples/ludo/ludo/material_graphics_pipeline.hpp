@@ -2,7 +2,8 @@
 
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/renderer/render_context.hpp"
-#include "licht/renderer/render_item.hpp"
+#include "licht/renderer/draw_item.hpp"
+#include "licht/rhi/buffer.hpp"
 #include "licht/rhi/shader_resource.hpp"
 #include "ludo_types.hpp"
 
@@ -61,6 +62,7 @@ private:
     Array<RHIShaderResourceBinding> texture_bindings_;
     RHIShaderResourceGroupLayout* texture_shader_resource_layout_ = nullptr;
     RHIShaderResourceGroupPool* texture_shader_resource_pool_ = nullptr;
+    Array<RHIBuffer*> texture_factors_buffers_;
     
     RHITexture* default_texture_ = nullptr;
     RHITextureView* default_texture_view_ = nullptr;

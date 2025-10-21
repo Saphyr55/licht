@@ -190,10 +190,20 @@ void gltf_create_primitive(tinygltf::Model& model, const tinygltf::Primitive& pr
         out_submesh.normals = gltf_get_accessor_data(model, normals_it->second);
     }
 
-    attributes_type::const_iterator texcoord0_it = primitive.attributes.find("TEXCOORD_0");
-    if (texcoord0_it != primitive.attributes.end()) {
-        out_submesh.uv_textures = gltf_get_accessor_data(model, texcoord0_it->second);
+    attributes_type::const_iterator uv_it = primitive.attributes.find("TEXCOORD_0");
+    if (uv_it != primitive.attributes.end()) {
+        out_submesh.uv_textures = gltf_get_accessor_data(model, uv_it->second);
     }
+
+    attributes_type::const_iterator tangents_it = primitive.attributes.find("TANGENT");
+    if (tangents_it != primitive.attributes.end()) {
+        out_submesh.tangents = gltf_get_accessor_data(model, tangents_it->second);
+    } 
+    
+    if (out_submesh.tangents.empty()) {
+        out_submesh.tangents.resize(sizeof(Vector4f));
+    }
+
 }
 
 void gltf_create_meshes(tinygltf::Model& model, Array<StaticMesh>& out_meshes) {
@@ -215,6 +225,10 @@ void gltf_create_meshes(tinygltf::Model& model, Array<StaticMesh>& out_meshes) {
                 submesh.material.diffuse_texture.format = find_format(base_color_image);
                 submesh.material.diffuse_texture.width = base_color_image.width;
                 submesh.material.diffuse_texture.height = base_color_image.height;
+                submesh.material.diffuse_factor = { static_cast<float32>(pbr.baseColorFactor[0]), 
+                                                    static_cast<float32>(pbr.baseColorFactor[1]), 
+                                                    static_cast<float32>(pbr.baseColorFactor[2]), 
+                                                    static_cast<float32>(pbr.baseColorFactor[3]) };
                 
                 if (gltf_material.normalTexture.index >= 0) {
                     tinygltf::Texture& normal_texture = model.textures[gltf_material.normalTexture.index];
@@ -224,6 +238,7 @@ void gltf_create_meshes(tinygltf::Model& model, Array<StaticMesh>& out_meshes) {
                     submesh.material.normal_texture.width = normal_image.width;
                     submesh.material.normal_texture.height = normal_image.height;
                 }
+
             }
 
             mesh.append_submesh(submesh);

@@ -40,9 +40,7 @@ void RenderContext::startup() {
 }
 
 void RenderContext::shutdown() {
-    
     device_->wait_idle();
-    device_->destroy_command_allocator(command_allocator_);
 
     for (uint32 i = 0; i < frame_context_.frame_count; i++) {
         device_->destroy_semaphore(frame_context_.frame_available_semaphores[i]);

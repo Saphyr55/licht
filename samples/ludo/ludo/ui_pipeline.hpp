@@ -2,7 +2,9 @@
 
 namespace licht {
 
-class Mesh {
+class UiPipeline {
+public:
+
 private:
     
 };

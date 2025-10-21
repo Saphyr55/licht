@@ -2,7 +2,6 @@
 #include "licht/core/io/file_handle.hpp"
 #include "licht/core/io/file_system.hpp"
 #include "licht/core/memory/shared_ref.hpp"
-#include "licht/renderer/render_item.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/buffer_pool.hpp"
 #include "licht/rhi/device.hpp"
@@ -106,21 +105,23 @@ void MaterialGraphicsPipeline::initialize(const SharedRef<RHIDevice>& device,
     // Bindings and attributes.
     RHIVertexBindingDescription position_input_binding_description(
         0, sizeof(Vector3f), RHIVertexInputRate::Vertex);
-
     RHIVertexAttributeDescription position_attribute_description(
         0, 0, RHIFormat::RGB32Float);
 
     RHIVertexBindingDescription normal_input_binding_description(
         1, sizeof(Vector3f), RHIVertexInputRate::Vertex);
-
     RHIVertexAttributeDescription normal_attribute_description(
         1, 1, RHIFormat::RGB32Float);
 
     RHIVertexBindingDescription texture_uv_input_binding_description(
         2, sizeof(Vector2f), RHIVertexInputRate::Vertex);
-
     RHIVertexAttributeDescription texture_uv_attribute_description(
         2, 2, RHIFormat::RG32Float);
+
+    RHIVertexBindingDescription tangent_input_binding_description(
+        3, sizeof(Vector4f), RHIVertexInputRate::Vertex);
+    RHIVertexAttributeDescription tangent_attribute_description(
+        3, 3, RHIFormat::RGBA32Float);
 
     Rect2D scissor = {
         .x = 0.0f,
@@ -145,8 +146,8 @@ void MaterialGraphicsPipeline::initialize(const SharedRef<RHIDevice>& device,
             .with_vertex_shader(vertex_shader, "main")
             .with_fragment_shader(fragment_shader, "main")
             .with_vertex_bindings(
-                {position_input_binding_description, normal_input_binding_description, texture_uv_input_binding_description},
-                {position_attribute_description, normal_attribute_description, texture_uv_attribute_description})
+                {position_input_binding_description, normal_input_binding_description, texture_uv_input_binding_description, tangent_input_binding_description},
+                {position_attribute_description, normal_attribute_description, texture_uv_attribute_description, tangent_attribute_description})
             .with_viewport(viewport, scissor)
             .with_shader_resource_group_layout({
                 global_shader_resource_layout_, // Set 0
@@ -242,7 +243,7 @@ void MaterialGraphicsPipeline::compile(const RenderPacket& packet) {
     size_t sr_texture_pool_index = 0;
     for (uint32 frame = 0; frame < renderer_->get_frame_count(); frame++) {
         
-        for (RenderItem& item : packet.items) {
+        for (DrawItem& item : packet.items) {
 
             RHIShaderResourceGroup* tex_group = texture_shader_resource_pool_->get_group(sr_texture_pool_index++);
 

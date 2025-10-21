@@ -1,12 +1,12 @@
 #include "render_frame_script.hpp"
 
+#include "licht/core/containers/array.hpp"
 #include "licht/core/containers/array_view.hpp"
 #include "licht/core/containers/index_range.hpp"
 #include "licht/core/defines.hpp"
 #include "licht/core/io/file_system.hpp"
 #include "licht/core/math/math.hpp"
 #include "licht/core/math/matrix4.hpp"
-#include "licht/core/math/quaternion.hpp"
 #include "licht/core/math/vector3.hpp"
 #include "licht/core/math/vector4.hpp"
 #include "licht/core/memory/default_allocator.hpp"
@@ -17,7 +17,6 @@
 #include "licht/engine/project_settings.hpp"
 #include "licht/renderer/mesh/static_mesh.hpp"
 #include "licht/renderer/mesh/static_mesh_loader.hpp"
-#include "licht/renderer/render_item.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/command_queue.hpp"
@@ -65,9 +64,7 @@ void RenderFrameScript::on_startup() {
     material_graphics_pipeline_ = new_ref<MaterialGraphicsPipeline>();
 
     graphics_queue_ = device_->get_graphics_queue();
-    present_queue_ = device_->get_queue_if([&](RHICommandQueueRef command_queue) -> bool {
-        return command_queue->is_graphics_type() && command_queue->is_present_mode() && graphics_queue_ != present_queue_;
-    });
+    present_queue_ = device_->get_present_queue();
 
     cmd_allocator_ = device_->create_command_allocator({
         .command_queue = graphics_queue_,
@@ -95,7 +92,7 @@ void RenderFrameScript::on_startup() {
     // Model
     String model_asset_path = projectdir;
     model_asset_path.append("/assets/models/Sponza/glTF/Sponza.gltf");
-    Array<StaticMesh> model = gltf_static_meshes_load(model_asset_path);
+    Array<StaticMesh> meshes_model = gltf_static_meshes_load(model_asset_path);
 
     depth_texture_ = texture_pool_->create_texture({
         .format = RHIFormat::D24S8,
@@ -137,14 +134,14 @@ void RenderFrameScript::on_startup() {
     // Device objects --
     RHIDeviceMemoryUploader uploader(device_, buffer_pool_, texture_pool_);
 
-    for (StaticMesh& mesh : model) {
+    for (StaticMesh& mesh : meshes_model) {
         for (StaticSubMesh& submesh : mesh.get_submeshes()) {
-            RenderItem item;
+            DrawItem item;
 
             item.model_constant.model = Matrix4f::identity();
             item.model_constant.model = Matrix4f::scale(item.model_constant.model, Vector3f(.009f));
 
-            constexpr size_t vertex_buffer_size = 3;
+            constexpr size_t vertex_buffer_size = 4;
             RHIBuffer* vertex_buffers[vertex_buffer_size];
 
             vertex_buffers[0] = uploader.send_buffer(RHIStagingBufferContext(
@@ -155,6 +152,9 @@ void RenderFrameScript::on_startup() {
 
             vertex_buffers[2] = uploader.send_buffer(RHIStagingBufferContext(
                 RHIBufferUsageFlags::Vertex, submesh.uv_textures.size(), submesh.uv_textures.data()));
+
+            vertex_buffers[3] = uploader.send_buffer(RHIStagingBufferContext(
+                RHIBufferUsageFlags::Vertex, submesh.tangents.size(), submesh.tangents.data()));
 
             FixedArray<TextureBuffer*, 2> textures = {
                 &submesh.material.diffuse_texture,
@@ -202,7 +202,7 @@ void RenderFrameScript::on_startup() {
             item.index_count = submesh.indices.size();
             packet_.items.append(item);
         }
-    }
+    }    
 
     packet_.light = RenderPunctualLight{
         .position = Vector3f(0.0f, 10.0f, 0.0f),
@@ -225,12 +225,10 @@ void RenderFrameScript::on_tick(float64 delta_time) {
         RHICommandBuffer* cmd = renderer_->get_current_command_buffer();
         float32 width = static_cast<float32>(renderer_->get_swapchain()->get_width());
         float32 height = static_cast<float32>(renderer_->get_swapchain()->get_height());
-        Rect2D area = {
-            .x = 0.0f,
-            .y = 0.0f,
-            .width = width,
-            .height = height,
-        };
+        Rect2D area = {.x = 0.0f,
+                       .y = 0.0f,
+                       .width = width,
+                       .height = height};
 
         RHIRenderPassBeginInfo render_pass_begin_info = {};
         render_pass_begin_info.render_pass = material_graphics_pipeline_->get_render_pass();
@@ -244,27 +242,23 @@ void RenderFrameScript::on_tick(float64 delta_time) {
 
             cmd->bind_graphics_pipeline(graphics_pipeline);
 
-            Rect2D scissor = {
-                .x = 0.0f,
-                .y = 0.0f,
-                .width = width,
-                .height = height,
-            };
+            Rect2D scissor = {.x = 0.0f,
+                              .y = 0.0f,
+                              .width = width,
+                              .height = height};
 
-            Viewport viewport = {
-                .x = 0.0f,
-                .y = 0.0f,
-                .width = width,
-                .height = height,
-                .min_depth = 0.0f,
-                .max_depth = 1.0f,
-            };
+            Viewport viewport = {.x = 0.0f,
+                                 .y = 0.0f,
+                                 .width = width,
+                                 .height = height,
+                                 .min_depth = 0.0f,
+                                 .max_depth = 1.0f};
 
             cmd->set_viewports(&viewport, 1);
             cmd->set_scissors(&scissor, 1);
 
             // Render Packet
-            for (RenderItem& item : packet_.items) {
+            for (DrawItem& item : packet_.items) {
                 RHIShaderResourceGroup* global_group = material_graphics_pipeline_
                                                            ->get_global_shader_resource_pool()
                                                            ->get_group(renderer_->get_current_frame());
@@ -326,8 +320,8 @@ void RenderFrameScript::reset() {
     RHITextureDescription depth_texture_desc = {};
     depth_texture_desc.format = RHIFormat::D24S8;
     depth_texture_desc.usage = RHITextureUsageFlags::DepthStencilAttachment;
-    depth_texture_desc.sharing_mode = RHISharingMode::Private,
-    depth_texture_desc.memory_usage = RHIMemoryUsage::Device,
+    depth_texture_desc.sharing_mode = RHISharingMode::Private;
+    depth_texture_desc.memory_usage = RHIMemoryUsage::Device;
     depth_texture_desc.width = renderer_->get_swapchain()->get_width();
     depth_texture_desc.height = renderer_->get_swapchain()->get_height();
     depth_texture_ = texture_pool_->create_texture(depth_texture_desc);
@@ -372,7 +366,7 @@ void RenderFrameScript::on_shutdown() {
 
     device_->destroy_texture_view(depth_texture_view_);
 
-    for (RenderItem& item : packet_.items) {
+    for (DrawItem& item : packet_.items) {
         for (size_t i : IndexRange(0, item.samplers.size())) {
             if (item.samplers[i]) {
                 device_->destroy_sampler(item.samplers[i]);

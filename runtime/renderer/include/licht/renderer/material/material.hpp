@@ -1,6 +1,7 @@
 #pragma once
 
 #include "licht/core/containers/array.hpp"
+#include "licht/core/math/vector4.hpp"
 #include "licht/rhi/rhi_types.hpp"
 
 namespace licht {
@@ -15,6 +16,7 @@ struct TextureBuffer {
 struct Material {
     TextureBuffer diffuse_texture;
     TextureBuffer normal_texture;
+    Vector4f diffuse_factor; 
 };
 
 }

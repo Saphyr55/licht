@@ -2,6 +2,7 @@
 
 #include "licht/core/containers/array.hpp"
 #include "licht/core/math/matrix4.hpp"
+#include "licht/core/math/vector3.hpp"
 #include "licht/rhi/buffer.hpp"
 
 namespace licht {
@@ -17,14 +18,22 @@ struct RenderPunctualLight {
     alignas(16) Vector3f color;
 };
 
-struct RenderItem {
+struct TextureFactors {
+    alignas(16) Vector4f diffuse_factor;
+};
+
+struct DrawItem {
     Array<RHIBuffer*> vertex_buffers;
     RHIBuffer* index_buffer;
+    size_t index_start = 0;
     size_t index_count = 0;
+    size_t vertex_start = 0;
+    size_t vertex_count = 0;
 
     Array<RHISampler*> samplers;
     Array<RHITexture*> textures;
     Array<RHITextureView*> texture_views;
+    Array<Array<TextureFactors>> texture_factors_list;
 
     Array<RHIShaderResourceGroup*> shader_groups;
 
@@ -33,7 +42,7 @@ struct RenderItem {
 };
 
 struct RenderPacket {
-    Array<RenderItem> items;
+    Array<DrawItem> items;
     RenderPunctualLight light;
 };
 
