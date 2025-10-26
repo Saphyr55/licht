@@ -15,8 +15,10 @@
 #include "licht/core/platform/display.hpp"
 #include "licht/core/trace/trace.hpp"
 #include "licht/engine/project_settings.hpp"
+#include "licht/renderer/draw_item.hpp"
 #include "licht/renderer/mesh/static_mesh.hpp"
 #include "licht/renderer/mesh/static_mesh_loader.hpp"
+#include "licht/renderer/shader/shader_compiler.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/device_memory_uploader.hpp"
@@ -135,73 +137,11 @@ void RenderFrameScript::on_startup() {
 
     for (StaticMesh& mesh : meshes_model) {
         for (StaticSubMesh& submesh : mesh.get_submeshes()) {
-            DrawItem item;
-
-            item.model_constant.model = Matrix4f::identity();
-            item.model_constant.model = Matrix4f::scale(item.model_constant.model, Vector3f( 0.005f));
-
-            constexpr const size_t vertex_buffer_size = 4;
-            RHIBuffer* vertex_buffers[vertex_buffer_size];
-
-            vertex_buffers[0] = uploader.send_buffer(RHIStagingBufferContext(
-                RHIBufferUsageFlags::Vertex, submesh.positions.size(), submesh.positions.data()));
-
-            vertex_buffers[1] = uploader.send_buffer(RHIStagingBufferContext(
-                RHIBufferUsageFlags::Vertex, submesh.normals.size(), submesh.normals.data()));
-
-            vertex_buffers[2] = uploader.send_buffer(RHIStagingBufferContext(
-                RHIBufferUsageFlags::Vertex, submesh.uv_textures.size(), submesh.uv_textures.data()));
-
-            vertex_buffers[3] = uploader.send_buffer(RHIStagingBufferContext(
-                RHIBufferUsageFlags::Vertex, submesh.tangents.size(), submesh.tangents.data()));
-
-            FixedArray<TextureBuffer*, 2> textures = {
-                &submesh.material.diffuse_texture,
-                &submesh.material.normal_texture,
-            };
-
-            for (size_t texture = 0; texture < textures.size(); texture++) {
-                TextureBuffer& texture_buffer = *textures[texture];
-                if (texture_buffer.data.empty()) {
-                    item.textures.append(nullptr);
-                    item.texture_views.append(nullptr);
-                    item.samplers.append(nullptr);
-                    continue;
-                }
-
-                RHITextureDescription tex_desc = {};
-                tex_desc.format = texture_buffer.format;
-                tex_desc.memory_usage = RHIMemoryUsage::Device;
-                tex_desc.usage = RHITextureUsageFlags::Sampled;
-                tex_desc.sharing_mode = RHISharingMode::Shared;
-                tex_desc.width = texture_buffer.width;
-                tex_desc.height = texture_buffer.height;
-                tex_desc.mip_levels = Math::floor(Math::log2(Math::max(tex_desc.width, tex_desc.height))) + 1;
-
-                item.vertex_buffers = Array<RHIBuffer*>(vertex_buffers, vertex_buffer_size);
-                item.textures.append(uploader.send_texture(RHIStagingBufferContext(
-                                                               RHIBufferUsageFlags::Storage, texture_buffer.data.size(), texture_buffer.data.data()),
-                                                           tex_desc));
-
-                item.texture_views.append(device_->create_texture_view(RHITextureViewDescription{
-                    .texture = item.textures[texture],
-                    .format = tex_desc.format,
-                    .dimension = RHITextureDimension::Dim2D,
-                    .mip_levels = tex_desc.mip_levels,
-                }));
-
-                item.samplers.append(device_->create_sampler(RHISamplerDescription{
-                    .max_lod = static_cast<float32>(tex_desc.mip_levels),
-                }));
-            }
-
-            item.index_buffer = uploader.send_buffer(
-                RHIStagingBufferContext(RHIBufferUsageFlags::Index, ArrayView(submesh.indices)));
-
-            item.index_count = submesh.indices.size();
+            DrawItem item = DrawItem::create(device_, uploader, submesh);
+            item.model_constant.model = Matrix4f::scale(item.model_constant.model, Vector3f(0.005f));
             packet_.items.append(item);
         }
-    }    
+    }
 
     packet_.light = RenderPunctualLight{
         .position = Vector3f(0.0f, 5.0f, 0.0f),
@@ -212,6 +152,33 @@ void RenderFrameScript::on_startup() {
 
     material_graphics_pipeline_->initialize_shader_resource_pool(packet_.items.size());
     material_graphics_pipeline_->compile(packet_);
+
+    Input::on_key_release.connect([&](const VirtualKey key) {
+        if (key != VirtualKey::G) {
+            return;
+        }
+
+        device_->wait_idle();
+
+        StringRef projectdir = project_settings.get_name("projectdir");
+        FileSystem& file_system = FileSystem::get_platform();
+
+        String vertex_shader_path(projectdir);
+        vertex_shader_path.append("/assets/shaders/ludo.material.vert");
+
+        String fragment_shader_path(projectdir);
+        fragment_shader_path.append("/assets/shaders/ludo.material.frag");
+
+        if (!SPIRVShaderCompiler::compile_file(vertex_shader_path, "shaders/ludo.material.vert.spv", SPIRVShaderCompiler::Stage::Vertex)) {
+            return;
+        }
+
+        if (!SPIRVShaderCompiler::compile_file(fragment_shader_path, "shaders/ludo.material.frag.spv", SPIRVShaderCompiler::Stage::Fragment)) {
+            return;
+        }
+
+        material_graphics_pipeline_->reload();
+    });
 }
 
 void RenderFrameScript::on_tick(float64 delta_time) {

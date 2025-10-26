@@ -3,14 +3,14 @@
 #include "licht/core/containers/array.hpp"
 #include "licht/core/math/matrix4.hpp"
 #include "licht/core/math/vector3.hpp"
+#include "licht/renderer/mesh/static_mesh.hpp"
 #include "licht/rhi/buffer.hpp"
+#include "licht/rhi/device_memory_uploader.hpp"
 
 namespace licht {
 
 struct RenderModelConstant {
     alignas(64) Matrix4f model = Matrix4f::identity();
-
-    RenderModelConstant() = default;
 };
 
 struct RenderPunctualLight {
@@ -20,11 +20,20 @@ struct RenderPunctualLight {
 
 struct TextureFactors {
     alignas(16) Vector4f diffuse_factor;
+
+    TextureFactors() = default;
 };
 
-struct DrawItem {
+struct LICHT_RENDERER_API DrawItem {
+public:
+    static DrawItem create(SharedRef<RHIDevice> device, RHIDeviceMemoryUploader& uploader, StaticSubMesh& submesh);
+
+    DrawItem() = default;
+    ~DrawItem() = default;
+
+public:
     Array<RHIBuffer*> vertex_buffers;
-    RHIBuffer* index_buffer;
+    RHIBuffer* index_buffer = nullptr;
     size_t index_start = 0;
     size_t index_count = 0;
     size_t vertex_start = 0;

@@ -17,7 +17,8 @@ public:
                     const SharedRef<RHITexturePool>& texture_pool);
 
     void initialize_shader_resource_pool(size_t item_count);
-
+    
+    void reload();
     void destroy();
 
     void compile(const RenderPacket& packet);
@@ -43,6 +44,10 @@ public:
 
     MaterialGraphicsPipeline() = default;
     ~MaterialGraphicsPipeline() = default;
+
+private:
+    void destroy_pipeline_internal();
+    void create_pipeline_internal();
 
 private:
     SharedRef<RHIDevice> device_ = nullptr;

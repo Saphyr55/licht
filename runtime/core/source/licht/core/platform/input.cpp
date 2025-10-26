@@ -17,13 +17,13 @@ Signal<const Button&> Input::on_button_release;
 
 HashSet<VirtualKey> Input::keys_dow_;
 HashSet<VirtualKey> Input::keys_up_;
-Array<VirtualKey> Input::keys_pressed_;
-Array<VirtualKey> Input::keys_release_;
+HashSet<VirtualKey> Input::keys_pressed_;
+HashSet<VirtualKey> Input::keys_release_;
 
-HashSet<Button> Input::buttons_dow_;
+HashSet<Button> Input::buttons_down_;
 HashSet<Button> Input::buttons_up_;
-Array<Button> Input::buttons_pressed_;
-Array<Button> Input::buttons_release_;
+HashSet<Button> Input::buttons_pressed_;
+HashSet<Button> Input::buttons_release_;
 
 bool Input::key_is_down(VirtualKey key) {
     return keys_dow_.contains(key);
@@ -42,7 +42,7 @@ bool Input::key_is_release(VirtualKey key) {
 }
 
 bool Input::button_is_down(Button button) {
-    return buttons_dow_.contains(button);
+    return buttons_down_.contains(button);
 }
 
 bool Input::button_is_up(Button button) {

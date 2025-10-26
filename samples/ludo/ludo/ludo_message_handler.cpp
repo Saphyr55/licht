@@ -31,10 +31,10 @@ void LudoDisplayMessageHandler::on_mouse_move(float32 pos_rel_x, float32 pos_rel
 
 void LudoDisplayMessageHandler::on_button_up(Button button) {
     Input::buttons_pressed_.remove(button);
-    Input::buttons_dow_.remove(button);
+    Input::buttons_down_.remove(button);
 
     if (!Input::buttons_release_.contains(button)) {
-        Input::buttons_release_.append(button);
+        Input::buttons_release_.insert(button);
         Input::on_button_release.emit(button);
     }
 
@@ -47,11 +47,11 @@ void LudoDisplayMessageHandler::on_button_down(const Button button) {
     Input::buttons_up_.remove(button);
 
     if (!Input::buttons_pressed_.contains(button)) {
-        Input::buttons_pressed_.append(button);
+        Input::buttons_pressed_.insert(button);
         Input::on_button_pressed(button);
     }
 
-    Input::buttons_dow_.insert(button);
+    Input::buttons_down_.insert(button);
     Input::on_button_down(button);
 }
 
@@ -60,7 +60,7 @@ void LudoDisplayMessageHandler::on_key_down(const VirtualKey key) {
     Input::keys_up_.remove(key);
 
     if (!Input::keys_pressed_.contains(key)) {
-        Input::keys_pressed_.append(key);
+        Input::keys_pressed_.insert(key);
         Input::on_key_pressed(key);
     }
 
@@ -73,7 +73,7 @@ void LudoDisplayMessageHandler::on_key_up(const VirtualKey key) {
     Input::keys_dow_.remove(key);
 
     if (!Input::keys_release_.contains(key)) {
-        Input::keys_release_.append(key);
+        Input::keys_release_.insert(key);
         Input::on_key_release.emit(key);
     }
 

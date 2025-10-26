@@ -174,13 +174,13 @@ public:
 
     static HashSet<VirtualKey> keys_dow_;
     static HashSet<VirtualKey> keys_up_;
-    static Array<VirtualKey> keys_release_;
-    static Array<VirtualKey> keys_pressed_;
+    static HashSet<VirtualKey> keys_release_;
+    static HashSet<VirtualKey> keys_pressed_;
     
-    static HashSet<Button> buttons_dow_;
+    static HashSet<Button> buttons_down_;
     static HashSet<Button> buttons_up_;
-    static Array<Button> buttons_release_;
-    static Array<Button> buttons_pressed_;
+    static HashSet<Button> buttons_release_;
+    static HashSet<Button> buttons_pressed_;
 };
 
 }  //namespace licht

@@ -68,13 +68,13 @@ void main() {
     float NdotL = max(dot(normal, light_direction), 0.0);
     float NdotH = max(dot(normal, halfway_direction), 0.0);
 
-    float shininess = 8.0;
+    float shininess = 64.0;
     float specular = NdotL > 0.0 ? pow(NdotH, shininess) : 0.0;
-    vec3 result = 0.1 * diffuse.rgb +
+    vec3 result = 0.01 * diffuse.rgb +
                   NdotL * diffuse.rgb +
                   specular * punctual_light.color;
 
-    float epsilon = 1.0e-2;
+    float epsilon = 1.0e-5;
     result *= inverse_square_light_attenuation(light_distance, 1.0, epsilon);
 
     out_frag_color = vec4(result, diffuse.a);
