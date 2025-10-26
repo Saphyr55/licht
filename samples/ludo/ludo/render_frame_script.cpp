@@ -19,7 +19,6 @@
 #include "licht/renderer/mesh/static_mesh_loader.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/command_buffer.hpp"
-#include "licht/rhi/command_queue.hpp"
 #include "licht/rhi/device_memory_uploader.hpp"
 #include "licht/rhi/graphics_pipeline.hpp"
 #include "licht/rhi/rhi_forwards.hpp"
@@ -89,9 +88,9 @@ void RenderFrameScript::on_startup() {
     texture_pool_ = device_->create_texture_pool();
     texture_pool_->initialize_pool(&DefaultAllocator::get_instance(), 64);
 
-    // Model
     String model_asset_path = projectdir;
     model_asset_path.append("/assets/models/Sponza/glTF/Sponza.gltf");
+
     Array<StaticMesh> meshes_model = gltf_static_meshes_load(model_asset_path);
 
     depth_texture_ = texture_pool_->create_texture({
@@ -139,9 +138,9 @@ void RenderFrameScript::on_startup() {
             DrawItem item;
 
             item.model_constant.model = Matrix4f::identity();
-            item.model_constant.model = Matrix4f::scale(item.model_constant.model, Vector3f(.009f));
+            item.model_constant.model = Matrix4f::scale(item.model_constant.model, Vector3f( 0.005f));
 
-            constexpr size_t vertex_buffer_size = 4;
+            constexpr const size_t vertex_buffer_size = 4;
             RHIBuffer* vertex_buffers[vertex_buffer_size];
 
             vertex_buffers[0] = uploader.send_buffer(RHIStagingBufferContext(
@@ -205,8 +204,8 @@ void RenderFrameScript::on_startup() {
     }    
 
     packet_.light = RenderPunctualLight{
-        .position = Vector3f(0.0f, 10.0f, 0.0f),
-        .color = Vector3f(1.0f, 0.5f, 0.2f),
+        .position = Vector3f(0.0f, 5.0f, 0.0f),
+        .color = Vector3f(1.0f, 1.0f, 1.0f),
     };
 
     uploader.upload(graphics_queue_);
@@ -304,7 +303,6 @@ void RenderFrameScript::update_uniform(const float64 delta_time) {
 
     float32 aspect_ratio = renderer_->get_swapchain()->get_width() / static_cast<float32>(renderer_->get_swapchain()->get_height());
     ubo.proj = Matrix4f::perspective(Math::radians(75.0f), aspect_ratio, 0.1f, 10000.0f);
-
     ubo.view_proj = ubo.proj * ubo.view;
 
     ubo.eye_position = camera_->position;

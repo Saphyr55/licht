@@ -86,8 +86,10 @@ constexpr Matrix4<R> Matrix4<R>::translate(const Mat& mat, const Vector3<R>& vec
 
 template <Real R>
 constexpr Matrix4<R> Matrix4<R>::scale(const Mat& mat, const Vector3<R>& vec) {
-    return mat * Mat(Vector4<R>(vec.x, 0, 0, 0), Vector4<R>(0, vec.y, 0, 0),
-                     Vector4<R>(0, 0, vec.z, 0), Vector4<R>(0, 0, 0, 1));
+    return mat * Mat(Vector4<R>(vec.x, 0, 0, 0), 
+                     Vector4<R>(0, vec.y, 0, 0),
+                     Vector4<R>(0, 0, vec.z, 0), 
+                     Vector4<R>(0, 0, 0, 1));
 }
 
 template <Real R>

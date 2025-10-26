@@ -1,7 +1,7 @@
 #include "licht/renderer/mesh/static_mesh_loader.hpp"
 #include "licht/core/containers/array.hpp"
 #include "licht/core/defines.hpp"
-#include "licht/core/memory/shared_ref.hpp"
+#include "licht/core/math/vector3.hpp"
 #include "licht/core/string/format.hpp"
 #include "licht/core/trace/trace.hpp"
 #include "licht/renderer/material/material.hpp"
@@ -17,56 +17,46 @@
 
 namespace licht {
 
-// Source: https://github.com/syoyo/tinygltf/blob/release/examples/basic/main.cpp
-void dbgModel(tinygltf::Model& model) {
-    for (tinygltf::Mesh& mesh : model.meshes) {
-        std::cout << "mesh : " << mesh.name << std::endl;
-        for (tinygltf::Primitive& primitive : mesh.primitives) {
-            const tinygltf::Accessor& indexAccessor = model.accessors[primitive.indices];
-
-            std::cout << "index_accessor: count " << indexAccessor.count << ", type " << indexAccessor.componentType << std::endl;
-
-            tinygltf::Material& mat = model.materials[primitive.material];
-            for (auto& mats : mat.values) {
-                std::cout << "mat : " << mats.first.c_str() << std::endl;
-            }
-
-            for (tinygltf::Image& image : model.images) {
-                std::cout << "image name : " << image.uri << std::endl;
-                std::cout << "  size : " << image.image.size() << std::endl;
-                std::cout << "  w/h : " << image.width << "/" << image.height << std::endl;
-            }
-
-            std::cout << "indices : " << primitive.indices << std::endl;
-            std::cout << "mode     : " << "(" << primitive.mode << ")" << std::endl;
-
-            for (auto& attrib : primitive.attributes) {
-                std::cout << "attribute : " << attrib.first.c_str() << std::endl;
-            }
-        }
-    }
-}
-
-static RHIFormat find_format(const tinygltf::Image& image) {
+static RHIFormat find_format(const tinygltf::Image& image, const bool normal = false) {
     RHIFormat format = RHIFormat::RGB8sRGB;
-    switch (image.component) {
-        case 1:
-            format = RHIFormat::R8sRGB;
-            break;
-        case 2:
-            format = RHIFormat::RG8sRGB;
-            break;
-        case 3:
-            format = RHIFormat::RGB8sRGB;
-            break;
-        case 4:
-            format = RHIFormat::RGBA8sRGB;
-            break;
-        default:
-            LLOG_WARN("[GLTF]", vformat("Unsupported image component count: %d", image.component));
-            break;
-    }
+    if (normal) {
+        switch (image.component) {
+            case 1:
+                format = RHIFormat::R8;
+                break;
+            case 2:
+                format = RHIFormat::RG8;
+                break;
+            case 3:
+                format = RHIFormat::RGB8;
+                break;
+            case 4:
+                format = RHIFormat::RGBA8;
+                break;
+            default:
+                LLOG_WARN("[GLTF]", vformat("Unsupported image component count: %d", image.component));
+                break;
+        }
+    } else {
+        switch (image.component) {
+            case 1:
+                format = RHIFormat::R8sRGB;
+                break;
+            case 2:
+                format = RHIFormat::RG8sRGB;
+                break;
+            case 3:
+                format = RHIFormat::RGB8sRGB;
+                break;
+            case 4:
+                format = RHIFormat::RGBA8sRGB;
+                break;
+            default:
+                LLOG_WARN("[GLTF]", vformat("Unsupported image component count: %d", image.component));
+                break;
+        }
 
+    }
     if (image.bits == 16) {
         switch (image.component) {
             case 1:
@@ -107,7 +97,7 @@ static RHIFormat find_format(const tinygltf::Image& image) {
     return format;
 }
 
-StaticSubMesh::Buffer gltf_get_accessor_data(tinygltf::Model& model, int32 accessor_index) {
+static StaticSubMesh::Buffer gltf_get_accessor_data(tinygltf::Model& model, int32 accessor_index) {
     if (accessor_index < 0 || accessor_index >= model.accessors.size()) {
         return StaticSubMesh::Buffer();
     }
@@ -129,7 +119,7 @@ StaticSubMesh::Buffer gltf_get_accessor_data(tinygltf::Model& model, int32 acces
 }
 
 template <typename T>
-Array<uint32> gltf_get_indices_type(tinygltf::Model& model, int32 accessor_index) {
+static Array<uint32> gltf_get_indices_type(tinygltf::Model& model, int32 accessor_index) {
     StaticSubMesh::Buffer index_bytes = gltf_get_accessor_data(model, accessor_index);
 
     Array<uint32> indices;
@@ -148,7 +138,7 @@ Array<uint32> gltf_get_indices_type(tinygltf::Model& model, int32 accessor_index
     return indices;
 }
 
-Array<uint32> gltf_get_indices(tinygltf::Model& model, const tinygltf::Primitive& primitive) {
+static Array<uint32> gltf_get_indices(tinygltf::Model& model, const tinygltf::Primitive& primitive) {
     tinygltf::Accessor& accessor = model.accessors[primitive.indices];
     switch (accessor.componentType) {
         case TINYGLTF_COMPONENT_TYPE_BYTE:
@@ -171,7 +161,117 @@ Array<uint32> gltf_get_indices(tinygltf::Model& model, const tinygltf::Primitive
     return {};
 }
 
-void gltf_create_primitive(tinygltf::Model& model, const tinygltf::Primitive& primitive, StaticSubMesh& out_submesh) {
+static void recompute_normals(StaticSubMesh& mesh) {
+    size_t vertex_count = mesh.positions.size() / sizeof(Vector3f);
+    size_t index_count  = mesh.indices.size();
+
+    Vector3f* positions = reinterpret_cast<Vector3f*>(mesh.positions.data());
+    Array<Vector3f> normals;
+    normals.resize(vertex_count, Vector3f(0.0));
+
+    for (size_t i = 0; i < index_count; i += 3) {
+        uint32 i0 = mesh.indices[i];
+        uint32 i1 = mesh.indices[i + 1];
+        uint32 i2 = mesh.indices[i + 2];
+
+        Vector3f v0 = positions[i0];
+        Vector3f v1 = positions[i1];
+        Vector3f v2 = positions[i2];
+
+        Vector3f e1 = v1 - v0;
+        Vector3f e2 = v2 - v0;
+
+        Vector3f n = Vector3f::normalize(Vector3f::cross(e1, e2));
+
+        normals[i0] += n;
+        normals[i1] += n;
+        normals[i2] += n;
+    }
+
+    for (Vector3f& n : normals) {
+        n = Vector3f::normalize(n);
+    }
+
+    mesh.normals = Array<uint8>(reinterpret_cast<uint8*>(normals.data()), vertex_count * sizeof(Vector3f));
+}
+
+static void recompute_tangents(StaticSubMesh& mesh) {
+    size_t vertex_count = mesh.positions.size() / sizeof(Vector3f);
+    size_t index_count  = mesh.indices.size();
+
+    Vector3f* positions = reinterpret_cast<Vector3f*>(mesh.positions.data());
+    Vector3f* normals   = reinterpret_cast<Vector3f*>(mesh.normals.data());
+    Vector2f* uvs       = reinterpret_cast<Vector2f*>(mesh.uv_textures.data());
+
+    Array<Vector3f> tan1;
+    tan1.resize(vertex_count, Vector3f(0.0));
+
+    Array<Vector3f> tan2;
+    tan2.resize(vertex_count, Vector3f(0.0));
+
+    Array<Vector4f> tangents;
+    tangents.resize(vertex_count, Vector4f(0.0));
+
+    for (size_t i = 0; i < index_count; i += 3) {
+        uint32 i0 = mesh.indices[i];
+        uint32 i1 = mesh.indices[i + 1];
+        uint32 i2 = mesh.indices[i + 2];
+
+        const Vector3f& v0 = positions[i0];
+        const Vector3f& v1 = positions[i1];
+        const Vector3f& v2 = positions[i2];
+
+        const Vector2f& w0 = uvs[i0];
+        const Vector2f& w1 = uvs[i1];
+        const Vector2f& w2 = uvs[i2];
+
+        float32 x1 = v1.x - v0.x;
+        float32 x2 = v2.x - v0.x;
+        float32 y1 = v1.y - v0.y;
+        float32 y2 = v2.y - v0.y;
+        float32 z1 = v1.z - v0.z;
+        float32 z2 = v2.z - v0.z;
+
+        float32 s1 = w1.x - w0.x;
+        float32 s2 = w2.x - w0.x;
+        float32 t1 = w1.y - w0.y;
+        float32 t2 = w2.y - w0.y;
+
+        float32 r = (s1 * t2 - s2 * t1);
+        if (std::abs(r) < 1e-8f) r = 1.0f;
+        r = 1.0f / r;
+
+        Vector3f sdir = {(t2 * x1 - t1 * x2) * r,
+                         (t2 * y1 - t1 * y2) * r,
+                         (t2 * z1 - t1 * z2) * r};
+        Vector3f tdir = {(s1 * x2 - s2 * x1) * r,
+                         (s1 * y2 - s2 * y1) * r,
+                         (s1 * z2 - s2 * z1) * r};
+
+        tan1[i0] += sdir;
+        tan1[i1] += sdir;
+        tan1[i2] += sdir;
+
+        tan2[i0] += tdir;
+        tan2[i1] += tdir;
+        tan2[i2] += tdir;
+    }
+
+    for (size_t i = 0; i < vertex_count; ++i) {
+        const Vector3f& n = normals[i];
+        const Vector3f& t = tan1[i];
+
+        Vector3f tangent = Vector3f::normalize(t - n * Vector3f::dot(n, t));
+
+        float32 w = (Vector3f::dot(Vector3f::cross(n, t), tan2[i]) < 0.0f) ? -1.0f : 1.0f;
+
+        tangents[i] = Vector4f(tangent.x, tangent.y, tangent.z, w);
+    }
+
+    mesh.tangents = Array<uint8>(reinterpret_cast<uint8*>(tangents.data()), vertex_count * sizeof(Vector4f));
+}
+
+static void gltf_create_primitive(tinygltf::Model& model, const tinygltf::Primitive& primitive, StaticSubMesh& out_submesh) {
     out_submesh.positions = gltf_get_accessor_data(model, primitive.attributes.at("POSITION"));
 
     using attributes_type = decltype(primitive.attributes);
@@ -185,14 +285,18 @@ void gltf_create_primitive(tinygltf::Model& model, const tinygltf::Primitive& pr
         }
     }
 
+    attributes_type::const_iterator uv_it = primitive.attributes.find("TEXCOORD_0");
+    if (uv_it != primitive.attributes.end()) {
+        out_submesh.uv_textures = gltf_get_accessor_data(model, uv_it->second);
+    }
+
     attributes_type::const_iterator normals_it = primitive.attributes.find("NORMAL");
     if (normals_it != primitive.attributes.end()) {
         out_submesh.normals = gltf_get_accessor_data(model, normals_it->second);
     }
-
-    attributes_type::const_iterator uv_it = primitive.attributes.find("TEXCOORD_0");
-    if (uv_it != primitive.attributes.end()) {
-        out_submesh.uv_textures = gltf_get_accessor_data(model, uv_it->second);
+    
+    if (out_submesh.normals.empty()) {
+        recompute_normals(out_submesh);
     }
 
     attributes_type::const_iterator tangents_it = primitive.attributes.find("TANGENT");
@@ -201,12 +305,12 @@ void gltf_create_primitive(tinygltf::Model& model, const tinygltf::Primitive& pr
     } 
     
     if (out_submesh.tangents.empty()) {
-        out_submesh.tangents.resize(sizeof(Vector4f));
+        recompute_tangents(out_submesh);
     }
 
 }
 
-void gltf_create_meshes(tinygltf::Model& model, Array<StaticMesh>& out_meshes) {
+static void gltf_create_meshes(tinygltf::Model& model, Array<StaticMesh>& out_meshes) {
     out_meshes.reserve(model.meshes.size());
     for (const tinygltf::Mesh& gltf_mesh : model.meshes) {
         StaticMesh mesh;
@@ -234,7 +338,7 @@ void gltf_create_meshes(tinygltf::Model& model, Array<StaticMesh>& out_meshes) {
                     tinygltf::Texture& normal_texture = model.textures[gltf_material.normalTexture.index];
                     tinygltf::Image& normal_image = model.images[normal_texture.source];
                     submesh.material.normal_texture.data = Array<uint8>(normal_image.image.data(), normal_image.image.size());
-                    submesh.material.normal_texture.format = find_format(normal_image);
+                    submesh.material.normal_texture.format = find_format(normal_image, true);
                     submesh.material.normal_texture.width = normal_image.width;
                     submesh.material.normal_texture.height = normal_image.height;
                 }
