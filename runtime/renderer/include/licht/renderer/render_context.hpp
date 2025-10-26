@@ -5,6 +5,7 @@
 #include "licht/core/platform/window_handle.hpp"
 #include "licht/renderer/renderer_exports.hpp"
 #include "licht/rhi/command_buffer.hpp"
+#include "licht/rhi/command_queue.hpp"
 #include "licht/rhi/rhi_forwards.hpp"
 #include "licht/rhi/swapchain.hpp"
 
@@ -18,7 +19,10 @@ enum class RenderResult {
 
 class LICHT_RENDERER_API RenderContext {
 public:
-    void startup();
+    void initialize(WindowHandle window_handle,
+                    const RHICommandQueueRef& graphics_queue,
+                    const RHICommandQueueRef& present_queue,
+                    RHICommandAllocator* cmd_allocator);
 
     void shutdown();
 
@@ -38,9 +42,6 @@ public:
         return frame_context_;
     }
 
-    void set_window_handle(WindowHandle window_handle) {
-        window_handle_ = window_handle;
-    }
 
     RHICommandAllocator* get_command_allocator() {
         return command_allocator_;
@@ -60,14 +61,14 @@ public:
         frame_context_.frame_height = height;
     }
 
-    void set_on_reset(Function<void()>&& on_reset) {
+    void on_reset(Function<void()>&& on_reset) {
         on_reset_ = on_reset;
-    } 
+    }
 
     uint32 get_frame_count() const {
         return frame_context_.frame_count;
-    }    
-    
+    }
+
     uint32 get_current_frame() const {
         return frame_context_.current_frame;
     }
@@ -75,7 +76,7 @@ public:
     uint32 get_frame_index() const {
         return frame_context_.frame_index;
     }
-    
+
     RHICommandQueueRef get_present_queue() {
         return present_queue_;
     }
@@ -92,14 +93,6 @@ public:
         return graphics_queue_;
     }
 
-    void set_graphics_queue(const RHICommandQueueRef& graphics_queue) {
-        graphics_queue_ = graphics_queue;
-    }
-
-    void set_present_queue(const RHICommandQueueRef& present_queue) {
-        present_queue_ = present_queue;
-    }
-
     RHICommandBuffer* get_current_command_buffer() {
         return current_cmd_;
     }
@@ -110,6 +103,18 @@ public:
 
 private:
     void reset();
+
+    void set_graphics_queue(const RHICommandQueueRef& graphics_queue) {
+        graphics_queue_ = graphics_queue;
+    }
+
+    void set_present_queue(const RHICommandQueueRef& present_queue) {
+        present_queue_ = present_queue;
+    }
+
+    void set_window_handle(WindowHandle window_handle) {
+        window_handle_ = window_handle;
+    }
 
 public:
     RenderContext()

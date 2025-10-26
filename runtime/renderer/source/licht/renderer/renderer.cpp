@@ -1,14 +1,23 @@
-#include "licht/renderer/render_context.hpp"
 #include "licht/core/modules/module_registry.hpp"
 #include "licht/core/platform/display.hpp"
+#include "licht/renderer/render_context.hpp"
+#include "licht/rhi/command_queue.hpp"
 #include "licht/rhi/device.hpp"
 #include "licht/rhi/rhi_module.hpp"
 #include "licht/rhi/swapchain.hpp"
-#include "licht/rhi/command_queue.hpp"
+
 
 namespace licht {
 
-void RenderContext::startup() {
+void RenderContext::initialize(WindowHandle window_handle,
+                               const RHICommandQueueRef& graphics_queue,
+                               const RHICommandQueueRef& present_queue,
+                               RHICommandAllocator* cmd_allocator) {
+    set_window_handle(window_handle);
+    set_command_allocator(cmd_allocator);
+    set_graphics_queue(graphics_queue);
+    set_present_queue(present_queue);
+
     ModuleRegistry& registry = ModuleRegistry::get_instance();
     RHIModule* module = registry.get_module<RHIModule>(RHIModule::ModuleName);
 
@@ -90,7 +99,7 @@ RenderResult RenderContext::end_frame() {
     }
 
     if (!frame_context_.success) {
-        return RenderResult::Unknown; 
+        return RenderResult::Unknown;
     }
     device_->wait_fence(frame_context_.in_flight_fences[frame_context_.current_frame]);
 

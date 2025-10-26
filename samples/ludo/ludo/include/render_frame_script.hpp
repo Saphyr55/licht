@@ -22,6 +22,8 @@ public:
 
     void update_resized(const uint32 width, const uint32 height);
 
+    void reload_shaders();
+
     void pause();
 
     void unpause();
@@ -32,7 +34,7 @@ private:
     void reset();
 
 public:
-    RenderFrameScript(Camera* camera);
+    RenderFrameScript(Camera* camera, WindowHandle window_handle);
     ~RenderFrameScript() = default;
 
 private:
@@ -54,7 +56,7 @@ private:
 
     RHICommandAllocator* cmd_allocator_;
 
-    SharedRef<RenderContext> renderer_;
+    SharedRef<RenderContext> render_context_;
     SharedRef<MaterialGraphicsPipeline> material_graphics_pipeline_;
 
     bool pause_ = false;

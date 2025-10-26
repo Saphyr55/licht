@@ -92,7 +92,7 @@ void LudoAppRunner::on_run_delegate() {
         }
     });
 
-    RenderFrameScript render_frame_script(&camera);
+    RenderFrameScript render_frame_script(&camera, window_handle);
     render_frame_script.on_startup();
 
     // By creating a DisplayMessageHandler, you can intercept the platform and window events.

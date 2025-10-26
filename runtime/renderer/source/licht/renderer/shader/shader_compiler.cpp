@@ -4,7 +4,7 @@
 
 namespace licht {
 
-bool SPIRVShaderCompiler::compile_file(StringRef input_filepath, StringRef output_filepath, Stage stage) {
+bool SPIRVShaderCompiler::compile_glsl_file(StringRef input_filepath, StringRef output_filepath, Stage stage) {
 
     String stage_flag;
     switch (stage) {

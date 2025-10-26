@@ -36,7 +36,8 @@ includes("runtime/scene")
 includes("runtime/renderer")
 
 -- Sample sources --
-includes("samples/ludo")
+includes("samples/ludo/ludo")
+includes("samples/ludo/app")
 
 -- Third Party -- 
 includes("third_party")
