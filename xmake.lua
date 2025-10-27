@@ -16,8 +16,6 @@ end
 
 add_requires("libsdl3", "catch2", "lua")
 
-includes("scripts/xmake/**.lua")
-
 function target_files_default(param)
     add_includedirs("include", param)
 
@@ -36,7 +34,8 @@ includes("runtime/scene")
 includes("runtime/renderer")
 
 -- Sample sources --
-includes("samples/ludo")
+includes("samples/ludo/ludo")
+includes("samples/ludo/app")
 
 -- Third Party -- 
 includes("third_party")

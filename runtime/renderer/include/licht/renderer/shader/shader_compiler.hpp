@@ -15,7 +15,7 @@ public:
         Geometry
     };
 
-    static bool compile_file(StringRef input_filepath, StringRef output_filepath, Stage stage);
+    static bool compile_glsl_file(StringRef input_filepath, StringRef output_filepath, Stage stage);
 };
 
 }  //namespace licht

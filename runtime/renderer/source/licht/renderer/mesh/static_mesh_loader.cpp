@@ -326,7 +326,7 @@ static void gltf_create_meshes(tinygltf::Model& model, Array<StaticMesh>& out_me
                 tinygltf::Image& base_color_image = model.images[base_color_texture.source];
 
                 submesh.material.diffuse_texture.data = Array<uint8>(base_color_image.image.data(), base_color_image.image.size());
-                submesh.material.diffuse_texture.format = find_format(base_color_image);
+                submesh.material.diffuse_texture.format = find_format(base_color_image, true);
                 submesh.material.diffuse_texture.width = base_color_image.width;
                 submesh.material.diffuse_texture.height = base_color_image.height;
                 submesh.material.diffuse_factor = { static_cast<float32>(pbr.baseColorFactor[0]), 

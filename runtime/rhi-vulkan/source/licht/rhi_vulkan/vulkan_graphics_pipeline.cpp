@@ -230,10 +230,6 @@ void VulkanGraphicsPipeline::destroy() {
 
     VulkanAPI::lvkDestroyPipeline(context.device, pipeline_, context.allocator);
     VulkanAPI::lvkDestroyPipelineLayout(context.device, pipeline_layout_, context.allocator);
-    for (RHIShaderResourceGroupLayout* layout : description_.layouts) {
-        VulkanShaderResourceGroupLayout* vklayout = static_cast<VulkanShaderResourceGroupLayout*>(layout);
-        VulkanAPI::lvkDestroyDescriptorSetLayout(context.device, vklayout->get_handle(), context.allocator);
-    }
 }
 
 }  //namespace licht

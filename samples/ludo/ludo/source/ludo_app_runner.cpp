@@ -24,7 +24,7 @@ static Camera initial_camera = []() -> Camera {
     Camera camera(Vector3f(0.0f, 5.0f, 0.0f));
     camera.look_at(Vector3f(0.0f));
     camera.movement_speed = 10.0f;
-    return std::move(camera);
+    return camera;
 }();
 
 void LudoAppRunner::camera_on_tick(Camera& camera, float64 delta_time) {
@@ -92,7 +92,7 @@ void LudoAppRunner::on_run_delegate() {
         }
     });
 
-    RenderFrameScript render_frame_script(&camera);
+    RenderFrameScript render_frame_script(&camera, window_handle);
     render_frame_script.on_startup();
 
     // By creating a DisplayMessageHandler, you can intercept the platform and window events.
@@ -110,24 +110,25 @@ void LudoAppRunner::on_run_delegate() {
     DeltaTimer timer;
     FrameRateMonitor frame_monitor;
 
-    bool unlimited_frame_rate = false;
+    // Unlimited by default, can switch by pressing F1.
+    bool limited_frame_rate = false;
 
-    // Main loop
+    // Main loop.
     while (g_is_app_running) {
         float64 delta_time = timer.tick();
 
-        // Frame rate limiting
-        if (!unlimited_frame_rate) {
+        // Frame rate limiting.
+        if (limited_frame_rate) {
             delta_time = timer.limit(delta_time, TargetFrameRate);
         }
 
-        // Handle window and platform events
+        // Handle window and platform events.
         display.handle_events();
 
         // Update the camera, must be call once per frame.
         camera_on_tick(camera, delta_time);
 
-        // Tick the render frame script with a delta time
+        // Tick the render frame script with a delta time.
         render_frame_script.on_tick(delta_time);
 
         // Restart the initial camera state.
@@ -137,7 +138,7 @@ void LudoAppRunner::on_run_delegate() {
 
         // Switch between 144Hz and unlimited frame rate.
         if (Input::key_is_pressed(VirtualKey::F1)) {
-            unlimited_frame_rate = !unlimited_frame_rate;
+            limited_frame_rate = !limited_frame_rate;
         }
 
         // Restart application when Ctrl+R key pressed.
@@ -152,8 +153,8 @@ void LudoAppRunner::on_run_delegate() {
     }
 
     // Do not forget to stop it.
-    // TODO: Need to be done by a manager
     render_frame_script.on_shutdown();
+    // TODO: Need to be done by a manager
     rhi_module->on_shutdown();
 
     display.close(window_handle);

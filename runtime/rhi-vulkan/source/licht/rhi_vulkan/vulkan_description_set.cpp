@@ -24,26 +24,23 @@ constexpr static auto binding_set_mapping = [](const RHIShaderResourceBinding& b
 };
 
 void VulkanShaderResourceGroup::set_buffer(const RHIWriteBufferResource& resource) {
-
     VulkanBuffer* vkbuffer = static_cast<VulkanBuffer*>(resource.buffer);
+    VkDescriptorType descriptor_type = vulkan_descriptor_type_get(layout_->get_resource_type(resource.binding));
 
-    RHIShaderResourceType shader_resource_type = layout_->get_resource_type(resource.binding);
-    VkDescriptorType descriptor_type = vulkan_descriptor_type_get(shader_resource_type);
+    PendingDescriptorArray& entry = pending_arrays_[resource.binding];
+    entry.type = descriptor_type;
 
-    VkDescriptorBufferInfo buffer_info = {};
-    buffer_info.buffer = vkbuffer->get_handle();
-    buffer_info.offset = static_cast<VkDeviceSize>(resource.offset);
-    buffer_info.range = static_cast<VkDeviceSize>(resource.range);
-    buffer_infos_.append(buffer_info);
+    if (entry.buffer_infos.size() <= resource.array_index) {
+        if (entry.buffer_infos.empty()) {
+            entry.buffer_infos = {};
+        }
+        entry.buffer_infos.resize(resource.array_index + 1);
+    }
 
-    VkWriteDescriptorSet descriptor_write = {};
-    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptor_write.dstSet = descriptor_set_;
-    descriptor_write.dstBinding = static_cast<uint32>(resource.binding);
-    descriptor_write.dstArrayElement = 0;
-    descriptor_write.descriptorType = descriptor_type;
-    descriptor_write.descriptorCount = 1;
-    descriptor_writes_.append(descriptor_write);
+    VkDescriptorBufferInfo& info = entry.buffer_infos[resource.array_index];
+    info.buffer = vkbuffer->get_handle();
+    info.offset = static_cast<VkDeviceSize>(resource.offset);
+    info.range = static_cast<VkDeviceSize>(resource.range);
 }
 
 void VulkanShaderResourceGroup::set_sampler(const RHIWriteSamplerResource& resource) {
@@ -54,24 +51,22 @@ void VulkanShaderResourceGroup::set_texture_sampler(const RHIWriteTextureSampler
     VulkanTextureView* vk_view = static_cast<VulkanTextureView*>(resource.texture_view);
     VulkanSampler* vk_sampler = static_cast<VulkanSampler*>(resource.sampler);
 
-    RHIShaderResourceType shader_resource_type = layout_->get_resource_type(resource.binding);
-    VkDescriptorType descriptor_type = vulkan_descriptor_type_get(shader_resource_type);
+    VkDescriptorType descriptor_type = vulkan_descriptor_type_get(layout_->get_resource_type(resource.binding));
 
-    VkDescriptorImageInfo image_info = {};
-    image_info.sampler = vk_sampler->get_handle();
-    image_info.imageView = vk_view->get_handle();
-    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_infos_.append(image_info);
+    PendingDescriptorArray& entry = pending_arrays_[resource.binding];
+    entry.type = descriptor_type;
 
-    VkWriteDescriptorSet descriptor_write = {};
-    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptor_write.dstSet = descriptor_set_;
-    descriptor_write.dstBinding = resource.binding;
-    descriptor_write.dstArrayElement = 0;
-    descriptor_write.descriptorType = descriptor_type;
-    descriptor_write.descriptorCount = 1;
+    if (entry.image_infos.size() <= resource.array_index) {
+        if (entry.image_infos.empty()) {
+            entry.image_infos = {};
+        }
+        entry.image_infos.resize(resource.array_index + 1);
+    }
 
-    descriptor_writes_.append(descriptor_write);
+    VkDescriptorImageInfo& info = entry.image_infos[resource.array_index];
+    info.sampler = vk_sampler->get_handle();
+    info.imageView = vk_view->get_handle();
+    info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 }
 
 void VulkanShaderResourceGroup::set_texture(const RHIWriteTextureResource& resource) {
@@ -79,53 +74,44 @@ void VulkanShaderResourceGroup::set_texture(const RHIWriteTextureResource& resou
 }
 
 void VulkanShaderResourceGroup::compile() {
-    if (descriptor_writes_.empty()) {
+    if (pending_arrays_.empty()) {
         return;
     }
 
     VulkanContext& context = vulkan_context_get();
 
-    size_t current_buffer_info_index = 0;
-    size_t current_image_info_index = 0;
+    Array<VkWriteDescriptorSet> writes;
+    writes.reserve(pending_arrays_.size());
 
-    for (VkWriteDescriptorSet& write : descriptor_writes_) {
-        switch (write.descriptorType) {
-            case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-            case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-                write.pBufferInfo = &buffer_infos_[current_buffer_info_index++];
-                break;
-            case VK_DESCRIPTOR_TYPE_SAMPLER:
-            case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-            case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-            case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-                write.pImageInfo = &image_infos_[current_image_info_index++];
-                break;
-            case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
-            case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
-            case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
-            case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
-            case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-            case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
-            case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
-            case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
-            case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:
-            case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM:
-            case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
-            case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
-            case VK_DESCRIPTOR_TYPE_MAX_ENUM:
-                break;
+    for (auto& [binding, entry] : pending_arrays_) {
+        VkWriteDescriptorSet write = {};
+        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write.dstSet = descriptor_set_;
+        write.dstBinding = binding;
+        write.dstArrayElement = 0;
+        write.descriptorType = entry.type;
+
+        if (!entry.buffer_infos.empty()) {
+            write.descriptorCount = static_cast<uint32>(entry.buffer_infos.size());
+            write.pBufferInfo = entry.buffer_infos.data();
+        } else if (!entry.image_infos.empty()) {
+            write.descriptorCount = static_cast<uint32>(entry.image_infos.size());
+            write.pImageInfo = entry.image_infos.data();
+        } else {
+            continue;
         }
+
+        writes.append(write);
     }
 
     VulkanAPI::lvkUpdateDescriptorSets(context.device,
-                                       descriptor_writes_.size(),
-                                       descriptor_writes_.data(),
-                                       0,  // No copy.
+                                       writes.size(),
+                                       writes.data(),
+                                       0,
                                        nullptr);
 
-    descriptor_writes_.clear();
-    buffer_infos_.clear();
-    image_infos_.clear();
+    pending_arrays_.clear();
+
 }
 
 RHIShaderResourceType VulkanShaderResourceGroupLayout::get_resource_type(size_t binding) const {
@@ -197,7 +183,7 @@ RHIShaderResourceGroup* VulkanShaderResourceGroupPool::allocate_group(RHIShaderR
 }
 
 RHIShaderResourceGroup* VulkanShaderResourceGroupPool::get_group(size_t pool_index) {
-    VulkanShaderResourceGroup& group = allocated_groups_[pool_index]; 
+    VulkanShaderResourceGroup& group = allocated_groups_[pool_index];
     if (group.get_handle() == VK_NULL_HANDLE) {
         return nullptr;
     }

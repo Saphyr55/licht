@@ -28,18 +28,6 @@ struct RHIShaderResourceBinding {
         , stage(in_stage) {}
 };
 
-class Builder {
-public:
-    Builder();
-
-    Builder& with_stage(RHIShaderStage stage) {
-        return *this;
-    }
-
-private:
-    RHIShaderResourceBinding binding;
-};
-
 /**
  * @brief Data structure to update a Buffer (Uniform or Storage) resource in a Shader Resource Group.
  */
@@ -48,17 +36,20 @@ struct RHIWriteBufferResource {
     uint32 binding = 0;
     size_t offset = 0;
     size_t range = 0;
+    size_t array_index = 0;
 
     RHIWriteBufferResource() = default;
 
     RHIWriteBufferResource(uint32 in_binding,
                            RHIBuffer* in_buffer,
                            size_t in_offset = 0,
-                           size_t in_range = 0)
+                           size_t in_range = 0,
+                           size_t in_array_index = 0)
         : buffer(in_buffer)
         , binding(in_binding)
         , offset(in_offset)
-        , range(in_range) {}
+        , range(in_range)
+        , array_index(in_array_index) {}
 };
 
 /**
@@ -67,12 +58,14 @@ struct RHIWriteBufferResource {
 struct RHIWriteSamplerResource {
     RHISampler* sampler = nullptr;
     uint32 binding = 0;
+    size_t array_index = 0;
 
     RHIWriteSamplerResource() = default;
 
-    RHIWriteSamplerResource(uint32 in_binding, RHISampler* in_sampler)
+    RHIWriteSamplerResource(uint32 in_binding, RHISampler* in_sampler, size_t in_array_index = 0)
         : sampler(in_sampler)
-        , binding(in_binding) {}
+        , binding(in_binding)
+        , array_index(in_array_index) {}
 };
 
 /**
@@ -82,15 +75,18 @@ struct RHIWriteTextureSamplerResource {
     RHITextureView* texture_view = nullptr;
     RHISampler* sampler = nullptr;
     uint32 binding = 0;
+    size_t array_index = 0;
 
     RHIWriteTextureSamplerResource() = default;
 
     RHIWriteTextureSamplerResource(uint32 in_binding,
                                    RHITextureView* in_texture_view,
-                                   RHISampler* in_sampler)
+                                   RHISampler* in_sampler,
+                                   size_t in_array_index = 0)
         : texture_view(in_texture_view)
         , sampler(in_sampler)
-        , binding(in_binding) {}
+        , binding(in_binding)
+        , array_index(in_array_index) {}
 };
 
 /**
@@ -100,12 +96,16 @@ struct RHIWriteTextureSamplerResource {
 struct RHIWriteTextureResource {
     RHITextureView* texture_view = nullptr;
     uint32 binding = 0;
+    size_t array_index = 0;
 
     RHIWriteTextureResource() = default;
 
-    RHIWriteTextureResource(uint32 in_binding, RHITextureView* in_texture_view)
+    RHIWriteTextureResource(uint32 in_binding,
+                            RHITextureView* in_texture_view,
+                            size_t in_array_index = 0)
         : texture_view(in_texture_view)
-        , binding(in_binding) {}
+        , binding(in_binding)
+        , array_index(in_array_index) {}
 };
 
 /**

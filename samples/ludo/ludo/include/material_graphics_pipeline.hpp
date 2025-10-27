@@ -1,13 +1,16 @@
 #pragma once
 
+#include "licht/core/containers/fixed_array.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/renderer/render_context.hpp"
 #include "licht/renderer/draw_item.hpp"
-#include "licht/rhi/buffer.hpp"
+#include "licht/rhi/rhi_forwards.hpp"
 #include "licht/rhi/shader_resource.hpp"
 #include "ludo_types.hpp"
 
 namespace licht {
+
+struct PunctualLight;
 
 class MaterialGraphicsPipeline {
 public:
@@ -23,7 +26,7 @@ public:
 
     void compile(const RenderPacket& packet);
 
-    void update(const RenderPunctualLight& light);
+    void update(const PunctualLight& light);
     void update(const UniformBufferObject& ubo);
 
     inline RHIGraphicsPipeline* get_graphics_pipeline_handle() {
@@ -63,6 +66,15 @@ private:
 
     Array<RHIBuffer*> uniform_buffers_;
     Array<RHIBuffer*> light_buffers_;
+    Array<RHIBuffer*> sampler_indices_buffers_;
+
+    static constexpr const uint32 sampler_count = 2;
+    struct SamplerIndices {
+        int32 diffuse_index = 0;
+        int32 normal_index = 1;
+        int32 unused1 = -1;
+        int32 unused2 = -1;
+    } sampler_indices_;
 
     Array<RHIShaderResourceBinding> texture_bindings_;
     RHIShaderResourceGroupLayout* texture_shader_resource_layout_ = nullptr;
