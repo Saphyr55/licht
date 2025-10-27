@@ -13,19 +13,18 @@ layout(location = 4) in vec3 in_bitangent;
 
 layout(location = 0) out vec4 out_frag_color;
 
-layout(set = 0, binding = 0) uniform UniformBufferObject {
+layout(std140, set = 0, binding = 0) uniform UniformBufferObject {
     mat4 view;
     mat4 proj;
     mat4 view_proj;
     vec3 eye_position;
 } u_ubo;
 
-layout(set = 0, binding = 1) uniform ULights {
+layout(std140, set = 0, binding = 1) uniform ULights {
     PunctualLight punctual_light;
 } u_lights;
 
-layout(set = 1, binding = 0) uniform sampler2D u_diffuse_map;
-layout(set = 1, binding = 1) uniform sampler2D u_normal_map;
+layout(set = 1, binding = 0) uniform sampler2D u_samplers2D[];
 
 float inverse_square_curve_windowing(float light_distance, float max_distance) {
     float value = 1.0 - pow(light_distance / max_distance, 4);
@@ -38,8 +37,8 @@ float inverse_square_light_attenuation(float light_distance, float fixed_distanc
 }
 
 void main() {
-    vec4 diffuse = texture(u_diffuse_map, in_texture_uv);
-    vec3 normal_map = texture(u_normal_map, in_texture_uv).rgb;
+    vec4 diffuse = texture(u_samplers2D[0], in_texture_uv);
+    vec3 normal_map = texture(u_samplers2D[1], in_texture_uv).rgb;
 
     vec3 normal = normalize(in_normal);
     vec3 tangent = normalize(in_tangent);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "licht/core/containers/array.hpp"
+#include "licht/core/containers/hash_map.hpp"
 #include "licht/core/containers/hash_set.hpp"
 #include "licht/rhi/shader_resource.hpp"
 
@@ -66,9 +67,14 @@ public:
     virtual ~VulkanShaderResourceGroup() override = default;
 
 private:
-    Array<VkDescriptorBufferInfo> buffer_infos_;
-    Array<VkDescriptorImageInfo> image_infos_; 
-    Array<VkWriteDescriptorSet> descriptor_writes_; 
+    struct PendingDescriptorArray {
+        VkDescriptorType type;
+        Array<VkDescriptorBufferInfo> buffer_infos;
+        Array<VkDescriptorImageInfo> image_infos;
+    };
+
+    HashMap<uint32, PendingDescriptorArray> pending_arrays_;
+
     RHIShaderResourceGroupLayout* layout_ = nullptr;
     VkDescriptorSet descriptor_set_ = VK_NULL_HANDLE;
     size_t index_pool_ = 0;

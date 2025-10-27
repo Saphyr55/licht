@@ -101,6 +101,7 @@ void RenderFrameScript::on_startup() {
         .format = depth_texture_->get_description().format,
     });
 
+    compile_shaders();
     material_graphics_pipeline_->initialize(device_, render_context_, buffer_pool_, texture_pool_);
 
     // -- Framebuffers --
@@ -312,6 +313,15 @@ void RenderFrameScript::on_shutdown() {
 void RenderFrameScript::reload_shaders() {
     device_->wait_idle();
 
+    compile_shaders();
+    material_graphics_pipeline_->reload();
+}
+
+void RenderFrameScript::update_resized(const uint32 width, const uint32 height) {
+    render_context_->update_resized(width, height);
+}
+
+bool RenderFrameScript::compile_shaders() {
     StringRef projectdir = ProjectSettings::get_instance().get_name("projectdir");
     FileSystem& file_system = FileSystem::get_platform();
 
@@ -324,15 +334,7 @@ void RenderFrameScript::reload_shaders() {
     bool vert_ok = SPIRVShaderCompiler::compile_glsl_file(vertex_shader_path, "shaders/ludo.material.vert.spv", SPIRVShaderCompiler::Stage::Vertex);
     bool frag_ok = SPIRVShaderCompiler::compile_glsl_file(fragment_shader_path, "shaders/ludo.material.frag.spv", SPIRVShaderCompiler::Stage::Fragment);
 
-    if (!vert_ok || !frag_ok) {
-        return;
-    }
-
-    material_graphics_pipeline_->reload();
-}
-
-void RenderFrameScript::update_resized(const uint32 width, const uint32 height) {
-    render_context_->update_resized(width, height);
+    return vert_ok && frag_ok;
 }
 
 void RenderFrameScript::pause() {

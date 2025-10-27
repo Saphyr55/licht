@@ -7,6 +7,7 @@
 #include "licht/rhi/rhi_forwards.hpp"
 #include "licht/rhi/texture.hpp"
 #include "material_graphics_pipeline.hpp"
+#include "licht/scene/punctual_light.hpp"
 
 namespace licht {
 
@@ -21,6 +22,8 @@ public:
     void on_tick(float64 delta_time);
 
     void update_resized(const uint32 width, const uint32 height);
+
+    bool compile_shaders();
 
     void reload_shaders();
 

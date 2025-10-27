@@ -7,6 +7,7 @@
 #include "licht/rhi/device.hpp"
 #include "licht/rhi/device_memory_uploader.hpp"
 #include "licht/rhi/render_pass.hpp"
+#include "licht/scene/punctual_light.hpp"
 #include "ludo_types.hpp"
 
 namespace licht {
@@ -37,6 +38,7 @@ void MaterialGraphicsPipeline::initialize(const SharedRef<RHIDevice>& device,
     tex_desc.mip_levels = 1;
 
     RHIDeviceMemoryUploader uploader(device_, buffer_pool_, texture_pool_);
+    // Remove the default texture by using a sampler array.
     default_texture_ = uploader.send_texture(RHIStagingBufferContext(
                                                  RHIBufferUsageFlags::Storage, texture_buffer.size(), texture_buffer.data()),
                                              tex_desc);
@@ -61,24 +63,15 @@ void MaterialGraphicsPipeline::initialize(const SharedRef<RHIDevice>& device,
         .deph_attachement_description = RHIDepthAttachementDescription(RHIFormat::D24S8),
     });
 
-    RHIShaderResourceBinding ubo_binding(0,
-                                         RHIShaderResourceType::Uniform,
-                                         RHIShaderStage::Fragment | RHIShaderStage::Vertex);
-
-    RHIShaderResourceBinding lights_binding(1,
-                                            RHIShaderResourceType::Uniform,
-                                            RHIShaderStage::Fragment);
-
-    RHIShaderResourceBinding diffuse_binding(0,
-                                             RHIShaderResourceType::Sampler,
-                                             RHIShaderStage::Fragment);
-
-    RHIShaderResourceBinding normal_binding(1,
-                                            RHIShaderResourceType::Sampler,
-                                            RHIShaderStage::Fragment);
+    RHIShaderResourceBinding ubo_binding(0, RHIShaderResourceType::Uniform, RHIShaderStage::Fragment | RHIShaderStage::Vertex);
+    RHIShaderResourceBinding lights_binding(1, RHIShaderResourceType::Uniform, RHIShaderStage::Fragment);
+    RHIShaderResourceBinding samplers_binding(0, RHIShaderResourceType::Sampler, RHIShaderStage::Fragment, 2);
 
     global_bindings_ = {ubo_binding, lights_binding};
-    texture_bindings_ = {diffuse_binding, normal_binding};
+    texture_bindings_ = {samplers_binding};
+
+    global_shader_resource_layout_ = device_->create_shader_resource_layout(global_bindings_);
+    texture_shader_resource_layout_ = device_->create_shader_resource_layout(texture_bindings_);
 
     create_pipeline_internal();
 }
@@ -127,6 +120,10 @@ void MaterialGraphicsPipeline::reload() {
 
 void MaterialGraphicsPipeline::destroy() {
     destroy_pipeline_internal();
+
+    device_->destroy_shader_resource_layout(global_shader_resource_layout_);
+    device_->destroy_shader_resource_layout(texture_shader_resource_layout_);
+
     device_->destroy_render_pass(render_pass_);
 
     device_->destroy_sampler(default_sampler_);
@@ -175,26 +172,17 @@ void MaterialGraphicsPipeline::compile(const RenderPacket& packet) {
     size_t sr_texture_pool_index = 0;
     for (uint32 frame = 0; frame < renderer_->get_frame_count(); frame++) {
         for (DrawItem& item : packet.items) {
+
             RHIShaderResourceGroup* tex_group = texture_shader_resource_pool_->get_group(sr_texture_pool_index++);
+            uint32 binding = texture_bindings_[0].binding;
 
-            if (item.samplers[0]) {
-                tex_group->set_texture_sampler(RHIWriteTextureSamplerResource(texture_bindings_[0].binding,
-                                                                              item.texture_views[0],
-                                                                              item.samplers[0]));
-            } else {
-                tex_group->set_texture_sampler(RHIWriteTextureSamplerResource(texture_bindings_[0].binding,
-                                                                              default_texture_view_,
-                                                                              default_sampler_));
-            }
+            for (uint32 i = 0; i < 2; i++) {
+                RHITextureView* texture_view = item.texture_views[i] ? item.texture_views[i] : default_texture_view_;
+                RHISampler* sampler = item.samplers[i] ? item.samplers[i] : default_sampler_;
 
-            if (item.samplers[1]) {
-                tex_group->set_texture_sampler(RHIWriteTextureSamplerResource(texture_bindings_[1].binding,
-                                                                              item.texture_views[1],
-                                                                              item.samplers[1]));
-            } else {
-                tex_group->set_texture_sampler(RHIWriteTextureSamplerResource(texture_bindings_[1].binding,
-                                                                              default_texture_view_,
-                                                                              default_sampler_));
+                RHIWriteTextureSamplerResource write(binding, texture_view, sampler, i);
+
+                tex_group->set_texture_sampler(write);
             }
 
             tex_group->compile();
@@ -221,10 +209,6 @@ void MaterialGraphicsPipeline::destroy_pipeline_internal() {
 }
 
 void MaterialGraphicsPipeline::create_pipeline_internal() {
-    
-    global_shader_resource_layout_ = device_->create_shader_resource_layout(global_bindings_);
-    texture_shader_resource_layout_ = device_->create_shader_resource_layout(texture_bindings_);
-
     // Bindings and attributes.
     RHIVertexBindingDescription position_input_binding_description(
         0, sizeof(Vector3f), RHIVertexInputRate::Vertex);

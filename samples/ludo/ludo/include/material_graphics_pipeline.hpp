@@ -3,11 +3,13 @@
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/renderer/render_context.hpp"
 #include "licht/renderer/draw_item.hpp"
-#include "licht/rhi/buffer.hpp"
+#include "licht/rhi/rhi_forwards.hpp"
 #include "licht/rhi/shader_resource.hpp"
 #include "ludo_types.hpp"
 
 namespace licht {
+
+struct PunctualLight;
 
 class MaterialGraphicsPipeline {
 public:

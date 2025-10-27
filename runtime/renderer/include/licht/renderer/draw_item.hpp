@@ -2,7 +2,6 @@
 
 #include "licht/core/containers/array.hpp"
 #include "licht/core/math/matrix4.hpp"
-#include "licht/core/math/vector3.hpp"
 #include "licht/renderer/mesh/static_mesh.hpp"
 #include "licht/rhi/buffer.hpp"
 #include "licht/rhi/device_memory_uploader.hpp"
@@ -11,11 +10,6 @@ namespace licht {
 
 struct RenderModelConstant {
     alignas(16) Matrix4f model = Matrix4f::identity();
-};
-
-struct PunctualLight {
-    alignas(16) Vector3f position;
-    alignas(16) Vector3f color;
 };
 
 struct LICHT_RENDERER_API DrawItem {

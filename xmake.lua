@@ -16,8 +16,6 @@ end
 
 add_requires("libsdl3", "catch2", "lua")
 
-includes("scripts/xmake/**.lua")
-
 function target_files_default(param)
     add_includedirs("include", param)
 
