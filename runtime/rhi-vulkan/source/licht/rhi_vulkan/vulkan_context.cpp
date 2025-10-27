@@ -11,7 +11,6 @@
 #include "licht/rhi_vulkan/vulkan_render_surface.hpp"
 #include "licht/rhi_vulkan/vulkan_shader_module.hpp"
 
-
 #include <vulkan/vulkan_core.h>
 
 namespace licht {
@@ -28,7 +27,7 @@ void vulkan_device_initialize(VulkanContext& context, VulkanPhysicalDeviceSelect
 
     LCHECK_MSG(context.physical_device_info.is_suitable, "Physical device is not suitable for Vulkan operations.");
 
-    float32 queue_priority = 1.0f;  // [0.0, 1.0]
+    float32 queue_priority = 1.0f;
 
     Array<uint32> queue_famillies = vulkan_query_queue_family_indices(context);
 
@@ -66,9 +65,7 @@ void vulkan_device_initialize(VulkanContext& context, VulkanPhysicalDeviceSelect
                                       present_support ? "Yes" : "No"));
     }
 
-    VkPhysicalDeviceFeatures physical_device_features = {};
-    physical_device_features.samplerAnisotropy = physical_device_selector.get_info().features.samplerAnisotropy;
-    
+    VkPhysicalDeviceFeatures physical_device_features = physical_device_selector.get_info().features;
 
     Array<const char*> physical_device_extensions;
     physical_device_extensions.resize(g_physical_device_extensions.size());
@@ -77,9 +74,16 @@ void vulkan_device_initialize(VulkanContext& context, VulkanPhysicalDeviceSelect
         physical_device_extensions[i] = g_physical_device_extensions[i].data();
     }
 
+    VkPhysicalDeviceVulkan12Features vulkan12_features = {};
+    vulkan12_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+    vulkan12_features.runtimeDescriptorArray = VK_TRUE;
+    vulkan12_features.descriptorIndexing = VK_TRUE;
+    vulkan12_features.runtimeDescriptorArray = VK_TRUE;
+    vulkan12_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+
     VkDeviceCreateInfo device_create_info = {};
     device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    device_create_info.pNext = VK_NULL_HANDLE;
+    device_create_info.pNext = &vulkan12_features;
     device_create_info.pQueueCreateInfos = device_queue_create_infos.data();
     device_create_info.queueCreateInfoCount = static_cast<uint32>(device_queue_create_infos.size());
     device_create_info.pEnabledFeatures = &physical_device_features;

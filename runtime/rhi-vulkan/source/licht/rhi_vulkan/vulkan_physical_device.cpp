@@ -1,9 +1,10 @@
 
 #include "licht/core/trace/trace.hpp"
 
-#include "licht/rhi_vulkan/vulkan_render_surface.hpp"
 #include "licht/rhi_vulkan/vulkan_context.hpp"
 #include "licht/rhi_vulkan/vulkan_loader.hpp"
+#include "licht/rhi_vulkan/vulkan_render_surface.hpp"
+
 
 #include <vulkan/vulkan_core.h>
 
@@ -93,6 +94,17 @@ const VulkanPhysicalDeviceInformation& VulkanPhysicalDeviceSelector::query_info(
     bool is_suitable_extension_support = check_extension_support(g_physical_device_extensions);
 
     VulkanAPI::lvkGetPhysicalDeviceMemoryProperties(context_.physical_device, &info_.memory_properties);
+
+    VkPhysicalDeviceVulkan12Features supported_features12 = {};
+    supported_features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+
+    VkPhysicalDeviceFeatures2 features2 = {};
+    features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    features2.pNext = &supported_features12;
+
+    VulkanAPI::lvkGetPhysicalDeviceFeatures2(context_.physical_device, &features2);
+
+    LCHECK_MSG(supported_features12.runtimeDescriptorArray, "GPU does not support runtimeDescriptorArray");
 
     info_.is_suitable =
         is_suitable_device_properties &&

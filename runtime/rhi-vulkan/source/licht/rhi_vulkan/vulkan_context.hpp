@@ -20,7 +20,7 @@
 
 namespace licht {
 
-static const Array<StringRef> g_physical_device_extensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+static const Array<StringRef> g_physical_device_extensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME};
 
 struct VulkanContext {
     SharedRef<DynamicLibrary> library;
