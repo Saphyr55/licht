@@ -31,7 +31,7 @@ struct RHIBufferDescription {
 };
 
 /**
- * @brief Abstract base class representing a buffer resource in the RHI.
+ * @brief Interface representing a buffer resource in the RHI.
  *
  * RHIBuffer provides an interface for buffer objects, allowing querying of usage, access mode, size,
  * and supporting operations such as binding, mapping, unmapping, and updating buffer data.

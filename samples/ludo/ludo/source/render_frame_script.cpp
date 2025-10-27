@@ -11,6 +11,7 @@
 #include "licht/core/memory/default_allocator.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/modules/module_registry.hpp"
+#include "licht/core/platform/input.hpp"
 #include "licht/engine/project_settings.hpp"
 #include "licht/renderer/draw_item.hpp"
 #include "licht/renderer/mesh/static_mesh.hpp"
@@ -128,9 +129,9 @@ void RenderFrameScript::on_startup() {
         }
     }
 
-    packet_.light = RenderPunctualLight{
-        .position = Vector3f(0.0f, 5.0f, 0.0f),
-        .color = Vector3f(1.0f, 1.0f, 1.0f),
+    punctual_light_ = PunctualLight{
+        .position = Vector3f(0.0f, 2.0f, 0.5f),
+        .color = Vector3f(1.0f, 0.0f, 0.0f),
     };
 
     uploader.upload(graphics_queue_);
@@ -139,10 +140,9 @@ void RenderFrameScript::on_startup() {
     material_graphics_pipeline_->compile(packet_);
 
     Input::on_key_release.connect([&](const VirtualKey key) {
-        if (key != VirtualKey::G) {
-            return;
+        if (key == VirtualKey::G) {
+            reload_shaders();
         }
-        reload_shaders();
     });
 }
 
@@ -225,22 +225,19 @@ void RenderFrameScript::on_tick(float64 delta_time) {
 void RenderFrameScript::update_uniform(const float64 delta_time) {
     UniformBufferObject ubo;
 
-    static float32 rotation_x = 0.0f;
-    static float32 rotation_y = 0.0f;
-
-    rotation_x += delta_time * 30.0f;
-    rotation_y += delta_time * 45.0f;
+    float32 width = render_context_->get_swapchain()->get_width();
+    float32 height = render_context_->get_swapchain()->get_height();
+    float32 aspect_ratio = width / height;
 
     ubo.view = camera_->view;
 
-    float32 aspect_ratio = render_context_->get_swapchain()->get_width() / static_cast<float32>(render_context_->get_swapchain()->get_height());
     ubo.proj = Matrix4f::perspective(Math::radians(75.0f), aspect_ratio, 0.1f, 10000.0f);
     ubo.view_proj = ubo.proj * ubo.view;
 
     ubo.eye_position = camera_->position;
 
     material_graphics_pipeline_->update(ubo);
-    material_graphics_pipeline_->update(packet_.light);
+    material_graphics_pipeline_->update(punctual_light_);
 }
 
 void RenderFrameScript::reset() {

@@ -101,7 +101,7 @@ void MaterialGraphicsPipeline::initialize_shader_resource_pool(size_t item_count
                                  RHISharingMode::Private)));
 
         light_buffers_.append(buffer_pool_->create_buffer(
-            RHIBufferDescription(sizeof(RenderPunctualLight),
+            RHIBufferDescription(sizeof(PunctualLight),
                                  RHIBufferUsageFlags::Uniform,
                                  RHIMemoryUsage::Host,
                                  RHISharingMode::Private)));
@@ -208,8 +208,8 @@ void MaterialGraphicsPipeline::compile(const RenderPacket& packet) {
     }
 }
 
-void MaterialGraphicsPipeline::update(const RenderPunctualLight& light) {
-    light_buffers_[renderer_->get_current_frame()]->update(&light, sizeof(RenderPunctualLight), 0);
+void MaterialGraphicsPipeline::update(const PunctualLight& light) {
+    light_buffers_[renderer_->get_current_frame()]->update(&light, sizeof(PunctualLight), 0);
 }
 
 void MaterialGraphicsPipeline::update(const UniformBufferObject& ubo) {

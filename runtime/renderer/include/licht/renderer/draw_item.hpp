@@ -10,18 +10,12 @@
 namespace licht {
 
 struct RenderModelConstant {
-    alignas(64) Matrix4f model = Matrix4f::identity();
+    alignas(16) Matrix4f model = Matrix4f::identity();
 };
 
-struct RenderPunctualLight {
+struct PunctualLight {
     alignas(16) Vector3f position;
     alignas(16) Vector3f color;
-};
-
-struct TextureFactors {
-    alignas(16) Vector4f diffuse_factor;
-
-    TextureFactors() = default;
 };
 
 struct LICHT_RENDERER_API DrawItem {
@@ -42,7 +36,6 @@ public:
     Array<RHISampler*> samplers;
     Array<RHITexture*> textures;
     Array<RHITextureView*> texture_views;
-    Array<Array<TextureFactors>> texture_factors_list;
 
     Array<RHIShaderResourceGroup*> shader_groups;
 
@@ -52,7 +45,6 @@ public:
 
 struct RenderPacket {
     Array<DrawItem> items;
-    RenderPunctualLight light;
 };
 
 }  //namespace licht

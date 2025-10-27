@@ -23,7 +23,7 @@ public:
 
     void compile(const RenderPacket& packet);
 
-    void update(const RenderPunctualLight& light);
+    void update(const PunctualLight& light);
     void update(const UniformBufferObject& ubo);
 
     inline RHIGraphicsPipeline* get_graphics_pipeline_handle() {

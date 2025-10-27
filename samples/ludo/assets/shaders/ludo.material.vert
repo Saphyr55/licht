@@ -28,13 +28,12 @@ layout(push_constant) uniform UDrawItem {
 void main() {
     vec4 world_position = u_item.model * vec4(in_position, 1.0);
 
-    mat3 m3_model = mat3(u_item.model);
-    mat3 normal_matrix = mat3(u_item.model); 
+    mat3 normal_matrix = transpose(inverse(mat3(u_item.model))); 
 
     vec3 normal = normalize(normal_matrix * in_normal);
     vec3 tangent = normalize(normal_matrix * in_tangent.xyz);
     tangent = normalize(tangent - dot(tangent, normal) * normal);
-    vec3 bitangent = cross(normal, tangent);
+    vec3 bitangent = cross(normal, tangent) * in_tangent.w;
 
     out_position = world_position.xyz;
     out_bitangent = bitangent;

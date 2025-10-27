@@ -41,6 +41,7 @@ private:
     Camera* camera_;
 
     RenderPacket packet_;
+    PunctualLight punctual_light_;
 
     WindowHandle window_handle_;
     RHIDeviceRef device_;
