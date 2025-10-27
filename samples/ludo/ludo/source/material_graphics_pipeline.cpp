@@ -13,13 +13,11 @@
 namespace licht {
 
 void MaterialGraphicsPipeline::initialize(const SharedRef<RHIDevice>& device,
-                                          const SharedRef<RenderContext>& renderer,
-                                          const SharedRef<RHIBufferPool>& buffer_pool,
-                                          const SharedRef<RHITexturePool>& texture_pool) {
+                                          const SharedRef<RenderContext>& renderer) {
     renderer_ = renderer;
     device_ = device;
-    buffer_pool_ = buffer_pool;
-    texture_pool_ = texture_pool;
+    buffer_pool_ = renderer->get_buffer_pool();
+    texture_pool_ = renderer->get_texture_pool();
 
     Array<uint8> texture_buffer;
     texture_buffer.resize(4);

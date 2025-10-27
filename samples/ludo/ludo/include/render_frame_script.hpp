@@ -48,17 +48,10 @@ private:
 
     WindowHandle window_handle_;
     RHIDeviceRef device_;
-    RHIBufferPoolRef buffer_pool_;
-    RHITexturePoolRef texture_pool_;
-
-    RHICommandQueueRef graphics_queue_;
-    RHICommandQueueRef present_queue_;
     
     Array<RHIFramebuffer*> framebuffers_;
     RHITextureView* depth_texture_view_ ;
     RHITexture* depth_texture_;
-
-    RHICommandAllocator* cmd_allocator_;
 
     SharedRef<RenderContext> render_context_;
     SharedRef<MaterialGraphicsPipeline> material_graphics_pipeline_;
