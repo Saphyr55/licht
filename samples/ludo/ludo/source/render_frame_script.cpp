@@ -303,10 +303,10 @@ bool RenderFrameScript::compile_shaders() {
     String fragment_shader_path = projectdir + "/assets/shaders/ludo.material.frag";
 
     bool vert_ok = SPIRVShaderCompiler::compile_glsl_file(vertex_shader_path, 
-        "shaders/ludo.material.vert.spv", SPIRVShaderCompiler::Stage::Vertex);
+        "ludo.material.vert.spv", SPIRVShaderCompiler::Stage::Vertex);
 
     bool frag_ok = SPIRVShaderCompiler::compile_glsl_file(fragment_shader_path, 
-        "shaders/ludo.material.frag.spv", SPIRVShaderCompiler::Stage::Fragment);
+        "ludo.material.frag.spv", SPIRVShaderCompiler::Stage::Fragment);
 
     return vert_ok && frag_ok;
 }

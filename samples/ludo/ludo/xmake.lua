@@ -10,6 +10,7 @@ target("ludo", function()
         "licht.messaging",
         "licht.scene",
         "licht.renderer",
+        "licht.entity",
         "stb"
     }
 

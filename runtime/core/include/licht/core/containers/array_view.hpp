@@ -12,8 +12,13 @@ class ArrayView {
 public:
     using value_type = ElementType;
     using size_type = size_t;
+    
     using reference = ElementType&;
     using const_reference = const ElementType&;
+    
+    using pointer = ElementType*;
+    using const_pointer = const ElementType*;
+
     using iterator = ElementType*;
     using const_iterator = const ElementType*;
 

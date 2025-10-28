@@ -1,21 +1,21 @@
-target("licht.core", function()
+target("licht.entity", function()
     set_kind("shared")
     set_group("engine")
 
-    add_packages("libsdl3", "lua")
+    add_deps("licht.core")
 
     target_files_default({
         public = true
     })
 
-    add_defines("LICHT_CORE_EXPORTS")
+    add_defines("LICHT_ENTITY_EXPORTS")
 end)
 
-target("licht.core.tests", function()
+target("licht.entity.tests", function()
     set_kind("binary")
     set_group("engine.tests")
 
-    add_deps("licht.core")
+    add_deps("licht.core", "licht.entity")
 
     add_packages("catch2")
 
@@ -23,5 +23,5 @@ target("licht.core.tests", function()
 
     add_files("tests/**.cpp")
 
-    add_defines("LICHT_CORE_EXPORTS")
+    add_defines("LICHT_ENTITY_EXPORTS")
 end)

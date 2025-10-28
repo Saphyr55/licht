@@ -22,6 +22,8 @@ public:
     using value_type = ElementType;
     using size_type = size_t;
     using reference = ElementType&;
+    using pointer = ElementType*;
+    using const_pointer = const ElementType*;
     using const_reference = const ElementType&;
     using iterator = ElementType*;
     using const_iterator = const ElementType*;
@@ -165,15 +167,17 @@ public:
     void resize(size_type size, const ElementType& default_element = ElementType()) {
         if (size > capacity_) {
             reserve(size);
+        } else if (!data_ && capacity_ > 0) {
+            data_ = allocator_allocate(capacity_);
         }
 
         if (size > size_) {
-            for (size_type i = size_; i < size; ++i) {
+            for (size_type i = size_; i < size; i++) {
                 lplacement_new(data_ + i) ElementType(default_element);
             }
         } else {
             if constexpr (std::is_destructible_v<ElementType>) {
-                for (size_type i = size; i < size_; ++i) {
+                for (size_type i = size; i < size_; i++) {
                     data_[i].~ElementType();
                 }
             }
@@ -201,11 +205,11 @@ public:
         std::swap(allocator_, other.allocator_);
     }
 
-    inline constexpr const ElementType* data() const {
+    constexpr const ElementType* data() const {
         return data_;
     }
 
-    inline constexpr ElementType* data() {
+    constexpr ElementType* data() {
         return data_;
     }
 
@@ -307,6 +311,8 @@ public:
         , capacity_(other.capacity_)
         , allocator_(std::move(other.allocator_)) {
         other.data_ = nullptr;
+        other.size_ = 0;
+        other.capacity_ = 0;
     }
 
     ~Array() {
@@ -409,7 +415,7 @@ private:
         }
     }
 
-    inline constexpr ElementType* allocator_allocate(size_type n) {
+    constexpr ElementType* allocator_allocate(size_type n) {
         ElementType* elements = allocator_.allocate(n);
         LCHECK(elements);
         return elements;

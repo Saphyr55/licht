@@ -18,6 +18,7 @@ enum class RenderResult {
     Unknown,
 };
 
+
 class LICHT_RENDERER_API RenderContext {
 public:
     void initialize(WindowHandle window_handle);

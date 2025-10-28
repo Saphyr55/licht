@@ -60,6 +60,13 @@ local _modules = {
             "licht.core",
             "licht.engine"
         }
+    },
+    {
+        name = "licht.entity",
+        version = "0.0.1-dev",
+        dependencies = {
+            "licht.core"
+        }
     }
 }
 
