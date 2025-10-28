@@ -65,6 +65,14 @@ public:
         command_allocator_ = cmd_allocator;
     }
 
+    void set_graphics_queue(const RHICommandQueueRef& graphics_queue) {
+        graphics_queue_ = graphics_queue;
+    }
+
+    void set_present_queue(const RHICommandQueueRef& present_queue) {
+        present_queue_ = present_queue;
+    }
+
     void update_resized(const uint32 width, const uint32 height) {
         window_resized_ = true;
         frame_context_.frame_width = width;
@@ -113,14 +121,6 @@ public:
 
 private:
     void reset();
-
-    void set_graphics_queue(const RHICommandQueueRef& graphics_queue) {
-        graphics_queue_ = graphics_queue;
-    }
-
-    void set_present_queue(const RHICommandQueueRef& present_queue) {
-        present_queue_ = present_queue;
-    }
 
     void set_window_handle(WindowHandle window_handle) {
         window_handle_ = window_handle;
