@@ -4,29 +4,29 @@
 
 using namespace licht;
 
-struct Counter {
+struct ArrayCounterTest {
     static int32 constructions;
     static int32 destructions;
     int32 value;
 
-    Counter(int32 v = 0)
+    ArrayCounterTest(int32 v = 0)
         : value(v) { ++constructions; }
 
-    Counter(const Counter& o)
+    ArrayCounterTest(const ArrayCounterTest& o)
         : value(o.value) { ++constructions; }
 
-    Counter& operator=(const Counter& o) {
+    ArrayCounterTest& operator=(const ArrayCounterTest& o) {
         value = o.value;
         return *this;
     }
 
-    ~Counter() { ++destructions; }
+    ~ArrayCounterTest() { ++destructions; }
 
-    bool operator==(const Counter& o) const { return value == o.value; }
+    bool operator==(const ArrayCounterTest& o) const { return value == o.value; }
 };
 
-int32 Counter::constructions = 0;
-int32 Counter::destructions = 0;
+int32 ArrayCounterTest::constructions = 0;
+int32 ArrayCounterTest::destructions = 0;
 
 TEST_CASE("Basic append/emplace/pop and indexing", "[Array]") {
     Array<int32> a;
@@ -117,10 +117,10 @@ TEST_CASE("Map & map result type", "[Array::map]") {
         REQUIRE(mapped[i] == Catch::Approx(static_cast<float64>(a[i]) / 2.0));
     }
 
-    auto to_counter = a.map<Counter>([](int32 v) { return Counter(v * 10); });
-    REQUIRE(to_counter.size() == a.size());
-    for (size_t i = 0; i < to_counter.size(); ++i) {
-        REQUIRE(to_counter[i].value == a[i] * 10);
+    auto to_ArrayCounterTest = a.map<ArrayCounterTest>([](int32 v) { return ArrayCounterTest(v * 10); });
+    REQUIRE(to_ArrayCounterTest.size() == a.size());
+    for (size_t i = 0; i < to_ArrayCounterTest.size(); ++i) {
+        REQUIRE(to_ArrayCounterTest[i].value == a[i] * 10);
     }
 }
 
@@ -150,19 +150,19 @@ TEST_CASE("Equality, inequality and swap", "[Array::operators]") {
     REQUIRE(c[0] == 1);
 }
 
-TEST_CASE("Allocator/placement destruction check via Counter", "[Array::destruction]") {
-    Counter::constructions = 0;
-    Counter::destructions = 0;
+TEST_CASE("Allocator/placement destruction check via ArrayCounterTest", "[Array::destruction]") {
+    ArrayCounterTest::constructions = 0;
+    ArrayCounterTest::destructions = 0;
 
     {
-        Array<Counter> arr;
-        arr.append(Counter(10));
-        arr.append(Counter(20));
+        Array<ArrayCounterTest> arr;
+        arr.append(ArrayCounterTest(10));
+        arr.append(ArrayCounterTest(20));
         arr.emplace(30);
         REQUIRE(arr.size() == 3);
     }
 
-    REQUIRE(Counter::constructions == Counter::destructions);
+    REQUIRE(ArrayCounterTest::constructions == ArrayCounterTest::destructions);
 }
 
 TEST_CASE("reallocate moves elements and preserves values", "[Array::reallocate]") {
@@ -175,6 +175,56 @@ TEST_CASE("reallocate moves elements and preserves values", "[Array::reallocate]
     a.reserve(32);
     REQUIRE(a.size() == old_values.size());
     REQUIRE(a == old_values);
+}
+
+TEST_CASE("Nested Array<Array<T>> behavior", "[Array::nested]") {
+    ArrayCounterTest::constructions = 0;
+    ArrayCounterTest::destructions = 0;
+
+    {
+        Array<Array<ArrayCounterTest>> nested;  // Array of Arrays
+
+        // Create a few inner arrays
+        Array<ArrayCounterTest> inner1;
+        inner1.append(ArrayCounterTest(1));
+        inner1.append(ArrayCounterTest(2));
+
+        Array<ArrayCounterTest> inner2;
+        inner2.append(ArrayCounterTest(10));
+        inner2.append(ArrayCounterTest(20));
+        inner2.append(ArrayCounterTest(30));
+
+        // Append inner arrays into the outer one
+        nested.append(inner1);
+        nested.append(std::move(inner2));
+
+        REQUIRE(nested.size() == 2);
+        REQUIRE(nested[0].size() == 2);
+        REQUIRE(nested[1].size() == 3);
+
+        // Check values
+        REQUIRE(nested[0][0].value == 1);
+        REQUIRE(nested[0][1].value == 2);
+        REQUIRE(nested[1][0].value == 10);
+        REQUIRE(nested[1][2].value == 30);
+
+        // Modify nested elements to ensure deep access works
+        nested[0][1].value = 99;
+        REQUIRE(nested[0][1].value == 99);
+
+        // Copy the whole nested array
+        Array<Array<ArrayCounterTest>> copy = nested;
+        REQUIRE(copy.size() == nested.size());
+        REQUIRE(copy[0][1].value == 99);
+
+        // Move it to another
+        Array<Array<ArrayCounterTest>> moved = std::move(copy);
+        REQUIRE(moved.size() == 2);
+        REQUIRE(moved[0][1].value == 99);
+    }
+
+    // Ensure all constructed elements were properly destroyed
+    REQUIRE(ArrayCounterTest::constructions == ArrayCounterTest::destructions);
 }
 
 TEST_CASE("move_data and move assignment corner cases", "[Array::move]") {

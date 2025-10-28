@@ -1,29 +1,39 @@
+#include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/modules/module_registry.hpp"
 #include "licht/core/platform/display.hpp"
 #include "licht/renderer/render_context.hpp"
 #include "licht/rhi/command_queue.hpp"
 #include "licht/rhi/device.hpp"
+#include "licht/rhi/device_memory_uploader.hpp"
 #include "licht/rhi/rhi_module.hpp"
 #include "licht/rhi/swapchain.hpp"
-
+#include "licht/rhi/buffer_pool.hpp"
+#include "licht/rhi/texture_pool.hpp"
 
 namespace licht {
 
-void RenderContext::initialize(WindowHandle window_handle,
-                               const RHICommandQueueRef& graphics_queue,
-                               const RHICommandQueueRef& present_queue,
-                               RHICommandAllocator* cmd_allocator) {
-    set_window_handle(window_handle);
-    set_command_allocator(cmd_allocator);
-    set_graphics_queue(graphics_queue);
-    set_present_queue(present_queue);
+void RenderContext::initialize(WindowHandle window_handle) {
 
     ModuleRegistry& registry = ModuleRegistry::get_instance();
-    RHIModule* module = registry.get_module<RHIModule>(RHIModule::ModuleName);
-
-    // Device.
+    RHIModule* module = registry.get_module<RHIModule>("licht.rhi");
+    
     device_ = module->get_device();
 
+    set_window_handle(window_handle);
+    set_graphics_queue(device_->get_graphics_queue());
+    set_present_queue(device_->get_present_queue());
+
+    buffer_pool_ = device_->create_buffer_pool();
+    buffer_pool_->initialize_pool(&DefaultAllocator::get_instance(), 64);
+
+    texture_pool_ = device_->create_texture_pool();
+    texture_pool_->initialize_pool(&DefaultAllocator::get_instance(), 64);
+    
+    command_allocator_ = device_->create_command_allocator({
+        .command_queue = graphics_queue_,
+        .count = get_frame_count(),
+    });
+    
     WindowStatues window_statues = Display::get_default().query_window_statues(window_handle_);
     frame_context_.frame_height = static_cast<uint32>(window_statues.height);
     frame_context_.frame_width = static_cast<uint32>(window_statues.width);
@@ -50,6 +60,10 @@ void RenderContext::initialize(WindowHandle window_handle,
 
 void RenderContext::shutdown() {
     device_->wait_idle();
+    device_->destroy_command_allocator(command_allocator_);
+
+    buffer_pool_->dispose();
+    texture_pool_->dispose();
 
     for (uint32 i = 0; i < frame_context_.frame_count; i++) {
         device_->destroy_semaphore(frame_context_.frame_available_semaphores[i]);

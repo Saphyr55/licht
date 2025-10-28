@@ -53,6 +53,7 @@ public:
         return *this == StringRefBase(str);
     }
 
+
 private:
     const CharType* data_;
 };
@@ -61,6 +62,27 @@ using StringRef = StringRefBase<char>;
 using WStringRef = StringRefBase<wchar_t>;
 
 }  // namespace licht
+
+template<typename CharType>
+constexpr licht::StringBase<CharType> operator+(licht::StringRefBase<CharType> lhs, licht::StringRefBase<CharType> rhs) {
+    licht::StringBase<CharType> base(lhs);
+    base.append(rhs);
+    return std::move(base);
+}
+
+template<typename CharType>
+constexpr licht::StringBase<CharType> operator+(licht::StringRefBase<CharType> lhs, const CharType* rhs) {
+    licht::StringBase<CharType> base(lhs);
+    base.append(rhs);
+    return std::move(base);
+}
+
+template<typename CharType>
+constexpr licht::StringBase<CharType> operator+(const CharType* lhs, licht::StringRefBase<CharType> rhs) {
+    licht::StringBase<CharType> base(lhs);
+    base.append(rhs);
+    return std::move(base);
+}
 
 template <typename CharType>
 std::ostream& operator<<(std::ostream& os, const licht::StringRefBase<CharType>& str) {

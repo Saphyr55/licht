@@ -6,6 +6,8 @@ local _modules = {
             "licht.core",
             "licht.rhi",
             "licht.engine",
+            "licht.scene",
+            "licht.renderer",
             "licht.launcher"
         }
     }

@@ -1,10 +1,11 @@
 #pragma once
 
+#include "licht/entity/entity_exports.hpp"
 #include "licht/core/modules/module.hpp"
 
 namespace licht {
 
-class SchemaModule : public Module {
+class LICHT_ENTITY_API EntityModule : public Module {
 public:
     virtual void on_load() override;
 

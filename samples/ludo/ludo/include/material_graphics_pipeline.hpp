@@ -15,9 +15,7 @@ struct PunctualLight;
 class MaterialGraphicsPipeline {
 public:
     void initialize(const SharedRef<RHIDevice>& device,
-                    const SharedRef<RenderContext>& renderer,
-                    const SharedRef<RHIBufferPool>& buffer_pool,
-                    const SharedRef<RHITexturePool>& texture_pool);
+                    const SharedRef<RenderContext>& renderer);
 
     void initialize_shader_resource_pool(size_t item_count);
     

@@ -1,11 +1,12 @@
 #pragma once
 
 #include "licht/core/defines.hpp"
+#include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/platform/display.hpp"
 #include "licht/core/platform/window_handle.hpp"
 #include "licht/renderer/renderer_exports.hpp"
 #include "licht/rhi/command_buffer.hpp"
-#include "licht/rhi/command_queue.hpp"
+#include "licht/rhi/device_memory_uploader.hpp"
 #include "licht/rhi/rhi_forwards.hpp"
 #include "licht/rhi/swapchain.hpp"
 
@@ -17,14 +18,16 @@ enum class RenderResult {
     Unknown,
 };
 
+
 class LICHT_RENDERER_API RenderContext {
 public:
-    void initialize(WindowHandle window_handle,
-                    const RHICommandQueueRef& graphics_queue,
-                    const RHICommandQueueRef& present_queue,
-                    RHICommandAllocator* cmd_allocator);
+    void initialize(WindowHandle window_handle);
 
     void shutdown();
+
+    RHIDeviceMemoryUploader uploader() {
+        return RHIDeviceMemoryUploader(device_, buffer_pool_, texture_pool_, 64);
+    }
 
     RenderResult begin_frame();
 
@@ -42,6 +45,13 @@ public:
         return frame_context_;
     }
 
+    SharedRef<RHITexturePool> get_texture_pool() const {
+        return texture_pool_;
+    }
+
+    SharedRef<RHIBufferPool> get_buffer_pool() const {
+        return buffer_pool_;
+    }
 
     RHICommandAllocator* get_command_allocator() {
         return command_allocator_;
@@ -53,6 +63,14 @@ public:
 
     void set_command_allocator(RHICommandAllocator* cmd_allocator) {
         command_allocator_ = cmd_allocator;
+    }
+
+    void set_graphics_queue(const RHICommandQueueRef& graphics_queue) {
+        graphics_queue_ = graphics_queue;
+    }
+
+    void set_present_queue(const RHICommandQueueRef& present_queue) {
+        present_queue_ = present_queue;
     }
 
     void update_resized(const uint32 width, const uint32 height) {
@@ -104,14 +122,6 @@ public:
 private:
     void reset();
 
-    void set_graphics_queue(const RHICommandQueueRef& graphics_queue) {
-        graphics_queue_ = graphics_queue;
-    }
-
-    void set_present_queue(const RHICommandQueueRef& present_queue) {
-        present_queue_ = present_queue;
-    }
-
     void set_window_handle(WindowHandle window_handle) {
         window_handle_ = window_handle;
     }
@@ -121,11 +131,14 @@ public:
         : window_handle_(Display::InvalidWindowHandle) {}
 
 private:
+    SharedRef<RHIDeviceMemoryUploader> uploader_;
     Function<void()> on_reset_;
     WindowHandle window_handle_;
     RHIFrameContext frame_context_;
     RHIDeviceRef device_;
     RHICommandAllocator* command_allocator_;
+    RHIBufferPoolRef buffer_pool_;
+    RHITexturePoolRef texture_pool_;
     RHISwapchain* swapchain_;
     RHICommandBuffer* current_cmd_;
     RHICommandQueueRef present_queue_;

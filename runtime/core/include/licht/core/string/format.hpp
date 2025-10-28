@@ -13,7 +13,7 @@ inline String vformat(StringRef fmt, Args&&... args) {
     int32 size = ::snprintf(nullptr, 0, fmt, std::forward<Args>(args)...);
 
     if (size < 0) {
-        return String("");
+        return "";
     }
 
     String buffer;

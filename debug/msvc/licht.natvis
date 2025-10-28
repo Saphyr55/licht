@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
   <!-- Array -->
   <Type Name="licht::Array&lt;*&gt;">
     <DisplayString>{{ size={size_}, capacity={capacity_} }}</DisplayString>
@@ -25,26 +26,6 @@
     </Expand>
   </Type>
 
-  <Type Name="licht::String">
-    <DisplayString>{buffer_.data_,s}</DisplayString>
-    <StringView>buffer_.data_,s</StringView>
-    <Expand>
-      <Item Name="Size">buffer_.size_ - 1</Item>
-      <Item Name="Capacity">buffer_.capacity_</Item>
-      <Item Name="[raw view]">buffer_</Item>
-    </Expand>
-  </Type>
-
-  <Type Name="licht::WString">
-    <DisplayString>{buffer_.data_,su}</DisplayString>
-    <StringView>buffer_.data_,su</StringView>
-    <Expand>
-      <Item Name="Size">buffer_.size_ - 1</Item>
-      <Item Name="Capacity">buffer_.capacity_</Item>
-      <Item Name="[raw view]">buffer_</Item>
-    </Expand>
-  </Type>
-
   <Type Name="licht::StringRefBase&lt;*&gt;">
     <DisplayString>{data_,s}</DisplayString>
     <StringView>data_,s</StringView>
@@ -54,55 +35,295 @@
     </Expand>
   </Type>
 
-  <Type Name="licht::StringRef">
-    <DisplayString>{data_,s}</DisplayString>
-    <StringView>data_,s</StringView>
-    <Expand>
-      <Item Name="Size">string_length(data_)</Item>
-      <Item Name="[raw data]">data_,s</Item>
-    </Expand>
-  </Type>
-
-  <Type Name="licht::WStringRef">
-    <DisplayString>{data_,su}</DisplayString>
-    <StringView>data_,su</StringView>
-    <Expand>
-      <Item Name="Size">string_length(data_)</Item>
-      <Item Name="[raw data]">data_,su</Item>
-    </Expand>
-  </Type>
-
   <!-- HashMap types -->
-  <Type Name="licht::HashMap&lt;*&gt;">
-    <DisplayString>{{ size={size_}, capacity={capacity_} }}</DisplayString>
-    <DisplayString>{buckets_}</DisplayString>
+  <!-- HashMapEntry visualization -->
+  <Type Name="licht::HashMapEntry&lt;*,*&gt;">
+    <DisplayString>{{ key = {key}, value = {value} }}</DisplayString>
     <Expand>
-      <Item Name="Size">size_</Item>
-      <Item Name="Capacity">capacity_</Item>
-      <Item Name="Data">buckets_</Item>
-      <ExpandedItem>buckets_,view(simple)</ExpandedItem>
-      <ArrayItems Name="Buckets">
+      <Item Name="key">key</Item>
+      <Item Name="value">value</Item>
+    </Expand>
+  </Type>
+
+  <!-- HashMapElement visualization -->
+  <Type Name="licht::HashMapElement&lt;*,*&gt;">
+    <DisplayString>{{ key = {entry.key}, value = {entry.value}, hash = {hash} }}</DisplayString>
+    <Expand>
+      <Item Name="entry">entry</Item>
+      <Item Name="hash">hash</Item>
+      <Item Name="next">next</Item>
+    </Expand>
+  </Type>
+
+  <!-- HashMap visualization -->
+  <Type Name="licht::HashMap&lt;*,*&gt;">
+    <DisplayString>{{ size = {size_}, capacity = {capacity_} }}</DisplayString>
+    <Expand>
+      <!-- Basic information -->
+      <Item Name="size">size_</Item>
+      <Item Name="capacity">capacity_</Item>
+      <Item Name="load_factor" Condition="capacity_ != 0">(double)size_ / capacity_</Item>
+
+      <!-- Buckets array with linked lists -->
+      <ArrayItems Condition="buckets_ != nullptr &amp;&amp; capacity_ > 0">
         <Size>capacity_</Size>
         <ValuePointer>buckets_</ValuePointer>
+        <Direction>Forward</Direction>
+        <ArrayItems>
+          <Size Condition="$i0 != nullptr">1</Size>
+          <ValuePointer Condition="$i0 != nullptr">$i0</ValuePointer>
+          <Direction>Forward</Direction>
+
+          <!-- Linked list expansion for each bucket -->
+          <LinkedListItems Condition="$i0 != nullptr">
+            <Size Condition="false">1</Size>
+            <HeadPointer>$i0</HeadPointer>
+            <NextPointer>next</NextPointer>
+            <ValueNode>entry</ValueNode>
+          </LinkedListItems>
+        </ArrayItems>
       </ArrayItems>
+
+      <!-- Flat view of all key-value pairs -->
+      <CustomListItems Name="entries" Condition="buckets_ != nullptr &amp;&amp; capacity_ > 0">
+        <Variable Name="currentBucket" InitialValue="0" />
+        <Variable Name="currentElement" InitialValue="nullptr" />
+
+        <Loop>
+          <!-- Find next non-empty bucket or next element in chain -->
+          <If Condition="currentElement == nullptr">
+            <While
+              Condition="currentBucket &lt; capacity_ &amp;&amp; buckets_[currentBucket] == nullptr">
+              <Exec>currentBucket = currentBucket + 1</Exec>
+            </While>
+            <If Condition="currentBucket &lt; capacity_">
+              <Exec>currentElement = buckets_[currentBucket]</Exec>
+            </If>
+          </If>
+
+          <If Condition="currentElement != nullptr">
+            <Item Name="[{currentBucket}] key">currentElement->entry.key</Item>
+            <Item Name="[{currentBucket}] value">currentElement->entry.value</Item>
+            <Exec>currentElement = currentElement->next</Exec>
+            <If Condition="currentElement == nullptr">
+              <Exec>currentBucket = currentBucket + 1</Exec>
+            </If>
+          </If>
+
+          <Break Condition="currentBucket >= capacity_" />
+        </Loop>
+      </CustomListItems>
+
+      <!-- Empty state -->
+      <Item Name="[empty]" Condition="buckets_ == nullptr || capacity_ == 0">Empty map</Item>
     </Expand>
   </Type>
 
-  <Type Name="licht::HashMapElement&lt;*&gt;">
-    <DisplayString>{entry.key} - {entry.value}</DisplayString>
+  <!-- HashMap Iterator visualization -->
+  <Type Name="licht::HashMap&lt;*,*&gt;::Iterator">
+    <DisplayString>
+      <Condition Name="elem_ == nullptr">end()</Condition>
+      <Condition Name="elem_ != nullptr">{{ key = {elem_->entry.key}, value = {elem_->entry.value},
+        bucket = {bucket_index_} }}</Condition>
+    </DisplayString>
     <Expand>
-      <Item Name="Key">entry.key</Item>
-      <Item Name="Value">entry.value</Item>
-      <Item Name="Hash">hash</Item>
-      <Item Name="Next">next</Item>
+      <Item Name="bucket_index">bucket_index_</Item>
+      <Item Name="key" Condition="elem_ != nullptr">elem_->entry.key</Item>
+      <Item Name="value" Condition="elem_ != nullptr">elem_->entry.value</Item>
+      <Item Name="hash" Condition="elem_ != nullptr">elem_->hash</Item>
+      <Item Name="set">map_</Item>
     </Expand>
   </Type>
 
-  <Type Name="licht::HashMapEntry&lt;*&gt;">
-    <DisplayString>{key} - {value}</DisplayString>
+  <Type Name="licht::HashMap&lt;*,*&gt;::ConstIterator">
+    <DisplayString>
+      <Condition Name="elem_ == nullptr">end()</Condition>
+      <Condition Name="elem_ != nullptr">{{ key = {elem_->entry.key}, value = {elem_->entry.value},
+        bucket = {bucket_index_} }}</Condition>
+    </DisplayString>
     <Expand>
-      <Item Name="Key">key</Item>
-      <Item Name="Value">value</Item>
+      <Item Name="bucket_index">bucket_index_</Item>
+      <Item Name="key" Condition="elem_ != nullptr">elem_->entry.key</Item>
+      <Item Name="value" Condition="elem_ != nullptr">elem_->entry.value</Item>
+      <Item Name="hash" Condition="elem_ != nullptr">elem_->hash</Item>
+      <Item Name="set">map_</Item>
+    </Expand>
+  </Type>
+
+  <!-- Option visualization -->
+  <Type Name="licht::Option&lt;*&gt;">
+    <DisplayString>
+      <Condition Name="is_some_">Some({storage_})</Condition>
+      <Condition Name="!is_some_">None</Condition>
+    </DisplayString>
+    <Expand>
+      <Item Name="has_value">is_some_</Item>
+      <Item Name="value" Condition="is_some_">*((T*)&amp;storage_)</Item>
+      <Item Name="[none]" Condition="!is_some_">No value</Item>
+    </Expand>
+  </Type>
+
+  <!-- Success visualization -->
+  <Type Name="licht::Success&lt;*&gt;">
+    <DisplayString>Success({value_})</DisplayString>
+    <Expand>
+      <Item Name="value">value_</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="licht::Success&lt;void&gt;">
+    <DisplayString>Success</DisplayString>
+    <Expand>
+      <Item Name="[void]">void type</Item>
+    </Expand>
+  </Type>
+
+  <!-- Failure visualization -->
+  <Type Name="licht::Failure&lt;*&gt;">
+    <DisplayString>Failure({error_})</DisplayString>
+    <Expand>
+      <Item Name="error">error_</Item>
+    </Expand>
+  </Type>
+
+  <!-- Result visualization -->
+  <Type Name="licht::Result&lt;*,*&gt;">
+    <DisplayString>
+      <Condition Name="data_.index() == 1">Success({data_.1})</Condition>
+      <Condition Name="data_.index() == 2">Failure({data_.2})</Condition>
+      <Condition Name="data_.index() == 0">[moved-from]</Condition>
+    </DisplayString>
+    <Expand>
+      <!-- State information -->
+      <Item Name="state">
+        <Condition Name="data_.index() == 1">Success</Condition>
+        <Condition Name="data_.index() == 2">Failure</Condition>
+        <Condition Name="data_.index() == 0">MovedFrom</Condition>
+      </Item>
+
+      <!-- Success value -->
+      <Item Name="value" Condition="data_.index() == 1">data_.1</Item>
+
+      <!-- Error value -->
+      <Item Name="error" Condition="data_.index() == 2">data_.2</Item>
+
+      <!-- Variant index -->
+      <Item Name="variant_index">data_.index()</Item>
+    </Expand>
+  </Type>
+
+  <!-- Specialization for void success type -->
+  <Type Name="licht::Result&lt;void,*&gt;">
+    <DisplayString>
+      <Condition Name="data_.index() == 1">Success</Condition>
+      <Condition Name="data_.index() == 2">Failure({data_.2})</Condition>
+      <Condition Name="data_.index() == 0">[moved-from]</Condition>
+    </DisplayString>
+    <Expand>
+      <Item Name="state">
+        <Condition Name="data_.index() == 1">Success (void)</Condition>
+        <Condition Name="data_.index() == 2">Failure</Condition>
+        <Condition Name="data_.index() == 0">MovedFrom</Condition>
+      </Item>
+      <Item Name="error" Condition="data_.index() == 2">data_.2</Item>
+      <Item Name="variant_index">data_.index()</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="licht::HashSetElement&lt;*&gt;">
+    <DisplayString>{{ key = {key}, hash = {hash} }}</DisplayString>
+    <Expand>
+      <Item Name="key">key</Item>
+      <Item Name="hash">hash</Item>
+      <Item Name="next">next</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="licht::HashSet&lt;*&gt;">
+    <DisplayString>{{ size = {size_}, capacity = {capacity_} }}</DisplayString>
+    <Expand>
+      <!-- Basic information -->
+      <Item Name="size">size_</Item>
+      <Item Name="capacity">capacity_</Item>
+      <Item Name="load_factor" Condition="capacity_ != 0">(double)size_ / capacity_</Item>
+
+      <!-- Buckets array -->
+      <ArrayItems Condition="buckets_ != nullptr &amp;&amp; capacity_ > 0">
+        <Size>capacity_</Size>
+        <ValuePointer>buckets_</ValuePointer>
+        <Direction>Forward</Direction>
+        <ArrayItems>
+          <Size Condition="$i0 != nullptr">1</Size>
+          <ValuePointer Condition="$i0 != nullptr">$i0</ValuePointer>
+          <Direction>Forward</Direction>
+
+          <!-- Linked list expansion for each bucket -->
+          <LinkedListItems Condition="$i0 != nullptr">
+            <Size Condition="false">1</Size> <!-- Not used, but required -->
+            <HeadPointer>$i0</HeadPointer>
+            <NextPointer>next</NextPointer>
+            <ValueNode>key</ValueNode>
+          </LinkedListItems>
+        </ArrayItems>
+      </ArrayItems>
+
+      <!-- Alternative: Flat view of all elements (more readable) -->
+      <CustomListItems Name="elements" Condition="buckets_ != nullptr &amp;&amp; capacity_ > 0">
+        <Variable Name="currentBucket" InitialValue="0" />
+        <Variable Name="currentElement" InitialValue="nullptr" />
+
+        <Loop>
+          <!-- Find next non-empty bucket or next element in chain -->
+          <If Condition="currentElement == nullptr">
+            <While
+              Condition="currentBucket &lt; capacity_ &amp;&amp; buckets_[currentBucket] == nullptr">
+              <Exec>currentBucket = currentBucket + 1</Exec>
+            </While>
+            <If Condition="currentBucket &lt; capacity_">
+              <Exec>currentElement = buckets_[currentBucket]</Exec>
+            </If>
+          </If>
+
+          <If Condition="currentElement != nullptr">
+            <Item Name="[{currentBucket}]">currentElement->key</Item>
+            <Exec>currentElement = currentElement->next</Exec>
+            <If Condition="currentElement == nullptr">
+              <Exec>currentBucket = currentBucket + 1</Exec>
+            </If>
+          </If>
+
+          <Break Condition="currentBucket >= capacity_" />
+        </Loop>
+      </CustomListItems>
+
+      <!-- Empty state -->
+      <Item Name="[empty]" Condition="buckets_ == nullptr || capacity_ == 0">Empty set</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="licht::HashSet&lt;*&gt;::Iterator">
+    <DisplayString>
+      <Condition Name="elem_ == nullptr">end()</Condition>
+      <Condition Name="elem_ != nullptr">{{ key = {elem_->key}, bucket = {bucket_index_} }}</Condition>
+    </DisplayString>
+    <Expand>
+      <Item Name="bucket_index">bucket_index_</Item>
+      <Item Name="key" Condition="elem_ != nullptr">elem_->key</Item>
+      <Item Name="hash" Condition="elem_ != nullptr">elem_->hash</Item>
+      <Item Name="set">set_</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="licht::HashSet&lt;*&gt;::ConstIterator">
+    <DisplayString>
+      <Condition Name="elem_ == nullptr">end()</Condition>
+      <Condition Name="elem_ != nullptr">{{ key = {elem_->key}, bucket = {bucket_index_} }}</Condition>
+    </DisplayString>
+    <Expand>
+      <Item Name="bucket_index">bucket_index_</Item>
+      <Item Name="key" Condition="elem_ != nullptr">elem_->key</Item>
+      <Item Name="hash" Condition="elem_ != nullptr">elem_->hash</Item>
+      <Item Name="set">set_</Item>
     </Expand>
   </Type>
 </AutoVisualizer>

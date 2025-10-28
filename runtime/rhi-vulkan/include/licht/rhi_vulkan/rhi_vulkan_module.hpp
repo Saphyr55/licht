@@ -29,6 +29,4 @@ private:
     WindowHandle window_handle_;
 };
 
-LICHT_REGISTER_MODULE(RHIVulkanModule, "licht.rhi.vulkan")
-
 }  //namespace licht    

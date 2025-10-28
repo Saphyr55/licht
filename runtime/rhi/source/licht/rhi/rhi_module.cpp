@@ -4,6 +4,8 @@
 
 namespace licht {
 
+LICHT_REGISTER_MODULE(RHIModule, "licht.rhi");
+
 StringRef graphics_api_module_name(const GraphicsAPI graphics_api) {
     switch (graphics_api) {
         case GraphicsAPI::Vulkan: {

@@ -54,16 +54,17 @@ public:
     using ElementType = HashMapElement<KeyType, ValueType>;
     using EntryType = HashMapEntry<KeyType, ValueType>;
 
-    class Iterator {
+private:
+    class _Iterator {
     public:
-        Iterator(HashMap* map = nullptr, size_t bucket_index = 0, ElementType* elem = nullptr)
+        _Iterator(HashMap* map = nullptr, size_t bucket_index = 0, ElementType* elem = nullptr)
             : map_(map), bucket_index_(bucket_index), elem_(elem) {}
 
         EntryType& operator*() const { return elem_->entry; }
 
         EntryType* operator->() const { return &elem_->entry; }
 
-        Iterator& operator++() {
+        _Iterator& operator++() {
             if (!map_ || !elem_) {
                 // become end
                 bucket_index_ = map_ ? map_->capacity_ : 0;
@@ -91,17 +92,17 @@ public:
             return *this;
         }
 
-        Iterator operator++(int) {
-            Iterator tmp = *this;
+        _Iterator operator++(int) {
+            _Iterator tmp = *this;
             ++(*this);
             return tmp;
         }
 
-        bool operator==(const Iterator& other) const {
+        bool operator==(const _Iterator& other) const {
             return map_ == other.map_ && bucket_index_ == other.bucket_index_ && elem_ == other.elem_;
         }
 
-        bool operator!=(const Iterator& other) const { return !(*this == other); }
+        bool operator!=(const _Iterator& other) const { return !(*this == other); }
 
     private:
         HashMap* map_;
@@ -109,16 +110,16 @@ public:
         ElementType* elem_;
     };
 
-    class ConstIterator {
+    class _ConstIterator {
     public:
-        ConstIterator(const HashMap* map = nullptr, size_t bucket_index = 0, const ElementType* elem = nullptr)
+        _ConstIterator(const HashMap* map = nullptr, size_t bucket_index = 0, const ElementType* elem = nullptr)
             : map_(map), bucket_index_(bucket_index), elem_(elem) {}
 
         const EntryType& operator*() const { return elem_->entry; }
 
         const EntryType* operator->() const { return &elem_->entry; }
 
-        ConstIterator& operator++() {
+        _ConstIterator& operator++() {
             if (!map_ || !elem_) {
                 bucket_index_ = map_ ? map_->capacity_ : 0;
                 elem_ = nullptr;
@@ -143,23 +144,27 @@ public:
             return *this;
         }
 
-        ConstIterator operator++(int) {
-            ConstIterator tmp = *this;
+        _ConstIterator operator++(int) {
+            _ConstIterator tmp = *this;
             ++(*this);
             return tmp;
         }
 
-        bool operator==(const ConstIterator& other) const {
+        bool operator==(const _ConstIterator& other) const {
             return map_ == other.map_ && bucket_index_ == other.bucket_index_ && elem_ == other.elem_;
         }
 
-        bool operator!=(const ConstIterator& other) const { return !(*this == other); }
+        bool operator!=(const _ConstIterator& other) const { return !(*this == other); }
 
     private:
         const HashMap* map_;
         size_t bucket_index_;
         const ElementType* elem_;
     };
+
+public:
+    using const_iterator = _ConstIterator;
+    using iterator = _Iterator;
 
 public:
     HashMap(size_t capacity = 8)
@@ -299,7 +304,7 @@ public:
         return ne->entry;
     }
 
-    Iterator find(const KeyType& key) {
+    _Iterator find(const KeyType& key) {
         if (!buckets_) {
             return end();
         }
@@ -307,15 +312,15 @@ public:
         size_t idx = static_cast<size_t>(h % capacity_);
         ElementType* cur = buckets_[idx];
         while (cur) {
-            if (cur->key == key) {
-                return Iterator(this, idx, cur);
+            if (cur->entry.key == key) {
+                return _Iterator(this, idx, cur);
             }
             cur = cur->next;
         }
         return end();
     }
 
-    ConstIterator find(const KeyType& key) const {
+    _ConstIterator find(const KeyType& key) const {
         if (!buckets_) {
             return end();
         }
@@ -323,8 +328,8 @@ public:
         size_t idx = static_cast<size_t>(h % capacity_);
         ElementType* cur = buckets_[idx];
         while (cur) {
-            if (cur->key == key) {
-                return ConstIterator(this, idx, cur);
+            if (cur->entry.key == key) {
+                return _ConstIterator(this, idx, cur);
             }
             cur = cur->next;
         }
@@ -406,43 +411,43 @@ public:
         return ent.value;
     }
 
-    Iterator begin() {
+    _Iterator begin() {
         if (!buckets_) {
             return end();
         }
         for (size_t i = 0; i < capacity_; ++i) {
             if (buckets_[i]) {
-                return Iterator(this, i, buckets_[i]);
+                return _Iterator(this, i, buckets_[i]);
             }
         }
         return end();
     }
 
-    Iterator end() {
-        return Iterator(this, capacity_, nullptr);
+    _Iterator end() {
+        return _Iterator(this, capacity_, nullptr);
     }
 
-    ConstIterator begin() const {
+    _ConstIterator begin() const {
         if (!buckets_) {
             return end();
         }
         for (size_t i = 0; i < capacity_; ++i) {
             if (buckets_[i]) {
-                return ConstIterator(this, i, buckets_[i]);
+                return _ConstIterator(this, i, buckets_[i]);
             }
         }
         return end();
     }
 
-    ConstIterator end() const {
-        return ConstIterator(this, capacity_, nullptr);
+    _ConstIterator end() const {
+        return _ConstIterator(this, capacity_, nullptr);
     }
 
-    ConstIterator cbegin() const {
+    _ConstIterator cbegin() const {
         return begin();
     }
 
-    ConstIterator cend() const {
+    _ConstIterator cend() const {
         return end();
     }
 

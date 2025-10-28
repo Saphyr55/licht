@@ -15,6 +15,4 @@ public:
     virtual void on_unload() override;
 };
 
-LICHT_REGISTER_MODULE(CoreModule, "licht.core")
-
 }  //namespace licht

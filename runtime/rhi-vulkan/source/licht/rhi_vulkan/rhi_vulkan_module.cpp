@@ -10,6 +10,8 @@
 
 namespace licht {
 
+LICHT_REGISTER_MODULE(RHIVulkanModule, "licht.rhi.vulkan");
+
 RHIVulkanModule::RHIVulkanModule() 
     : window_handle_(Display::InvalidWindowHandle) {
 }
@@ -22,7 +24,7 @@ void RHIVulkanModule::on_startup() {
     LLOG_INFO("[RHIVulkanModule]", "Startup RHI Vulkan Module.");
 
     ModuleRegistry& registry = ModuleRegistry::get_instance();
-    RHIModule* module = registry.get_module<RHIModule>(RHIModule::ModuleName);
+    RHIModule* module = registry.get_module<RHIModule>("licht.rhi");
     
     window_handle_ = module->get_window_handle();
     module->set_device(new_ref<VulkanDevice>());

@@ -18,7 +18,7 @@ public:
 
     uint32 frame_index = 0;
     uint32 current_frame = 0;
-    uint32 frame_count = 3;
+    uint32 frame_count = 2;
 
     bool success = false;
     bool suboptimal = false;

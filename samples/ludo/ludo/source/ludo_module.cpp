@@ -2,7 +2,7 @@
 
 #include <licht/core/trace/trace.hpp>
 
-LICHT_REGISTER_MODULE(LudoModule, "ludo")
+LICHT_REGISTER_MODULE(LudoModule, "ludo");
 
 void LudoModule::on_load() {
     LLOG_INFO("[LudoModule]", "Ludo module loaded.");

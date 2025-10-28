@@ -13,13 +13,11 @@
 namespace licht {
 
 void MaterialGraphicsPipeline::initialize(const SharedRef<RHIDevice>& device,
-                                          const SharedRef<RenderContext>& renderer,
-                                          const SharedRef<RHIBufferPool>& buffer_pool,
-                                          const SharedRef<RHITexturePool>& texture_pool) {
+                                          const SharedRef<RenderContext>& renderer) {
     renderer_ = renderer;
     device_ = device;
-    buffer_pool_ = buffer_pool;
-    texture_pool_ = texture_pool;
+    buffer_pool_ = renderer->get_buffer_pool();
+    texture_pool_ = renderer->get_texture_pool();
 
     Array<uint8> texture_buffer;
     texture_buffer.resize(4);
@@ -257,13 +255,13 @@ void MaterialGraphicsPipeline::create_pipeline_internal() {
     float32 height = renderer_->get_swapchain()->get_height();
 
     // Load shaders binary codes.
-    FileHandleResult vertex_file_open_error = FileSystem::get_platform().open_read("shaders/ludo.material.vert.spv");
+    FileHandleResult vertex_file_open_error = FileSystem::get_platform().open_read("ludo.material.vert.spv");
     LCHECK(vertex_file_open_error.has_value());
 
     SharedRef<FileHandle> vertex_file_handle = vertex_file_open_error.value();
     SPIRVShader vertex_shader(vertex_file_handle->read_all_bytes());
 
-    FileHandleResult fragment_file_open_error = FileSystem::get_platform().open_read("shaders/ludo.material.frag.spv");
+    FileHandleResult fragment_file_open_error = FileSystem::get_platform().open_read("ludo.material.frag.spv");
     LCHECK(fragment_file_open_error.has_value());
 
     SharedRef<FileHandle> fragment_file_handle = fragment_file_open_error.value();

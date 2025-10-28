@@ -84,7 +84,7 @@ Module* ModuleRegistry::get_module_interface(const StringRef name) {
 void ModuleRegistry::register_module(const StringRef name, const ModuleInitializerFunc& initializer) {
     if (!pending_modules_.contains(name)) {
         pending_modules_.put(name, initializer);
-        LLOG_DEBUG("[ModuleRegistry]", vformat("The module has been registered.", name));
+        LLOG_DEBUG("[ModuleRegistry]", vformat("The module '%s' has been registered.", name));
     }
 }
 

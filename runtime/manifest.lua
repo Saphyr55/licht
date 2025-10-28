@@ -12,6 +12,23 @@ local _modules = {
         }
     },
     {
+        name = "licht.rhi.vulkan",
+        version = "0.0.1-dev",
+        dependencies = {
+            "licht.core",
+            "licht.rhi"
+        }
+    },
+    {
+        name = "licht.renderer",
+        version = "0.0.1-dev",
+        dependencies = {
+            "licht.core",
+            "licht.engine",
+            "licht.rhi"
+        }
+    },
+    {
         name = "licht.engine",
         version = "0.0.1-dev",
         dependencies = {
@@ -22,7 +39,10 @@ local _modules = {
         name = "licht.scene",
         version = "0.0.1-dev",
         dependencies = {
-            "licht.core"
+            "licht.core",
+            "licht.engine",
+            "licht.renderer",
+            "licht.rhi"
         }
     },
     {
@@ -34,11 +54,18 @@ local _modules = {
         }
     },
     {
-        name = "licht.rhi.vulkan",
+        name = "licht.messaging",
         version = "0.0.1-dev",
         dependencies = {
             "licht.core",
-            "licht.rhi"
+            "licht.engine"
+        }
+    },
+    {
+        name = "licht.entity",
+        version = "0.0.1-dev",
+        dependencies = {
+            "licht.core"
         }
     }
 }

@@ -149,17 +149,21 @@ bool module_manifest_resolve_dependencies(const ModuleManifest& manifest, Array<
 
     HashMap<StringRef, const ModuleManifestInformation*> module_map(size);
     HashMap<StringRef, size_t> indegree(size);
-    HashMap<StringRef, Array<StringRef>> graph(size);
+    HashMap<StringRef, Array<String>> graph(size);
 
     for (const ModuleManifestInformation& info : manifest.get_manifest_informations()) {
         module_map.put(info.name, &info);
-        indegree.put(info.name, 0);
-        graph.put(info.name, Array<StringRef>(size));
+        indegree[info.name] = 0;
+        graph[info.name] = Array<String>(size);
     }
 
     for (const ModuleManifestInformation& info : manifest.get_manifest_informations()) {
-        for (StringRef dependency : info.dependencies) {
-            Array<StringRef>* successors = graph.get_ptr(dependency);
+        for (const StringRef& dependency : info.dependencies) {
+            Array<String>* successors = graph.get_ptr(dependency);
+            
+            LLOG_ERROR_WHEN(!successors, "[ModuleManifest]", vformat("Module '%s' has an unknown dependency '%s'.", info.name.data(), dependency.data()));
+            LCHECK(successors);
+            
             successors->append(info.name);
             indegree[info.name]++;
         }
@@ -178,7 +182,7 @@ bool module_manifest_resolve_dependencies(const ModuleManifest& manifest, Array<
         pending.pop();
         out_order.append(module_map[current]);
 
-        for (StringRef next : graph[current]) {
+        for (const StringRef& next : graph[current]) {
             if (--indegree[next] == 0) {
                 pending.append(next);
             }

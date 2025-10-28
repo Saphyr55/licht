@@ -19,8 +19,6 @@ StringRef graphics_api_module_name(GraphicsAPI graphics_api);
 
 class LICHT_RHI_API RHIModule : public Module {
 public:
-    static constexpr const char* ModuleName = "licht.rhi";
-
     virtual void on_load() override;
 
     virtual void on_startup() override;
@@ -66,7 +64,5 @@ private:
     GraphicsAPI graphics_api_;
     RHIDeviceRef device_;
 };
-
-LICHT_REGISTER_MODULE(RHIModule, RHIModule::ModuleName)
 
 }  //namespace licht

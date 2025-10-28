@@ -7,7 +7,7 @@ class EngineAppRunner {
 public:
     virtual int32 run() {
         return 0;
-    };  
+    };
 };
 
 }

@@ -5,17 +5,17 @@
 
 namespace licht {
 
-class LICHT_MESSAGING_API MessageModule : public Module {
+class LICHT_MESSAGING_API MessagingModule : public Module {
 public:
-    virtual void on_load() = 0;
+    virtual void on_load() override;
 
-    virtual void on_startup() = 0;
+    virtual void on_startup() override;
 
-    virtual void on_shutdown() = 0;
+    virtual void on_shutdown() override;
 
-    virtual void on_unload() = 0;
+    virtual void on_unload() override;
 
-    virtual ~MessageModule() = default;
+    virtual ~MessagingModule() = default;
 };
 
 }

@@ -8,7 +8,6 @@
 #include "licht/core/math/matrix4.hpp"
 #include "licht/core/math/vector3.hpp"
 #include "licht/core/math/vector4.hpp"
-#include "licht/core/memory/default_allocator.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/modules/module_registry.hpp"
 #include "licht/core/platform/input.hpp"
@@ -36,7 +35,6 @@ RenderFrameScript::RenderFrameScript(Camera* camera, WindowHandle window_handle)
     : window_handle_(window_handle)
     , device_(nullptr)
     , framebuffers_(3)
-    , cmd_allocator_(nullptr)
     , pause_(false)
     , camera_(camera) {
 }
@@ -44,44 +42,29 @@ RenderFrameScript::RenderFrameScript(Camera* camera, WindowHandle window_handle)
 void RenderFrameScript::on_startup() {
     ProjectSettings& project_settings = ProjectSettings::get_instance();
     ModuleRegistry& registry = ModuleRegistry::get_instance();
-    RHIModule* module = registry.get_module<RHIModule>(RHIModule::ModuleName);
-    String projectdir(project_settings.get_name("projectdir"));
+    RHIModule* module = registry.get_module<RHIModule>("licht.rhi");
+    StringRef projectdir = project_settings.get_name("projectdir");
 
     FileSystem& file_system = FileSystem::get_platform();
+
+    LCHECK_MSG(compile_shaders(), "Failed to compile shaders.");
 
     device_ = module->get_device();
 
     render_context_ = new_ref<RenderContext>();
     material_graphics_pipeline_ = new_ref<MaterialGraphicsPipeline>();
 
-    graphics_queue_ = device_->get_graphics_queue();
-    present_queue_ = device_->get_present_queue();
-
-    cmd_allocator_ = device_->create_command_allocator({
-        .command_queue = graphics_queue_,
-        .count = render_context_->get_frame_count(),
-    });
-
-    // Setup renderer.
-    render_context_->initialize(window_handle_, graphics_queue_, present_queue_, cmd_allocator_);
+    render_context_->initialize(window_handle_);
     render_context_->on_reset([this]() -> void { reset(); });
 
     float32 width = render_context_->get_swapchain()->get_width();
     float32 height = render_context_->get_swapchain()->get_height();
 
-    // Pools
-    buffer_pool_ = device_->create_buffer_pool();
-    buffer_pool_->initialize_pool(&DefaultAllocator::get_instance(), 64);
-
-    texture_pool_ = device_->create_texture_pool();
-    texture_pool_->initialize_pool(&DefaultAllocator::get_instance(), 64);
-
-    String model_asset_path = projectdir;
-    model_asset_path.append("/assets/models/Sponza/glTF/Sponza.gltf");
+    String model_asset_path = projectdir + "/assets/models/Sponza/glTF/Sponza.gltf";
 
     Array<StaticMesh> meshes_model = gltf_static_meshes_load(model_asset_path);
 
-    depth_texture_ = texture_pool_->create_texture({
+    depth_texture_ = render_context_->get_texture_pool()->create_texture({
         .format = RHIFormat::D24S8,
         .usage = RHITextureUsageFlags::DepthStencilAttachment,
         .sharing_mode = RHISharingMode::Private,
@@ -94,17 +77,15 @@ void RenderFrameScript::on_startup() {
                            RHITextureLayoutTransition(depth_texture_,
                                                       RHITextureLayout::Undefined,
                                                       RHITextureLayout::DepthStencilAttachment),
-                           graphics_queue_);
+                           render_context_->get_graphics_queue());
 
     depth_texture_view_ = device_->create_texture_view({
         .texture = depth_texture_,
         .format = depth_texture_->get_description().format,
     });
 
-    compile_shaders();
-    material_graphics_pipeline_->initialize(device_, render_context_, buffer_pool_, texture_pool_);
+    material_graphics_pipeline_->initialize(device_, render_context_);
 
-    // -- Framebuffers --
     framebuffers_.reserve(render_context_->get_swapchain()->get_texture_views().size());
     for (RHITextureView* texture : render_context_->get_swapchain()->get_texture_views()) {
         RHIFramebufferDescription description = {
@@ -119,8 +100,7 @@ void RenderFrameScript::on_startup() {
         framebuffers_.append(framebuffer);
     }
 
-    // Device objects --
-    RHIDeviceMemoryUploader uploader(device_, buffer_pool_, texture_pool_);
+    RHIDeviceMemoryUploader uploader = render_context_->uploader();
 
     for (StaticMesh& mesh : meshes_model) {
         for (StaticSubMesh& submesh : mesh.get_submeshes()) {
@@ -135,7 +115,7 @@ void RenderFrameScript::on_startup() {
         .color = Vector3f(1.0f, 0.0f, 0.0f),
     };
 
-    uploader.upload(graphics_queue_);
+    uploader.upload(render_context_->get_graphics_queue());
 
     material_graphics_pipeline_->initialize_shader_resource_pool(packet_.items.size());
     material_graphics_pipeline_->compile(packet_);
@@ -243,7 +223,7 @@ void RenderFrameScript::update_uniform(const float64 delta_time) {
 
 void RenderFrameScript::reset() {
     device_->destroy_texture_view(depth_texture_view_);
-    texture_pool_->destroy_texture(depth_texture_);
+    render_context_->get_texture_pool()->destroy_texture(depth_texture_);
 
     RHITextureDescription depth_texture_desc = {};
     depth_texture_desc.format = RHIFormat::D24S8;
@@ -252,7 +232,7 @@ void RenderFrameScript::reset() {
     depth_texture_desc.memory_usage = RHIMemoryUsage::Device;
     depth_texture_desc.width = render_context_->get_swapchain()->get_width();
     depth_texture_desc.height = render_context_->get_swapchain()->get_height();
-    depth_texture_ = texture_pool_->create_texture(depth_texture_desc);
+    depth_texture_ = render_context_->get_texture_pool()->create_texture(depth_texture_desc);
 
     RHITextureViewDescription depth_texture_view_desc = {};
     depth_texture_view_desc.texture = depth_texture_;
@@ -283,8 +263,6 @@ void RenderFrameScript::reset() {
 void RenderFrameScript::on_shutdown() {
     render_context_->shutdown();
 
-    device_->destroy_command_allocator(cmd_allocator_);
-
     for (RHIFramebuffer* framebuffer : framebuffers_) {
         device_->destroy_framebuffer(framebuffer);
     }
@@ -302,10 +280,6 @@ void RenderFrameScript::on_shutdown() {
             }
         }
     }
-
-    texture_pool_->dispose();
-
-    buffer_pool_->dispose();
 
     device_->destroy_swapchain(render_context_->get_swapchain());
 }
@@ -325,14 +299,14 @@ bool RenderFrameScript::compile_shaders() {
     StringRef projectdir = ProjectSettings::get_instance().get_name("projectdir");
     FileSystem& file_system = FileSystem::get_platform();
 
-    String vertex_shader_path(projectdir);
-    vertex_shader_path.append("/assets/shaders/ludo.material.vert");
+    String vertex_shader_path = projectdir + "/assets/shaders/ludo.material.vert";
+    String fragment_shader_path = projectdir + "/assets/shaders/ludo.material.frag";
 
-    String fragment_shader_path(projectdir);
-    fragment_shader_path.append("/assets/shaders/ludo.material.frag");
+    bool vert_ok = SPIRVShaderCompiler::compile_glsl_file(vertex_shader_path,
+                                                          "ludo.material.vert.spv", SPIRVShaderCompiler::Stage::Vertex);
 
-    bool vert_ok = SPIRVShaderCompiler::compile_glsl_file(vertex_shader_path, "shaders/ludo.material.vert.spv", SPIRVShaderCompiler::Stage::Vertex);
-    bool frag_ok = SPIRVShaderCompiler::compile_glsl_file(fragment_shader_path, "shaders/ludo.material.frag.spv", SPIRVShaderCompiler::Stage::Fragment);
+    bool frag_ok = SPIRVShaderCompiler::compile_glsl_file(fragment_shader_path,
+                                                          "ludo.material.frag.spv", SPIRVShaderCompiler::Stage::Fragment);
 
     return vert_ok && frag_ok;
 }
