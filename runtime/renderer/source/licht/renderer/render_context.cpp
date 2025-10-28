@@ -15,7 +15,7 @@ namespace licht {
 void RenderContext::initialize(WindowHandle window_handle) {
 
     ModuleRegistry& registry = ModuleRegistry::get_instance();
-    RHIModule* module = registry.get_module<RHIModule>(RHIModule::ModuleName);
+    RHIModule* module = registry.get_module<RHIModule>("licht.rhi");
     
     device_ = module->get_device();
 

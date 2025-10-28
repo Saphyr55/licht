@@ -4,7 +4,7 @@
 
 namespace licht {
 
-LICHT_REGISTER_MODULE(SceneModule, "licht.scene")
+LICHT_REGISTER_MODULE(SceneModule, "licht.scene");
 
 void SceneModule::on_load() {
     LLOG_INFO("[SceneModule]", "Scene module loaded.");

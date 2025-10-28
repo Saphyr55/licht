@@ -42,7 +42,7 @@ RenderFrameScript::RenderFrameScript(Camera* camera, WindowHandle window_handle)
 void RenderFrameScript::on_startup() {
     ProjectSettings& project_settings = ProjectSettings::get_instance();
     ModuleRegistry& registry = ModuleRegistry::get_instance();
-    RHIModule* module = registry.get_module<RHIModule>(RHIModule::ModuleName);
+    RHIModule* module = registry.get_module<RHIModule>("licht.rhi");
     StringRef projectdir = project_settings.get_name("projectdir");
 
     FileSystem& file_system = FileSystem::get_platform();

@@ -2,7 +2,9 @@
 #include "licht/core/trace/trace.hpp"
 
 namespace licht {
-    
+
+LICHT_REGISTER_MODULE(CoreModule, "licht.core");
+
 void CoreModule::on_load() {
     LLOG_INFO("[CoreModule]", "Core module loaded.");
 }

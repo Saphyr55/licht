@@ -62,11 +62,9 @@ public:
 }  //namespace licht
 
 #define LICHT_REGISTER_MODULE_WITH_CUSTOM_VARIABLE(ModuleType, ModuleName, VariableName) \
-    namespace {                                                                          \
     static const auto(VariableName) = []() {                                             \
         return ::licht::ModuleRegistrant<ModuleType>(ModuleName);                        \
-    }();                                                                                 \
-    }
+    }()
 
 // Use __COUNTER__ for uniqueness (supported by GCC, Clang, MSVC)
 #define LICHT_REGISTER_MODULE(ModuleType, ModuleName) \

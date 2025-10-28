@@ -4,7 +4,7 @@
 
 namespace licht {
 
-LICHT_REGISTER_MODULE(RendererModule, "licht.renderer")
+LICHT_REGISTER_MODULE(RendererModule, "licht.renderer");
 
 void RendererModule::on_load() {
     LLOG_INFO("[RendererModule]", "RenderContext module loaded.");

@@ -2,6 +2,8 @@
 #include "licht/core/trace/trace.hpp"
 
 namespace licht {
+    
+LICHT_REGISTER_MODULE(LauncherModule, "licht.launcher");
 
 void LauncherModule::on_load() {
     LLOG_INFO("[LauncherModule]", "Launcher module loaded.");

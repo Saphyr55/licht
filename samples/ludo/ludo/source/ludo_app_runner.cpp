@@ -71,7 +71,7 @@ void LudoAppRunner::on_run_delegate() {
 
     // Module Registry manages the module.
     ModuleRegistry& module_registry = ModuleRegistry::get_instance();
-    RHIModule* rhi_module = module_registry.get_module<RHIModule>(RHIModule::ModuleName);
+    RHIModule* rhi_module = module_registry.get_module<RHIModule>("licht.rhi");
 
     // Need to know the window for creating the surface.
     rhi_module->set_window_handle(window_handle);
