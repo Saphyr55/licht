@@ -100,7 +100,7 @@ void RenderFrameScript::on_startup() {
         framebuffers_.append(framebuffer);
     }
 
-    RHIDeviceMemoryUploader uploader =  render_context_->uploader();
+    RHIDeviceMemoryUploader uploader = render_context_->uploader();
 
     for (StaticMesh& mesh : meshes_model) {
         for (StaticSubMesh& submesh : mesh.get_submeshes()) {
@@ -302,11 +302,11 @@ bool RenderFrameScript::compile_shaders() {
     String vertex_shader_path = projectdir + "/assets/shaders/ludo.material.vert";
     String fragment_shader_path = projectdir + "/assets/shaders/ludo.material.frag";
 
-    bool vert_ok = SPIRVShaderCompiler::compile_glsl_file(vertex_shader_path, 
-        "ludo.material.vert.spv", SPIRVShaderCompiler::Stage::Vertex);
+    bool vert_ok = SPIRVShaderCompiler::compile_glsl_file(vertex_shader_path,
+                                                          "ludo.material.vert.spv", SPIRVShaderCompiler::Stage::Vertex);
 
-    bool frag_ok = SPIRVShaderCompiler::compile_glsl_file(fragment_shader_path, 
-        "ludo.material.frag.spv", SPIRVShaderCompiler::Stage::Fragment);
+    bool frag_ok = SPIRVShaderCompiler::compile_glsl_file(fragment_shader_path,
+                                                          "ludo.material.frag.spv", SPIRVShaderCompiler::Stage::Fragment);
 
     return vert_ok && frag_ok;
 }

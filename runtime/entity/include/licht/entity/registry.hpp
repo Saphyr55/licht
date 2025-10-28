@@ -4,17 +4,21 @@
 #include <typeindex>
 #include <utility>
 
+#include "entity.hpp"
 #include "licht/core/containers/hash_map.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/core/memory/shared_ref_cast.hpp"
 #include "licht/entity/component_pool.hpp"
 #include "licht/entity/entity_exports.hpp"
+#include "view.hpp"
 
 namespace licht {
 
 class LICHT_ENTITY_API EntityRegistry {
 public:
     using ComponentPoolMap = HashMap<std::type_index, SharedRef<ComponentPoolInterface>>;
+
+    static constexpr const Entity invalid_entity = 0;
 
 public:
     Entity create() {
@@ -36,17 +40,17 @@ public:
         }
     }
 
-    bool valid(Entity e) const {
+    bool is_valid(Entity e) const {
         return living_entities_.contains(e);
     }
 
     template <typename ComponentType>
-    ComponentType& add(Entity e, const ComponentType& component = ComponentType()) {
+    ComponentType& add_component(Entity e, const ComponentType& component = ComponentType()) {
         return get_pool<ComponentType>().add_component(e, component);
     }
 
     template <typename ComponentType>
-    void remove(Entity e) {
+    void remove_component(Entity e) {
         ComponentPoolMap::iterator it = component_pools_.find(std::type_index(typeid(ComponentType)));
         if (it != component_pools_.end()) {
             static_ref_cast<ComponentPool<ComponentType>>(it->value)->remove_component(e);
@@ -54,7 +58,7 @@ public:
     }
 
     template <typename ComponentType>
-    bool has(Entity e) const {
+    bool has_component(Entity e) const {
         ComponentPoolMap::const_iterator it = component_pools_.find(std::type_index(typeid(ComponentType)));
         if (it == component_pools_.end()) {
             return false;
@@ -63,12 +67,12 @@ public:
     }
 
     template <typename... Components>
-    bool has_all(Entity e) const {
-        return (... && has<Components>(e));
+    bool has_components(Entity e) const {
+        return (... && has_component<Components>(e));
     }
 
     template <typename ComponentType>
-    ComponentType* get(Entity e) {
+    ComponentType* get_component(Entity e) {
         ComponentPoolMap::iterator it = component_pools_.find(std::type_index(typeid(ComponentType)));
         if (it == component_pools_.end()) {
             return nullptr;
@@ -76,45 +80,23 @@ public:
         return static_ref_cast<ComponentPool<ComponentType>>(it->value)->get_component(e);
     }
 
+    template <typename... Components>
+    EntityView<Components...> view() {
+        std::tuple<ComponentPool<Components>*...> pools = get_pools<Components...>();
+        ComponentPoolInterface* smallest_pool = find_smallest_pool<Components...>();
+        const Array<Entity>& entities = smallest_pool->entities();
+        return EntityView<Components...>(entities, pools);
+    }
+
     template <typename... Components, typename Func>
-    void each(Func&& func) {
-        ComponentPoolInterface* smallest_pool = nullptr;
-        size_t min_size = std::numeric_limits<size_t>::max();
-
-        auto pools = std::make_tuple(&get_pool<Components>()...);
-
-        std::apply([&](auto*... pool_ptrs) {
-            size_t sizes[] = {pool_ptrs->storage().size()...};
-            size_t min_index = 0;
-            for (size_t i = 0; i < sizeof...(Components); ++i) {
-                if (sizes[i] < min_size) {
-                    min_size = sizes[i];
-                    min_index = i;
-                }
-            }
-
-            ComponentPoolInterface* pool_ptrs_array[] = {pool_ptrs...};
-            smallest_pool = pool_ptrs_array[min_index];
-        },
-                   pools);
-
-        if (!smallest_pool || min_size == 0) {
-            return;
-        }
-
-        auto& entities = static_cast<ComponentPool<std::tuple_element_t<0, std::tuple<Components...>>>*>(smallest_pool)->entities();
-
-        for (Entity entity : entities) {
-            if (has_all<Components...>(entity)) {
-                invoke_with_components<Components...>(entity, std::forward<Func>(func));
-            }
-        }
+    void for_each(Func&& func) {
+        view<Components...>().for_each(std::forward<Func>(func));
     }
 
     template <typename ComponentType>
     ComponentPool<ComponentType>& get_pool() {
-        auto key = std::type_index(typeid(ComponentType));
-        auto it = component_pools_.find(key);
+        std::type_index key = std::type_index(typeid(ComponentType));
+        ComponentPoolMap::iterator it = component_pools_.find(key);
         if (it == component_pools_.end()) {
             SharedRef<ComponentPool<ComponentType>> pool = new_ref<ComponentPool<ComponentType>>();
             ComponentPool<ComponentType>* ptr = pool.get_resource();
@@ -146,14 +128,41 @@ private:
     template <typename... Components, typename Func>
     void invoke_with_components(Entity entity, Func&& func) {
         if constexpr (sizeof...(Components) == 1) {
-            auto* component = get<std::tuple_element_t<0, std::tuple<Components...>>>(entity);
+            auto* component = get_component<std::tuple_element_t<0, std::tuple<Components...>>>(entity);
             if (component) {
                 func(entity, *component);
             }
         } else {
-            auto components = std::make_tuple(get<Components>(entity)...);
+            auto components = std::make_tuple(get_component<Components>(entity)...);
             std::apply([&](auto*... comps) { func(entity, *comps...); }, components);
         }
+    }
+
+    template <typename... Components>
+    std::tuple<ComponentPool<Components>*...> get_pools() {
+        return std::make_tuple(&get_pool<Components>()...);
+    }
+
+    template <typename... Components>
+    ComponentPoolInterface* find_smallest_pool() {
+        std::tuple<ComponentPool<Components>*...> pools = get_pools<Components...>();
+        ComponentPoolInterface* smallest = nullptr;
+        size_t min_size = std::numeric_limits<size_t>::max();
+
+        std::apply([&](auto*... pool_ptrs) {
+            size_t sizes[] = {pool_ptrs->storage().size()...};
+            ComponentPoolInterface* ptrs[] = {pool_ptrs...};
+
+            for (size_t i = 0; i < sizeof...(Components); ++i) {
+                if (sizes[i] < min_size) {
+                    min_size = sizes[i];
+                    smallest = ptrs[i];
+                }
+            }
+        },
+                   pools);
+
+        return smallest;
     }
 
 private:

@@ -14,12 +14,17 @@ public:
     virtual void dispose() = 0;
     
     virtual bool has_component(Entity e) const = 0;
+    
+    virtual Array<Entity>& entities() = 0;
 
     virtual ~ComponentPoolInterface() = default;
 };
 
 template <typename ComponentType>
 class ComponentPool : public ComponentPoolInterface {
+public:
+    using component_type = ComponentType;
+
 public:
     ComponentType& add_component(Entity e, const ComponentType& component) {
         return *storage_.put(e, component);
@@ -59,7 +64,7 @@ public:
         return storage_;
     }
 
-    SparseSet<ComponentType, Entity>::sparse_type& entities() { 
+    virtual Array<Entity>& entities() override { 
         return storage_.dense(); 
     }
 

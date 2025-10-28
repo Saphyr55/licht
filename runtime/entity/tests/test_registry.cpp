@@ -16,53 +16,53 @@ struct Health {
 };
 
 TEST_CASE("Entity creation and validity.", "[EntityRegistry]") {
-    EntityRegistry reg;
+    EntityRegistry registry;
 
-    Entity e1 = reg.create();
-    Entity e2 = reg.create();
+    Entity e1 = registry.create();
+    Entity e2 = registry.create();
 
     REQUIRE(e1 != e2);
-    REQUIRE(reg.valid(e1));
-    REQUIRE(reg.valid(e2));
+    REQUIRE(registry.is_valid(e1));
+    REQUIRE(registry.is_valid(e2));
 
-    reg.destroy(e1);
-    REQUIRE_FALSE(reg.valid(e1));
-    REQUIRE(reg.valid(e2));
+    registry.destroy(e1);
+    REQUIRE_FALSE(registry.is_valid(e1));
+    REQUIRE(registry.is_valid(e2));
 }
 
 TEST_CASE("Add, get, and remove components.", "[EntityRegistry]") {
-    EntityRegistry reg;
-    Entity e = reg.create();
+    EntityRegistry registry;
+    Entity e = registry.create();
 
-    REQUIRE_FALSE(reg.has<Position>(e));
-    REQUIRE(reg.get<Position>(e) == nullptr);
+    REQUIRE_FALSE(registry.has_component<Position>(e));
+    REQUIRE(registry.get_component<Position>(e) == nullptr);
 
     Position p{1.0f, 2.0f};
-    reg.add<Position>(e, p);
+    registry.add_component<Position>(e, p);
 
-    REQUIRE(reg.has<Position>(e));
-    auto* p_ptr = reg.get<Position>(e);
+    REQUIRE(registry.has_component<Position>(e));
+    auto* p_ptr = registry.get_component<Position>(e);
     REQUIRE(p_ptr != nullptr);
     REQUIRE(p_ptr->x == 1.0f);
     REQUIRE(p_ptr->y == 2.0f);
 
-    reg.remove<Position>(e);
-    REQUIRE_FALSE(reg.has<Position>(e));
-    REQUIRE(reg.get<Position>(e) == nullptr);
+    registry.remove_component<Position>(e);
+    REQUIRE_FALSE(registry.has_component<Position>(e));
+    REQUIRE(registry.get_component<Position>(e) == nullptr);
 }
 
 TEST_CASE("Multiple component types.", "[EntityRegistry]") {
-    EntityRegistry reg;
-    Entity e = reg.create();
+    EntityRegistry registry;
+    Entity e = registry.create();
 
-    reg.add<Position>(e, {10, 20});
-    reg.add<Velocity>(e, {1, 2});
+    registry.add_component<Position>(e, {10, 20});
+    registry.add_component<Velocity>(e, {1, 2});
 
-    REQUIRE(reg.has<Position>(e));
-    REQUIRE(reg.has<Velocity>(e));
+    REQUIRE(registry.has_component<Position>(e));
+    REQUIRE(registry.has_component<Velocity>(e));
 
-    Position* pos = reg.get<Position>(e);
-    Velocity* vel = reg.get<Velocity>(e);
+    Position* pos = registry.get_component<Position>(e);
+    Velocity* vel = registry.get_component<Velocity>(e);
 
     REQUIRE(pos->x == 10);
     REQUIRE(pos->y == 20);
@@ -71,18 +71,18 @@ TEST_CASE("Multiple component types.", "[EntityRegistry]") {
 }
 
 TEST_CASE("Iterate over single components.", "[EntityRegistry]") {
-    EntityRegistry reg;
+    EntityRegistry registry;
 
-    Entity e1 = reg.create();
-    Entity e2 = reg.create();
-    Entity e3 = reg.create();
+    Entity e1 = registry.create();
+    Entity e2 = registry.create();
+    Entity e3 = registry.create();
 
-    reg.add<Position>(e1, {1, 1});
-    reg.add<Position>(e2, {2, 2});
-    reg.add<Position>(e3, {3, 3});
+    registry.add_component<Position>(e1, {1, 1});
+    registry.add_component<Position>(e2, {2, 2});
+    registry.add_component<Position>(e3, {3, 3});
 
-    int sum_x = 0, sum_y = 0;
-    reg.each<Position>([&](Entity e, Position& p) {
+    int32 sum_x = 0, sum_y = 0;
+    registry.for_each<Position>([&](Entity e, Position& p) -> void {
         sum_x += static_cast<int>(p.x);
         sum_y += static_cast<int>(p.y);
     });
@@ -92,23 +92,23 @@ TEST_CASE("Iterate over single components.", "[EntityRegistry]") {
 }
 
 TEST_CASE("Iterate over multiple components.", "[EntityRegistry]") {
-    EntityRegistry reg;
+    EntityRegistry registry;
 
-    Entity e1 = reg.create();
-    Entity e2 = reg.create();
-    Entity e3 = reg.create();
+    Entity e1 = registry.create();
+    Entity e2 = registry.create();
+    Entity e3 = registry.create();
 
-    reg.add<Position>(e1, {1, 1});
-    reg.add<Velocity>(e1, {10, 20});
+    registry.add_component<Position>(e1, {1, 1});
+    registry.add_component<Velocity>(e1, {10, 20});
 
-    reg.add<Position>(e2, {2, 2});
+    registry.add_component<Position>(e2, {2, 2});
     // e2 has no velocity
 
-    reg.add<Position>(e3, {3, 3});
-    reg.add<Velocity>(e3, {30, 40});
+    registry.add_component<Position>(e3, {3, 3});
+    registry.add_component<Velocity>(e3, {30, 40});
 
     float32 sum_x = 0, sum_dx = 0;
-    reg.each<Position, Velocity>([&](Entity e, Position& p, Velocity& v) {
+    registry.for_each<Position, Velocity>([&](Entity e, Position& p, Velocity& v) -> void {
         sum_x += static_cast<float32>(p.x);
         sum_dx += static_cast<float32>(v.dx);
     });
@@ -119,37 +119,37 @@ TEST_CASE("Iterate over multiple components.", "[EntityRegistry]") {
 }
 
 TEST_CASE("Destroy entities removes components.", "[EntityRegistry]") {
-    EntityRegistry reg;
+    EntityRegistry registry;
 
-    Entity e1 = reg.create();
-    Entity e2 = reg.create();
+    Entity e1 = registry.create();
+    Entity e2 = registry.create();
 
-    reg.add<Position>(e1, {1, 1});
-    reg.add<Position>(e2, {2, 2});
+    registry.add_component<Position>(e1, {1, 1});
+    registry.add_component<Position>(e2, {2, 2});
 
-    reg.destroy(e1);
+    registry.destroy(e1);
 
-    REQUIRE_FALSE(reg.valid(e1));
-    REQUIRE(reg.valid(e2));
+    REQUIRE_FALSE(registry.is_valid(e1));
+    REQUIRE(registry.is_valid(e2));
 
-    REQUIRE(reg.get<Position>(e1) == nullptr);
-    REQUIRE(reg.get<Position>(e2) != nullptr);
+    REQUIRE(registry.get_component<Position>(e1) == nullptr);
+    REQUIRE(registry.get_component<Position>(e2) != nullptr);
 }
 
 TEST_CASE("Disposing registry removes all entities and components.", "[EntityRegistry]") {
-    EntityRegistry reg;
+    EntityRegistry registry;
 
-    Entity e1 = reg.create();
-    Entity e2 = reg.create();
+    Entity e1 = registry.create();
+    Entity e2 = registry.create();
 
-    reg.add<Position>(e1, {1, 1});
-    reg.add<Velocity>(e2, {5, 5});
+    registry.add_component<Position>(e1, {1, 1});
+    registry.add_component<Velocity>(e2, {5, 5});
 
-    reg.dispose();
+    registry.dispose();
 
-    REQUIRE_FALSE(reg.valid(e1));
-    REQUIRE_FALSE(reg.valid(e2));
+    REQUIRE_FALSE(registry.is_valid(e1));
+    REQUIRE_FALSE(registry.is_valid(e2));
 
-    REQUIRE(reg.get<Position>(e1) == nullptr);
-    REQUIRE(reg.get<Velocity>(e2) == nullptr);
+    REQUIRE(registry.get_component<Position>(e1) == nullptr);
+    REQUIRE(registry.get_component<Velocity>(e2) == nullptr);
 }
