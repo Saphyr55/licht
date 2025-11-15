@@ -1,8 +1,5 @@
 #version 450
 
-#extension GL_ARB_separate_shader_objects : enable
-#extension GL_ARB_separate_shader_objects : enable
-
 layout(location = 0) in vec3 in_position;
 layout(location = 1) in vec3 in_normal;
 layout(location = 2) in vec2 in_texture_uv;
@@ -21,7 +18,7 @@ layout(std140, set = 0, binding = 0) uniform UniformBufferObject {
     vec3 eye_position;
 } u_ubo;
 
-layout(push_constant) uniform UDrawItem {
+layout(push_constant) uniform DrawItem {
     mat4 model;
 } u_item;
 

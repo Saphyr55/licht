@@ -37,7 +37,7 @@ public:
     RenderModelConstant model_constant;
 };
 
-struct RenderPacket {
+struct DrawPacket {
     Array<DrawItem> items;
 };
 

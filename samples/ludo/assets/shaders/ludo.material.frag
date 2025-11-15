@@ -22,7 +22,7 @@ layout(std140, set = 0, binding = 0) uniform UniformBufferObject {
     vec3 eye_position;
 } u_ubo;
 
-layout(std140, set = 0, binding = 1) uniform ULights {
+layout(std140, set = 0, binding = 1) uniform Lights {
     PunctualLight punctual_light;
 } u_lights;
 

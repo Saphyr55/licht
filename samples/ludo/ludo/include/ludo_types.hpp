@@ -9,7 +9,7 @@ struct UniformBufferObject {
     alignas(16) Matrix4f view = Matrix4f::identity();
     alignas(16) Matrix4f proj = Matrix4f::identity();
     // Never forget to update this one.
-    alignas(16) Matrix4f view_proj = proj * view;
+    alignas(16) Matrix4f view_proj = Matrix4f::identity();
     alignas(16) Vector3f eye_position = Vector3f(0.0f);
 
     UniformBufferObject() = default;

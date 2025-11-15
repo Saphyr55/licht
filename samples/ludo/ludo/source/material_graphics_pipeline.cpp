@@ -13,11 +13,11 @@
 namespace licht {
 
 void MaterialGraphicsPipeline::initialize(const SharedRef<RHIDevice>& device,
-                                          const SharedRef<RenderContext>& renderer) {
-    renderer_ = renderer;
+                                          const SharedRef<RenderContext>& render_context) {
+    render_context_ = render_context;
     device_ = device;
-    buffer_pool_ = renderer->get_buffer_pool();
-    texture_pool_ = renderer->get_texture_pool();
+    buffer_pool_ = render_context->get_buffer_pool();
+    texture_pool_ = render_context->get_texture_pool();
 
     Array<uint8> texture_buffer;
     texture_buffer.resize(4);
@@ -54,7 +54,7 @@ void MaterialGraphicsPipeline::initialize(const SharedRef<RHIDevice>& device,
 
     // Render Pass.
     RHIColorAttachmentDescription render_pass_color_attachment = {};
-    render_pass_color_attachment.format = renderer_->get_swapchain()->get_format();
+    render_pass_color_attachment.format = render_context_->get_swapchain()->get_format();
 
     render_pass_ = device_->create_render_pass({
         .color_attachment_decriptions = {render_pass_color_attachment},
@@ -76,8 +76,8 @@ void MaterialGraphicsPipeline::initialize(const SharedRef<RHIDevice>& device,
 }
 
 void MaterialGraphicsPipeline::initialize_shader_resource_pool(size_t item_count) {
-    size_t max_global_count = renderer_->get_frame_count();
-    size_t max_item_count = renderer_->get_frame_count() * item_count;
+    size_t max_global_count = render_context_->get_frame_count();
+    size_t max_item_count = render_context_->get_frame_count() * item_count;
 
     global_shader_resource_pool_ = device_->create_shader_resource_pool(max_global_count, global_bindings_);
     texture_shader_resource_pool_ = device_->create_shader_resource_pool(max_item_count, texture_bindings_);
@@ -117,12 +117,12 @@ void MaterialGraphicsPipeline::initialize_shader_resource_pool(size_t item_count
 }
 
 void MaterialGraphicsPipeline::reload() {
-    LLOG_INFO("[MaterialGraphicsPipeline]", "Reloading shaders and rebuilding pipeline...");
+    LLOG_INFO("[MaterialGraphicsPipeline]", "Reloading material shaders and rebuilding pipeline...");
 
     destroy_pipeline_internal();
     create_pipeline_internal();
 
-    LLOG_INFO("[MaterialGraphicsPipeline]", "Pipeline successfully reloaded.");
+    LLOG_INFO("[MaterialGraphicsPipeline]", "Material pipeline successfully reloaded.");
 }
 
 void MaterialGraphicsPipeline::destroy() {
@@ -152,13 +152,13 @@ void MaterialGraphicsPipeline::destroy() {
     }
 }
 
-void MaterialGraphicsPipeline::compile(const RenderPacket& packet) {
+void MaterialGraphicsPipeline::compile(const DrawPacket& packet) {
     if (!global_shader_resource_pool_ || !texture_shader_resource_pool_) {
         LLOG_ERROR("[MaterialGraphicsPipeline]", "Shader resource pools are not initialized.");
         return;
     }
 
-    for (uint32 frame = 0; frame < renderer_->get_frame_count(); frame++) {
+    for (uint32 frame = 0; frame < render_context_->get_frame_count(); frame++) {
         RHIShaderResourceGroup* uniform_group = global_shader_resource_pool_->get_group(frame);
 
         RHIBuffer* uniform_buffer = uniform_buffers_[frame];
@@ -184,7 +184,7 @@ void MaterialGraphicsPipeline::compile(const RenderPacket& packet) {
 
     size_t sr_texture_pool_index = 0;
 
-    for (uint32 frame = 0; frame < renderer_->get_frame_count(); frame++) {
+    for (uint32 frame = 0; frame < render_context_->get_frame_count(); frame++) {
         for (DrawItem& item : packet.items) {
             RHIShaderResourceGroup* tex_group = texture_shader_resource_pool_->get_group(sr_texture_pool_index++);
 
@@ -207,7 +207,7 @@ void MaterialGraphicsPipeline::compile(const RenderPacket& packet) {
             tex_group->compile();
 
             if (item.shader_groups.empty()) {
-                item.shader_groups.resize(renderer_->get_frame_count());
+                item.shader_groups.resize(render_context_->get_frame_count());
             }
 
             item.shader_groups[frame] = tex_group;
@@ -216,12 +216,12 @@ void MaterialGraphicsPipeline::compile(const RenderPacket& packet) {
 }
 
 void MaterialGraphicsPipeline::update(const PunctualLight& light) {
-    light_buffers_[renderer_->get_current_frame()]->update(&light, sizeof(PunctualLight));
+    light_buffers_[render_context_->get_current_frame()]->update(&light, sizeof(PunctualLight));
 }
 
 void MaterialGraphicsPipeline::update(const UniformBufferObject& ubo) {
-    uniform_buffers_[renderer_->get_current_frame()]->update(&ubo, sizeof(UniformBufferObject));
-    sampler_indices_buffers_[renderer_->get_current_frame()]->update(&sampler_indices_, sizeof(SamplerIndices));
+    uniform_buffers_[render_context_->get_current_frame()]->update(&ubo, sizeof(UniformBufferObject));
+    sampler_indices_buffers_[render_context_->get_current_frame()]->update(&sampler_indices_, sizeof(SamplerIndices));
 }
 
 void MaterialGraphicsPipeline::destroy_pipeline_internal() {
@@ -251,17 +251,19 @@ void MaterialGraphicsPipeline::create_pipeline_internal() {
         3, 3, RHIFormat::RGBA32Float);
 
     // Fetch size.
-    float32 width = renderer_->get_swapchain()->get_width();
-    float32 height = renderer_->get_swapchain()->get_height();
+    float32 width = render_context_->get_swapchain()->get_width();
+    float32 height = render_context_->get_swapchain()->get_height();
 
     // Load shaders binary codes.
-    FileHandleResult vertex_file_open_error = FileSystem::get_platform().open_read("ludo.material.vert.spv");
+    FileSystem& file_system = FileSystem::get_platform();
+
+    FileHandleResult vertex_file_open_error = file_system.open_read("ludo.material.vert.spv");
     LCHECK(vertex_file_open_error.has_value());
 
     SharedRef<FileHandle> vertex_file_handle = vertex_file_open_error.value();
     SPIRVShader vertex_shader(vertex_file_handle->read_all_bytes());
 
-    FileHandleResult fragment_file_open_error = FileSystem::get_platform().open_read("ludo.material.frag.spv");
+    FileHandleResult fragment_file_open_error = file_system.open_read("ludo.material.frag.spv");
     LCHECK(fragment_file_open_error.has_value());
 
     SharedRef<FileHandle> fragment_file_handle = fragment_file_open_error.value();
@@ -283,7 +285,6 @@ void MaterialGraphicsPipeline::create_pipeline_internal() {
         .max_depth = 1.0f,
     };
 
-    // -- Graphics Pipeline --
     graphics_pipeline_ = device_->create_graphics_pipeline(
         RHIGraphicsPipelineDescriptionBuilder()
             .with_render_pass(render_pass_)

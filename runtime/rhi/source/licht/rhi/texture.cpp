@@ -9,21 +9,23 @@ const RHITextureDescription& RHITexture::get_description() const {
     return description_;
 }
 
-void rhi_transition_texture(RHIDeviceRef device, const RHITextureLayoutTransition& barrier, const RHICommandQueueRef& queue) {
+void rhi_transition_texture(SharedRef<RHIDevice> device, const RHITextureLayoutTransition& barrier, const RHICommandQueueRef& queue) {
     RHICommandAllocatorDescription transfer_command_allocator_desc = {};
     transfer_command_allocator_desc.command_queue = queue;
 
-    RHICommandAllocator* transfer_command_allocator = device->create_command_allocator(transfer_command_allocator_desc);
+    RHICommandAllocator* cmd_allocator = device->create_command_allocator(transfer_command_allocator_desc);
 
     // Open a transfer command buffer
-    RHICommandBuffer* transfer_cmd = transfer_command_allocator->open();
-    transfer_command_allocator->reset_command_buffer(transfer_cmd);
+    RHICommandBuffer* cmd_buffer = cmd_allocator->open();
+    cmd_allocator->reset_command_buffer(cmd_buffer);
 
-    transfer_cmd->begin();
+    cmd_buffer->begin();
     {
-        transfer_cmd->transition_texture_layout(barrier);
+        cmd_buffer->transition_texture_layout(barrier);
     }
-    transfer_cmd->end();
+    cmd_buffer->end();
+
+    device->destroy_command_allocator(cmd_allocator);
 }
 
 }  //namespace licht

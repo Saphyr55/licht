@@ -17,8 +17,10 @@ out/
 
 # xmake cache.
 .xmake/
-vsxmake2022
-vsxmake2017
+
+vsxmake2026/
+vsxmake2022/
+vsxmake2017/
 
 # Developers 
 .notes/*

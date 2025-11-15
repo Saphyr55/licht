@@ -8,6 +8,7 @@
 #include "licht/rhi/texture.hpp"
 #include "material_graphics_pipeline.hpp"
 #include "licht/scene/punctual_light.hpp"
+#include "ui_graphics_pipeline.hpp"
 
 namespace licht {
 
@@ -19,7 +20,7 @@ public:
 
     void on_shutdown();
 
-    void on_tick(float64 delta_time);
+    void on_tick(const float64 delta_time);
 
     void update_resized(const uint32 width, const uint32 height);
 
@@ -32,29 +33,34 @@ public:
     void unpause();
 
 private:
-    void update_uniform(float64 delta_time);
+    void update_material_uniform(const float64 delta_time);
+    void update_ui_uniform(const float64 delta_time);
 
     void reset();
 
 public:
-    RenderFrameScript(Camera* camera, WindowHandle window_handle);
+    RenderFrameScript(Camera* camera, const WindowHandle window_handle);
     ~RenderFrameScript() = default;
 
 private:
     Camera* camera_;
 
-    RenderPacket packet_;
+    DrawPacket packet_;
+    DrawPacket ui_packet_;
     PunctualLight punctual_light_;
 
     WindowHandle window_handle_;
-    RHIDeviceRef device_;
+    SharedRef<RHIDevice> device_;
     
-    Array<RHIFramebuffer*> framebuffers_;
+    Array<RHIFramebuffer*> material_framebuffers_;
+    Array<RHIFramebuffer*> ui_framebuffers_;
+
     RHITextureView* depth_texture_view_ ;
     RHITexture* depth_texture_;
 
     SharedRef<RenderContext> render_context_;
     SharedRef<MaterialGraphicsPipeline> material_graphics_pipeline_;
+    SharedRef<UIGraphicsPipeline> ui_graphics_pipeline_;
 
     bool pause_ = false;
 };

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "licht/core/containers/fixed_array.hpp"
 #include "licht/core/memory/shared_ref.hpp"
 #include "licht/renderer/render_context.hpp"
 #include "licht/renderer/draw_item.hpp"
@@ -22,7 +21,7 @@ public:
     void reload();
     void destroy();
 
-    void compile(const RenderPacket& packet);
+    void compile(const DrawPacket& packet);
 
     void update(const PunctualLight& light);
     void update(const UniformBufferObject& ubo);
@@ -52,7 +51,7 @@ private:
 
 private:
     SharedRef<RHIDevice> device_ = nullptr;
-    SharedRef<RenderContext> renderer_ = nullptr;
+    SharedRef<RenderContext> render_context_ = nullptr;
     SharedRef<RHIBufferPool> buffer_pool_ = nullptr;
     SharedRef<RHITexturePool> texture_pool_ = nullptr;
     RHIGraphicsPipeline* graphics_pipeline_ = nullptr;
@@ -78,7 +77,7 @@ private:
     RHIShaderResourceGroupLayout* texture_shader_resource_layout_ = nullptr;
     RHIShaderResourceGroupPool* texture_shader_resource_pool_ = nullptr;
     Array<RHIBuffer*> texture_factors_buffers_;
-    
+
     RHITexture* default_texture_ = nullptr;
     RHITextureView* default_texture_view_ = nullptr;
     RHISampler* default_sampler_ = nullptr;

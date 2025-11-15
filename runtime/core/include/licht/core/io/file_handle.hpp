@@ -9,13 +9,13 @@ class LICHT_CORE_API FileHandle {
 public:
     virtual int64 tell() = 0;
 
-    virtual bool seek(int64 p_position) = 0;
+    virtual bool seek(int64 position) = 0;
 
-    virtual bool read(uint8* p_destination, size_t p_nbytes) = 0;
+    virtual bool read(uint8* destination, size_t nbytes) = 0;
 
     virtual Array<uint8> read_all_bytes() = 0;
 
-    virtual bool write(const uint8* p_source, size_t p_nbytes) = 0;
+    virtual bool write(const uint8* source, size_t nbytes) = 0;
 
     virtual bool flush() = 0;
 

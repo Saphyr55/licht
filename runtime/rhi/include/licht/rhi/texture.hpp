@@ -41,7 +41,7 @@ protected:
     RHITextureDescription description_;
 };
 
-LICHT_RHI_API void rhi_transition_texture(RHIDeviceRef device, 
+LICHT_RHI_API void rhi_transition_texture(SharedRef<RHIDevice> device, 
                                           const RHITextureLayoutTransition& barrier, 
                                           const RHICommandQueueRef& queue);
 

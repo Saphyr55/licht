@@ -12,7 +12,6 @@
 #include "licht/rhi/shader_resource.hpp"
 #include "licht/rhi/texture_view.hpp"
 
-
 namespace licht {
 
 class RHIDevice {

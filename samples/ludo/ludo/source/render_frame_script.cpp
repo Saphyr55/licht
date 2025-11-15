@@ -18,6 +18,7 @@
 #include "licht/renderer/shader/shader_compiler.hpp"
 #include "licht/rhi/command_buffer.hpp"
 #include "licht/rhi/device_memory_uploader.hpp"
+#include "licht/rhi/framebuffer.hpp"
 #include "licht/rhi/graphics_pipeline.hpp"
 #include "licht/rhi/rhi_forwards.hpp"
 #include "licht/rhi/rhi_module.hpp"
@@ -28,13 +29,14 @@
 #include "licht/scene/camera.hpp"
 #include "ludo_types.hpp"
 #include "material_graphics_pipeline.hpp"
+#include "ui_graphics_pipeline.hpp"
 
 namespace licht {
 
 RenderFrameScript::RenderFrameScript(Camera* camera, WindowHandle window_handle)
     : window_handle_(window_handle)
     , device_(nullptr)
-    , framebuffers_(3)
+    , material_framebuffers_(3)
     , pause_(false)
     , camera_(camera) {
 }
@@ -53,6 +55,7 @@ void RenderFrameScript::on_startup() {
 
     render_context_ = new_ref<RenderContext>();
     material_graphics_pipeline_ = new_ref<MaterialGraphicsPipeline>();
+    ui_graphics_pipeline_ = new_ref<UIGraphicsPipeline>();
 
     render_context_->initialize(window_handle_);
     render_context_->on_reset([this]() -> void { reset(); });
@@ -86,7 +89,7 @@ void RenderFrameScript::on_startup() {
 
     material_graphics_pipeline_->initialize(device_, render_context_);
 
-    framebuffers_.reserve(render_context_->get_swapchain()->get_texture_views().size());
+    material_framebuffers_.reserve(render_context_->get_swapchain()->get_texture_views().size());
     for (RHITextureView* texture : render_context_->get_swapchain()->get_texture_views()) {
         RHIFramebufferDescription description = {
             .render_pass = material_graphics_pipeline_->get_render_pass(),
@@ -97,11 +100,27 @@ void RenderFrameScript::on_startup() {
         };
 
         RHIFramebuffer* framebuffer = device_->create_framebuffer(description);
-        framebuffers_.append(framebuffer);
+        material_framebuffers_.append(framebuffer);
+    }
+
+    ui_graphics_pipeline_->initialize(device_, render_context_);
+
+    ui_framebuffers_.reserve(render_context_->get_swapchain()->get_texture_views().size());
+    for (RHITextureView* texture : render_context_->get_swapchain()->get_texture_views()) {
+        RHIFramebufferDescription description = {
+            .render_pass = ui_graphics_pipeline_->get_render_pass(),
+            .attachments = {texture, depth_texture_view_},
+            .width = width,
+            .height = height,
+            .layers = 1,
+        };
+
+        RHIFramebuffer* framebuffer = device_->create_framebuffer(description);
+        ui_framebuffers_.append(framebuffer);
     }
 
     RHIDeviceMemoryUploader uploader = render_context_->uploader();
-
+    
     for (StaticMesh& mesh : meshes_model) {
         for (StaticSubMesh& submesh : mesh.get_submeshes()) {
             DrawItem item = DrawItem::create(device_, uploader, submesh);
@@ -120,17 +139,23 @@ void RenderFrameScript::on_startup() {
     material_graphics_pipeline_->initialize_shader_resource_pool(packet_.items.size());
     material_graphics_pipeline_->compile(packet_);
 
-    Input::on_key_release.connect([&](const VirtualKey key) {
+    ui_graphics_pipeline_->initialize_shader_resource_pool(ui_packet_.items.size());
+    ui_graphics_pipeline_->compile(ui_packet_);
+
+    Input::on_key_release.connect([&](const VirtualKey key) -> void {
         if (key == VirtualKey::G) {
             reload_shaders();
         }
     });
 }
 
-void RenderFrameScript::on_tick(float64 delta_time) {
+void RenderFrameScript::on_tick(const float64 delta_time) {
     if (pause_) {
         return;
     }
+    
+    update_material_uniform(delta_time);
+    update_ui_uniform(delta_time);
 
     render_context_->begin_frame();
     {
@@ -144,10 +169,11 @@ void RenderFrameScript::on_tick(float64 delta_time) {
 
         RHIRenderPassBeginInfo render_pass_begin_info = {};
         render_pass_begin_info.render_pass = material_graphics_pipeline_->get_render_pass();
-        render_pass_begin_info.framebuffer = framebuffers_[render_context_->get_frame_index()];
+        render_pass_begin_info.framebuffer = material_framebuffers_[render_context_->get_frame_index()];
         render_pass_begin_info.area = area;
         render_pass_begin_info.color = Vector4f(0.01f, 0.01f, 0.01f, 1.0f);
 
+        // Material Pass
         cmd->begin_render_pass(render_pass_begin_info);
         {
             RHIGraphicsPipeline* graphics_pipeline = material_graphics_pipeline_->get_graphics_pipeline_handle();
@@ -197,13 +223,25 @@ void RenderFrameScript::on_tick(float64 delta_time) {
             }
         }
         cmd->end_render_pass();
+        
+        // UI Pass
+        RHIRenderPassBeginInfo ui_info = {};
+        ui_info.render_pass = ui_graphics_pipeline_->get_render_pass();
+        ui_info.framebuffer = ui_framebuffers_[render_context_->get_frame_index()];
+        ui_info.area = area;
 
-        update_uniform(delta_time);
+        cmd->begin_render_pass(ui_info);
+        {
+            RHIGraphicsPipeline* ui_pipeline = ui_graphics_pipeline_->get_graphics_pipeline_handle();
+
+            cmd->bind_graphics_pipeline(ui_pipeline);
+        }
+        cmd->end_render_pass();
     }
     render_context_->end_frame();
 }
 
-void RenderFrameScript::update_uniform(const float64 delta_time) {
+void RenderFrameScript::update_material_uniform(const float64 delta_time) {
     UniformBufferObject ubo;
 
     float32 width = render_context_->get_swapchain()->get_width();
@@ -219,6 +257,22 @@ void RenderFrameScript::update_uniform(const float64 delta_time) {
 
     material_graphics_pipeline_->update(ubo);
     material_graphics_pipeline_->update(punctual_light_);
+}
+
+void RenderFrameScript::update_ui_uniform(const float64 delta_time) {
+    UniformBufferObject ubo;
+
+    float32 width = render_context_->get_swapchain()->get_width();
+    float32 height = render_context_->get_swapchain()->get_height();
+    float32 aspect_ratio = width / height;
+
+    ubo.view = Matrix4f::identity();
+    ubo.proj = Matrix4f::orthographic(0.0f, width, 0.0f, height, 0.1f, 10000.0f);
+    ubo.view_proj = ubo.proj * ubo.view;
+
+    ubo.eye_position = Vector3f(0.0f);
+
+    ui_graphics_pipeline_->update(ubo);
 }
 
 void RenderFrameScript::reset() {
@@ -240,13 +294,18 @@ void RenderFrameScript::reset() {
     depth_texture_view_ = device_->create_texture_view(depth_texture_view_desc);
 
     // Destroy all existing framebuffers
-    for (RHIFramebuffer* framebuffer : framebuffers_) {
+    for (RHIFramebuffer* framebuffer : material_framebuffers_) {
         device_->destroy_framebuffer(framebuffer);
     }
-    framebuffers_.clear();
+    material_framebuffers_.clear();
+
+    for (RHIFramebuffer* framebuffer : ui_framebuffers_) {
+        device_->destroy_framebuffer(framebuffer);
+    }
+    ui_framebuffers_.clear();
 
     // Create new framebuffers
-    framebuffers_.reserve(render_context_->get_swapchain()->get_texture_views().size());
+    material_framebuffers_.reserve(render_context_->get_swapchain()->get_texture_views().size());
     for (RHITextureView* texture_view : render_context_->get_swapchain()->get_texture_views()) {
         RHIFramebufferDescription description = {};
         description.height = render_context_->get_swapchain()->get_height();
@@ -256,19 +315,38 @@ void RenderFrameScript::reset() {
         description.layers = 1;
 
         RHIFramebuffer* framebuffer = device_->create_framebuffer(description);
-        framebuffers_.append(framebuffer);
+        material_framebuffers_.append(framebuffer);
+    }
+
+    ui_framebuffers_.reserve(render_context_->get_swapchain()->get_texture_views().size());
+    for (RHITextureView* texture_view : render_context_->get_swapchain()->get_texture_views()) {
+        RHIFramebufferDescription description = {};
+        description.height = render_context_->get_swapchain()->get_height();
+        description.width = render_context_->get_swapchain()->get_width();
+        description.render_pass = ui_graphics_pipeline_->get_render_pass();
+        description.attachments = {texture_view, depth_texture_view_};
+        description.layers = 1;
+
+        RHIFramebuffer* framebuffer = device_->create_framebuffer(description);
+        ui_framebuffers_.append(framebuffer);
     }
 }
 
 void RenderFrameScript::on_shutdown() {
     render_context_->shutdown();
 
-    for (RHIFramebuffer* framebuffer : framebuffers_) {
+    for (RHIFramebuffer* framebuffer : material_framebuffers_) {
         device_->destroy_framebuffer(framebuffer);
     }
-    framebuffers_.clear();
+    material_framebuffers_.clear();
+
+    for (RHIFramebuffer* framebuffer : ui_framebuffers_) {
+        device_->destroy_framebuffer(framebuffer);
+    }
+    ui_framebuffers_.clear();
 
     material_graphics_pipeline_->destroy();
+    ui_graphics_pipeline_->destroy();
 
     device_->destroy_texture_view(depth_texture_view_);
 
@@ -288,7 +366,9 @@ void RenderFrameScript::reload_shaders() {
     device_->wait_idle();
 
     compile_shaders();
+    
     material_graphics_pipeline_->reload();
+    ui_graphics_pipeline_->reload();
 }
 
 void RenderFrameScript::update_resized(const uint32 width, const uint32 height) {
@@ -299,14 +379,23 @@ bool RenderFrameScript::compile_shaders() {
     StringRef projectdir = ProjectSettings::get_instance().get_name("projectdir");
     FileSystem& file_system = FileSystem::get_platform();
 
-    String vertex_shader_path = projectdir + "/assets/shaders/ludo.material.vert";
-    String fragment_shader_path = projectdir + "/assets/shaders/ludo.material.frag";
+    String material_vertex_shader_path = projectdir + "/assets/shaders/ludo.material.vert";
+    String material_fragment_shader_path = projectdir + "/assets/shaders/ludo.material.frag";
 
-    bool vert_ok = SPIRVShaderCompiler::compile_glsl_file(vertex_shader_path,
+    String ui_vertex_shader_path = projectdir + "/assets/shaders/ludo.ui.vert";
+    String ui_fragment_shader_path = projectdir + "/assets/shaders/ludo.ui.frag";
+
+    bool vert_ok = SPIRVShaderCompiler::compile_glsl_file(material_vertex_shader_path,
                                                           "ludo.material.vert.spv", SPIRVShaderCompiler::Stage::Vertex);
 
-    bool frag_ok = SPIRVShaderCompiler::compile_glsl_file(fragment_shader_path,
+    bool frag_ok = SPIRVShaderCompiler::compile_glsl_file(material_fragment_shader_path,
                                                           "ludo.material.frag.spv", SPIRVShaderCompiler::Stage::Fragment);
+
+    vert_ok = vert_ok && SPIRVShaderCompiler::compile_glsl_file(ui_vertex_shader_path,
+                                                          "ludo.ui.vert.spv", SPIRVShaderCompiler::Stage::Vertex);
+
+    frag_ok = frag_ok && SPIRVShaderCompiler::compile_glsl_file(ui_fragment_shader_path,
+                                                          "ludo.ui.frag.spv", SPIRVShaderCompiler::Stage::Fragment);
 
     return vert_ok && frag_ok;
 }
