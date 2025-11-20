@@ -163,9 +163,11 @@ void RenderFrameScript::on_tick(const float64 delta_time) {
 
     render_context_->begin_frame();
     {
-        RHICommandBuffer* cmd = render_context_->get_current_command_buffer();
+        RHICommandBuffer* cmd_buffer = render_context_->get_current_command_buffer();
+
         float32 width = static_cast<float32>(render_context_->get_swapchain()->get_width());
         float32 height = static_cast<float32>(render_context_->get_swapchain()->get_height());
+
         Rect2D area = {.x = 0.0f,
                        .y = 0.0f,
                        .width = width,
@@ -183,21 +185,22 @@ void RenderFrameScript::on_tick(const float64 delta_time) {
                              .min_depth = 0.0f,
                              .max_depth = 1.0f};
 
-        // Material Pass        
-        RHIRenderPassBeginInfo render_pass_begin_info = {};
-        render_pass_begin_info.render_pass = material_graphics_pipeline_->get_render_pass();
-        render_pass_begin_info.framebuffer = material_framebuffers_[render_context_->get_frame_index()];
-        render_pass_begin_info.area = area;
-        render_pass_begin_info.color = Vector4f(0.01f, 0.01f, 0.01f, 1.0f);
-
-        cmd->begin_render_pass(render_pass_begin_info);
+        // Material Pass
         {
+            RHIRenderPassBeginInfo render_pass_begin_info = {};
+            render_pass_begin_info.render_pass = material_graphics_pipeline_->get_render_pass();
+            render_pass_begin_info.framebuffer = material_framebuffers_[render_context_->get_frame_index()];
+            render_pass_begin_info.area = area;
+            render_pass_begin_info.color = Vector4f(0.01f, 0.01f, 0.01f, 1.0f);
+
+            cmd_buffer->begin_render_pass(render_pass_begin_info);
+
             RHIGraphicsPipeline* graphics_pipeline = material_graphics_pipeline_->get_graphics_pipeline_handle();
 
-            cmd->bind_graphics_pipeline(graphics_pipeline);
+            cmd_buffer->bind_graphics_pipeline(graphics_pipeline);
 
-            cmd->set_viewports(&viewport, 1);
-            cmd->set_scissors(&scissor, 1);
+            cmd_buffer->set_viewports(&viewport, 1);
+            cmd_buffer->set_scissors(&scissor, 1);
 
             // Render Packet
             for (DrawItem& item : packet_.items) {
@@ -205,42 +208,48 @@ void RenderFrameScript::on_tick(const float64 delta_time) {
                                                            ->get_global_shader_resource_pool()
                                                            ->get_group(render_context_->get_current_frame());
 
-                cmd->bind_shader_resource_group(graphics_pipeline, {global_group}, 0);
+                cmd_buffer->bind_shader_resource_group(graphics_pipeline, {global_group}, 0);
 
-                cmd->set_shader_constants(graphics_pipeline, RHIShaderConstants(&item.model_constant,
-                                                                                sizeof(RenderModelConstant),
-                                                                                0,
-                                                                                RHIShaderStage::Vertex));
+                cmd_buffer->set_shader_constants(graphics_pipeline, RHIShaderConstants(&item.model_constant,
+                                                                                       sizeof(RenderModelConstant),
+                                                                                       0,
+                                                                                       RHIShaderStage::Vertex));
 
                 RHIShaderResourceGroup* shader_group = item.shader_groups[render_context_->get_current_frame()];
 
-                cmd->bind_vertex_buffers(item.vertex_buffers);
-                cmd->bind_index_buffer(item.index_buffer);
+                cmd_buffer->bind_vertex_buffers(item.vertex_buffers);
+                cmd_buffer->bind_index_buffer(item.index_buffer);
 
-                cmd->bind_shader_resource_group(graphics_pipeline, {shader_group}, 1);
+                cmd_buffer->bind_shader_resource_group(graphics_pipeline, {shader_group}, 1);
 
                 RHIDrawIndexedCommand draw_indexed_command = {};
                 draw_indexed_command.index_count = item.index_count;
                 draw_indexed_command.instance_count = 1;
 
-                cmd->draw(draw_indexed_command);
+                cmd_buffer->draw(draw_indexed_command);
             }
+
+            cmd_buffer->end_render_pass();
         }
-        cmd->end_render_pass();
 
         // UI Pass
-        RHIRenderPassBeginInfo ui_info = {};
-        ui_info.render_pass = ui_graphics_pipeline_->get_render_pass();
-        ui_info.framebuffer = ui_framebuffers_[render_context_->get_frame_index()];
-        ui_info.area = area;
-
-        cmd->begin_render_pass(ui_info);
         {
+            RHIRenderPassBeginInfo render_pass_begin_info = {};
+            render_pass_begin_info.render_pass = ui_graphics_pipeline_->get_render_pass();
+            render_pass_begin_info.framebuffer = ui_framebuffers_[render_context_->get_frame_index()];
+            render_pass_begin_info.area = area;
+
+            cmd_buffer->begin_render_pass(render_pass_begin_info);
+
             RHIGraphicsPipeline* ui_pipeline = ui_graphics_pipeline_->get_graphics_pipeline_handle();
 
-            cmd->bind_graphics_pipeline(ui_pipeline);
+            cmd_buffer->bind_graphics_pipeline(ui_pipeline);
+
+            cmd_buffer->set_viewports(&viewport, 1);
+            cmd_buffer->set_scissors(&scissor, 1);
+            cmd_buffer->end_render_pass();
         }
-        cmd->end_render_pass();
+
     }
     render_context_->end_frame();
 }
@@ -280,7 +289,6 @@ void RenderFrameScript::update_ui_uniform(const float64 delta_time) {
 }
 
 void RenderFrameScript::reset() {
-
     // Destroy depth texture.
     device_->destroy_texture_view(depth_texture_view_);
     render_context_->get_texture_pool()->destroy_texture(depth_texture_);
@@ -348,7 +356,7 @@ void RenderFrameScript::on_shutdown() {
         device_->destroy_framebuffer(framebuffer);
     }
     material_framebuffers_.clear();
-    
+
     material_graphics_pipeline_->destroy();
 
     for (RHIFramebuffer* framebuffer : ui_framebuffers_) {
@@ -389,23 +397,23 @@ bool RenderFrameScript::compile_shaders() {
     StringRef projectdir = ProjectSettings::get_instance().get_name("projectdir");
     FileSystem& file_system = FileSystem::get_platform();
 
-    String material_vertex_shader_path = projectdir + "/assets/shaders/ludo.material.vert";
-    String material_fragment_shader_path = projectdir + "/assets/shaders/ludo.material.frag";
+    String material_vertex_shader_path = projectdir + "/assets/shaders/glsl/ludo.material.vert";
+    String material_fragment_shader_path = projectdir + "/assets/shaders/glsl/ludo.material.frag";
 
-    String ui_vertex_shader_path = projectdir + "/assets/shaders/ludo.ui.vert";
-    String ui_fragment_shader_path = projectdir + "/assets/shaders/ludo.ui.frag";
+    String ui_vertex_shader_path = projectdir + "/assets/shaders/glsl/ludo.ui.vert";
+    String ui_fragment_shader_path = projectdir + "/assets/shaders/glsl/ludo.ui.frag";
 
     bool vert_ok = SPIRVShaderCompiler::compile_glsl_file(material_vertex_shader_path,
-                                                          "ludo.material.vert.spv", SPIRVShaderCompiler::Stage::Vertex);
+                                                          "assets/shaders/glsl/ludo.material.vert.spv", SPIRVShaderCompiler::Stage::Vertex);
 
     bool frag_ok = SPIRVShaderCompiler::compile_glsl_file(material_fragment_shader_path,
-                                                          "ludo.material.frag.spv", SPIRVShaderCompiler::Stage::Fragment);
+                                                          "assets/shaders/glsl/ludo.material.frag.spv", SPIRVShaderCompiler::Stage::Fragment);
 
     vert_ok = vert_ok && SPIRVShaderCompiler::compile_glsl_file(ui_vertex_shader_path,
-                                                                "ludo.ui.vert.spv", SPIRVShaderCompiler::Stage::Vertex);
+                                                                "assets/shaders/glsl/ludo.ui.vert.spv", SPIRVShaderCompiler::Stage::Vertex);
 
     frag_ok = frag_ok && SPIRVShaderCompiler::compile_glsl_file(ui_fragment_shader_path,
-                                                                "ludo.ui.frag.spv", SPIRVShaderCompiler::Stage::Fragment);
+                                                                "assets/shaders/glsl/ludo.ui.frag.spv", SPIRVShaderCompiler::Stage::Fragment);
 
     return vert_ok && frag_ok;
 }

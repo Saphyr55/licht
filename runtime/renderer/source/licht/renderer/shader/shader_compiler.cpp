@@ -2,9 +2,17 @@
 #include "licht/renderer/shader/shader_compiler.hpp"
 #include "licht/core/trace/trace.hpp"
 
+#include <filesystem>
+
 namespace licht {
 
 bool SPIRVShaderCompiler::compile_glsl_file(StringRef input_filepath, StringRef output_filepath, Stage stage) {
+        // Ensure the output directory exists
+    std::filesystem::path out_path(output_filepath.data());
+    std::filesystem::path out_dir = out_path.parent_path();
+    if (!out_dir.empty() && !std::filesystem::exists(out_dir)) {
+        std::filesystem::create_directories(out_dir); // creates intermediate directories if needed
+    }
 
     String stage_flag;
     switch (stage) {
@@ -21,7 +29,7 @@ bool SPIRVShaderCompiler::compile_glsl_file(StringRef input_filepath, StringRef 
             stage_flag = "-V -S geom";
             break;
     }
-
+    
     String cmd = "glslangValidator ";
     cmd.append(stage_flag);
     cmd.append(" ");

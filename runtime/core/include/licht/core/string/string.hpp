@@ -153,6 +153,32 @@ public:
         return string_compare(buffer_.data(), str.data()) == 0;
     }
 
+    const CharType& operator[](size_t i) const {
+        return buffer_[i];
+    }
+
+    CharType& operator[](size_t i) {
+        return buffer_[i];
+    }
+
+    Array<CharType>::iterator begin() {
+        return buffer_.begin();
+    }
+
+    Array<CharType>::const_iterator cbegin() {
+        return buffer_.cbegin();
+    }
+
+    Array<CharType>::iterator end() {
+        return buffer_.end();
+    }
+
+    Array<CharType>::const_iterator cend() {
+        return buffer_.cend();
+    }
+
+public:
+
     virtual ~StringBase() {}
 
 protected:
@@ -164,6 +190,8 @@ protected:
 
 protected:
     Array<CharType> buffer_;
+    
+    
 };
 
 using WString =  StringBase<wchar_t>;

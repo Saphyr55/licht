@@ -1,3 +1,4 @@
+
 target("ludo", function()
     set_kind("shared")
     set_group("ludo")
