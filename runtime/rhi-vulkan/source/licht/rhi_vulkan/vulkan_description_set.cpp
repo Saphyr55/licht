@@ -24,7 +24,7 @@ constexpr static auto binding_set_mapping = [](const RHIShaderResourceBinding& b
 };
 
 void VulkanShaderResourceGroup::set_buffer(const RHIWriteBufferResource& resource) {
-    VulkanBuffer* vkbuffer = static_cast<VulkanBuffer*>(resource.buffer);
+    VulkanBuffer* vkbuffer = dynamic_cast<VulkanBuffer*>(resource.buffer);
     VkDescriptorType descriptor_type = vulkan_descriptor_type_get(layout_->get_resource_type(resource.binding));
 
     PendingDescriptorArray& entry = pending_arrays_[resource.binding];
@@ -43,13 +43,13 @@ void VulkanShaderResourceGroup::set_buffer(const RHIWriteBufferResource& resourc
     info.range = static_cast<VkDeviceSize>(resource.range);
 }
 
-void VulkanShaderResourceGroup::set_sampler(const RHIWriteSamplerResource& resource) {
+void VulkanShaderResourceGroup::set_sampler(const RHIWriteSamplerResource&  /*resource*/) {
     LCRASH("Not implemented.")
 }
 
 void VulkanShaderResourceGroup::set_texture_sampler(const RHIWriteTextureSamplerResource& resource) {
-    VulkanTextureView* vk_view = static_cast<VulkanTextureView*>(resource.texture_view);
-    VulkanSampler* vk_sampler = static_cast<VulkanSampler*>(resource.sampler);
+    VulkanTextureView* vk_view = dynamic_cast<VulkanTextureView*>(resource.texture_view);
+    VulkanSampler* vk_sampler = dynamic_cast<VulkanSampler*>(resource.sampler);
 
     VkDescriptorType descriptor_type = vulkan_descriptor_type_get(layout_->get_resource_type(resource.binding));
 
@@ -69,7 +69,7 @@ void VulkanShaderResourceGroup::set_texture_sampler(const RHIWriteTextureSampler
     info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 }
 
-void VulkanShaderResourceGroup::set_texture(const RHIWriteTextureResource& resource) {
+void VulkanShaderResourceGroup::set_texture(const RHIWriteTextureResource&  /*resource*/) {
     LCRASH("Not implemented.")
 }
 
@@ -154,7 +154,7 @@ RHIShaderResourceGroup* VulkanShaderResourceGroupPool::allocate_group(RHIShaderR
 
     VulkanContext& context = vulkan_context_get();
 
-    VulkanShaderResourceGroupLayout* vk_layout = static_cast<VulkanShaderResourceGroupLayout*>(layout);
+    VulkanShaderResourceGroupLayout* vk_layout = dynamic_cast<VulkanShaderResourceGroupLayout*>(layout);
     VkDescriptorSetLayout vk_layout_handle = vk_layout->get_handle();
 
     VkDescriptorSetAllocateInfo descriptor_set_allocation_info = {};
@@ -194,7 +194,7 @@ void VulkanShaderResourceGroupPool::deallocate_group(RHIShaderResourceGroup* gro
     LCHECK(group);
 
     VulkanContext& context = vulkan_context_get();
-    VulkanShaderResourceGroup* vk_group = static_cast<VulkanShaderResourceGroup*>(group);
+    VulkanShaderResourceGroup* vk_group = dynamic_cast<VulkanShaderResourceGroup*>(group);
     VkDescriptorSet& descriptor_set = vk_group->get_handle();
 
     free_groups_.add(vk_group->get_index_pool());

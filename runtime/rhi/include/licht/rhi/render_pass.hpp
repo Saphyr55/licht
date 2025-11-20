@@ -8,10 +8,25 @@ namespace licht {
 
 struct RHIColorAttachmentDescription {
     RHIFormat format;
+    
+    RHIAttachmentLoadOp load_op = RHIAttachmentLoadOp::Load_OP_Clear;
+    RHIAttachmentStoreOp store_op = RHIAttachmentStoreOp::Store_OP_Store;
+    
+    RHIAttachmentLoadOp stencil_load_op = RHIAttachmentLoadOp::Load_OP_DontCare;
+    RHIAttachmentStoreOp stencil_store_op = RHIAttachmentStoreOp::Store_OP_DontCare;
+    
+    RHITextureLayout initial_layout = RHITextureLayout::Undefined;
+    RHITextureLayout final_layout = RHITextureLayout::Present;
 };
 
 struct RHIDepthAttachementDescription {
     RHIFormat format;
+    
+    RHIAttachmentLoadOp load_op = RHIAttachmentLoadOp::Load_OP_Clear;
+    RHIAttachmentStoreOp store_op = RHIAttachmentStoreOp::Store_OP_DontCare;
+
+    RHIAttachmentLoadOp stencil_load_op = RHIAttachmentLoadOp::Load_OP_Clear;
+    RHIAttachmentStoreOp stencil_store_op = RHIAttachmentStoreOp::Store_OP_DontCare;
 };
 
 struct RHIRenderPassDescription {

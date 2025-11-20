@@ -16,12 +16,12 @@ void VulkanRenderPass::initialize() {
         VkAttachmentDescription color_attachment_description = {};
         color_attachment_description.format = vulkan_format_get(attachment_description.format);
         color_attachment_description.samples = VK_SAMPLE_COUNT_1_BIT;
-        color_attachment_description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        color_attachment_description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        color_attachment_description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        color_attachment_description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        color_attachment_description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        color_attachment_description.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        color_attachment_description.loadOp = vulkan_load_op_get(attachment_description.load_op);
+        color_attachment_description.storeOp = vulkan_store_op_get(attachment_description.store_op);
+        color_attachment_description.stencilLoadOp = vulkan_load_op_get(attachment_description.stencil_load_op);
+        color_attachment_description.stencilStoreOp = vulkan_store_op_get(attachment_description.stencil_store_op);
+        color_attachment_description.initialLayout =  vulkan_texture_layout_get(attachment_description.initial_layout);
+        color_attachment_description.finalLayout = vulkan_texture_layout_get(attachment_description.final_layout);
         attachments.append(color_attachment_description);
     }
 
@@ -49,10 +49,10 @@ void VulkanRenderPass::initialize() {
         VkAttachmentDescription deph_attachement_description = {};
         deph_attachement_description.format = vulkan_format_get(depth_attachement_desc.format);
         deph_attachement_description.samples = VK_SAMPLE_COUNT_1_BIT;
-        deph_attachement_description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        deph_attachement_description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        deph_attachement_description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        deph_attachement_description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        deph_attachement_description.loadOp = vulkan_load_op_get(depth_attachement_desc.load_op);;
+        deph_attachement_description.storeOp = vulkan_store_op_get(depth_attachement_desc.store_op);;
+        deph_attachement_description.stencilLoadOp = vulkan_load_op_get(depth_attachement_desc.stencil_load_op);
+        deph_attachement_description.stencilStoreOp = vulkan_store_op_get(depth_attachement_desc.stencil_store_op);
         deph_attachement_description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         deph_attachement_description.finalLayout = layout;
 

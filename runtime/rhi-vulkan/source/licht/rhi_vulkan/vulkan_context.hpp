@@ -114,6 +114,54 @@ inline bool rhi_texture_usage_has(RHITextureUsageFlags value, RHITextureUsageFla
     return (static_cast<uint8_t>(value) & static_cast<uint8_t>(flag)) != 0;
 }
 
+inline VkAttachmentLoadOp vulkan_load_op_get(RHIAttachmentLoadOp op) {
+    switch (op) {
+        case RHIAttachmentLoadOp::Load_OP_Load:
+            return VK_ATTACHMENT_LOAD_OP_LOAD;
+        case RHIAttachmentLoadOp::Load_OP_Clear:
+            return VK_ATTACHMENT_LOAD_OP_CLEAR;
+        case RHIAttachmentLoadOp::Load_OP_DontCare:
+            return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        case RHIAttachmentLoadOp::Load_OP_None:
+        default:
+            return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    }
+}
+
+inline VkAttachmentStoreOp vulkan_store_op_get(RHIAttachmentStoreOp op) {
+    switch (op) {
+        case RHIAttachmentStoreOp::Store_OP_Store:
+            return VK_ATTACHMENT_STORE_OP_STORE;
+        case RHIAttachmentStoreOp::Store_OP_DontCare:
+            return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        case RHIAttachmentStoreOp::Store_OP_None:
+        default:
+            return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    }
+}
+
+inline RHIAttachmentStoreOp rhi_store_op_get(VkAttachmentStoreOp op) {
+    switch (op) {
+        case VK_ATTACHMENT_STORE_OP_STORE:
+            return RHIAttachmentStoreOp::Store_OP_Store;
+        case VK_ATTACHMENT_STORE_OP_DONT_CARE:
+        default:
+            return RHIAttachmentStoreOp::Store_OP_DontCare;
+    }
+}
+
+inline RHIAttachmentLoadOp rhi_load_op_get(VkAttachmentLoadOp op) {
+    switch (op) {
+        case VK_ATTACHMENT_LOAD_OP_LOAD:
+            return RHIAttachmentLoadOp::Load_OP_Load;
+        case VK_ATTACHMENT_LOAD_OP_CLEAR:
+            return RHIAttachmentLoadOp::Load_OP_Clear;
+        case VK_ATTACHMENT_LOAD_OP_DONT_CARE:
+        default:
+            return RHIAttachmentLoadOp::Load_OP_DontCare;
+    }
+}
+
 inline VkImageLayout vulkan_texture_layout_get(RHITextureLayout layout) {
     switch (layout) {
         case RHITextureLayout::Undefined:
@@ -128,6 +176,8 @@ inline VkImageLayout vulkan_texture_layout_get(RHITextureLayout layout) {
             return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         case RHITextureLayout::DepthStencilAttachment:
             return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        case RHITextureLayout::Present:
+            return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         case RHITextureLayout::General:
             return VK_IMAGE_LAYOUT_GENERAL;
         default:
@@ -149,6 +199,8 @@ inline RHITextureLayout rhi_texture_layout_get(VkImageLayout layout) {
             return RHITextureLayout::ColorAttachment;
         case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
             return RHITextureLayout::DepthStencilAttachment;
+        case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
+            return RHITextureLayout::Present;
         case VK_IMAGE_LAYOUT_GENERAL:
             return RHITextureLayout::General;
         default:

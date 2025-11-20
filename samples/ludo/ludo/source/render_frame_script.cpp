@@ -35,10 +35,14 @@ namespace licht {
 
 RenderFrameScript::RenderFrameScript(Camera* camera, WindowHandle window_handle)
     : window_handle_(window_handle)
+    , camera_(camera)
     , device_(nullptr)
-    , material_framebuffers_(3)
-    , pause_(false)
-    , camera_(camera) {
+    , depth_texture_view_(nullptr)
+    , depth_texture_(nullptr)
+    , render_context_(nullptr)
+    , material_graphics_pipeline_(nullptr)
+    , ui_graphics_pipeline_(nullptr)
+    , pause_(false) {
 }
 
 void RenderFrameScript::on_startup() {
@@ -60,8 +64,8 @@ void RenderFrameScript::on_startup() {
     render_context_->initialize(window_handle_);
     render_context_->on_reset([this]() -> void { reset(); });
 
-    float32 width = render_context_->get_swapchain()->get_width();
-    float32 height = render_context_->get_swapchain()->get_height();
+    float32 width = static_cast<float32>(render_context_->get_swapchain()->get_width());
+    float32 height = static_cast<float32>(render_context_->get_swapchain()->get_height());
 
     String model_asset_path = projectdir + "/assets/models/Sponza/glTF/Sponza.gltf";
 
@@ -109,7 +113,7 @@ void RenderFrameScript::on_startup() {
     for (RHITextureView* texture : render_context_->get_swapchain()->get_texture_views()) {
         RHIFramebufferDescription description = {
             .render_pass = ui_graphics_pipeline_->get_render_pass(),
-            .attachments = {texture, depth_texture_view_},
+            .attachments = {texture},
             .width = width,
             .height = height,
             .layers = 1,
@@ -120,7 +124,7 @@ void RenderFrameScript::on_startup() {
     }
 
     RHIDeviceMemoryUploader uploader = render_context_->uploader();
-    
+
     for (StaticMesh& mesh : meshes_model) {
         for (StaticSubMesh& submesh : mesh.get_submeshes()) {
             DrawItem item = DrawItem::create(device_, uploader, submesh);
@@ -153,7 +157,7 @@ void RenderFrameScript::on_tick(const float64 delta_time) {
     if (pause_) {
         return;
     }
-    
+
     update_material_uniform(delta_time);
     update_ui_uniform(delta_time);
 
@@ -167,30 +171,30 @@ void RenderFrameScript::on_tick(const float64 delta_time) {
                        .width = width,
                        .height = height};
 
+        Rect2D scissor = {.x = 0.0f,
+                          .y = 0.0f,
+                          .width = width,
+                          .height = height};
+
+        Viewport viewport = {.x = 0.0f,
+                             .y = 0.0f,
+                             .width = width,
+                             .height = height,
+                             .min_depth = 0.0f,
+                             .max_depth = 1.0f};
+
+        // Material Pass        
         RHIRenderPassBeginInfo render_pass_begin_info = {};
         render_pass_begin_info.render_pass = material_graphics_pipeline_->get_render_pass();
         render_pass_begin_info.framebuffer = material_framebuffers_[render_context_->get_frame_index()];
         render_pass_begin_info.area = area;
         render_pass_begin_info.color = Vector4f(0.01f, 0.01f, 0.01f, 1.0f);
 
-        // Material Pass
         cmd->begin_render_pass(render_pass_begin_info);
         {
             RHIGraphicsPipeline* graphics_pipeline = material_graphics_pipeline_->get_graphics_pipeline_handle();
 
             cmd->bind_graphics_pipeline(graphics_pipeline);
-
-            Rect2D scissor = {.x = 0.0f,
-                              .y = 0.0f,
-                              .width = width,
-                              .height = height};
-
-            Viewport viewport = {.x = 0.0f,
-                                 .y = 0.0f,
-                                 .width = width,
-                                 .height = height,
-                                 .min_depth = 0.0f,
-                                 .max_depth = 1.0f};
 
             cmd->set_viewports(&viewport, 1);
             cmd->set_scissors(&scissor, 1);
@@ -223,7 +227,7 @@ void RenderFrameScript::on_tick(const float64 delta_time) {
             }
         }
         cmd->end_render_pass();
-        
+
         // UI Pass
         RHIRenderPassBeginInfo ui_info = {};
         ui_info.render_pass = ui_graphics_pipeline_->get_render_pass();
@@ -244,8 +248,8 @@ void RenderFrameScript::on_tick(const float64 delta_time) {
 void RenderFrameScript::update_material_uniform(const float64 delta_time) {
     UniformBufferObject ubo;
 
-    float32 width = render_context_->get_swapchain()->get_width();
-    float32 height = render_context_->get_swapchain()->get_height();
+    float32 width = static_cast<float32>(render_context_->get_swapchain()->get_width());
+    float32 height = static_cast<float32>(render_context_->get_swapchain()->get_height());
     float32 aspect_ratio = width / height;
 
     ubo.view = camera_->view;
@@ -262,8 +266,8 @@ void RenderFrameScript::update_material_uniform(const float64 delta_time) {
 void RenderFrameScript::update_ui_uniform(const float64 delta_time) {
     UniformBufferObject ubo;
 
-    float32 width = render_context_->get_swapchain()->get_width();
-    float32 height = render_context_->get_swapchain()->get_height();
+    float32 width = static_cast<float32>(render_context_->get_swapchain()->get_width());
+    float32 height = static_cast<float32>(render_context_->get_swapchain()->get_height());
     float32 aspect_ratio = width / height;
 
     ubo.view = Matrix4f::identity();
@@ -276,22 +280,10 @@ void RenderFrameScript::update_ui_uniform(const float64 delta_time) {
 }
 
 void RenderFrameScript::reset() {
+
+    // Destroy depth texture.
     device_->destroy_texture_view(depth_texture_view_);
     render_context_->get_texture_pool()->destroy_texture(depth_texture_);
-
-    RHITextureDescription depth_texture_desc = {};
-    depth_texture_desc.format = RHIFormat::D24S8;
-    depth_texture_desc.usage = RHITextureUsageFlags::DepthStencilAttachment;
-    depth_texture_desc.sharing_mode = RHISharingMode::Private;
-    depth_texture_desc.memory_usage = RHIMemoryUsage::Device;
-    depth_texture_desc.width = render_context_->get_swapchain()->get_width();
-    depth_texture_desc.height = render_context_->get_swapchain()->get_height();
-    depth_texture_ = render_context_->get_texture_pool()->create_texture(depth_texture_desc);
-
-    RHITextureViewDescription depth_texture_view_desc = {};
-    depth_texture_view_desc.texture = depth_texture_;
-    depth_texture_view_desc.format = depth_texture_->get_description().format;
-    depth_texture_view_ = device_->create_texture_view(depth_texture_view_desc);
 
     // Destroy all existing framebuffers
     for (RHIFramebuffer* framebuffer : material_framebuffers_) {
@@ -304,12 +296,29 @@ void RenderFrameScript::reset() {
     }
     ui_framebuffers_.clear();
 
+    float32 width = static_cast<float32>(render_context_->get_swapchain()->get_width());
+    float32 height = static_cast<float32>(render_context_->get_swapchain()->get_height());
+
+    RHITextureDescription depth_texture_desc = {};
+    depth_texture_desc.format = RHIFormat::D24S8;
+    depth_texture_desc.usage = RHITextureUsageFlags::DepthStencilAttachment;
+    depth_texture_desc.sharing_mode = RHISharingMode::Private;
+    depth_texture_desc.memory_usage = RHIMemoryUsage::Device;
+    depth_texture_desc.width = width;
+    depth_texture_desc.height = height;
+    depth_texture_ = render_context_->get_texture_pool()->create_texture(depth_texture_desc);
+
+    RHITextureViewDescription depth_texture_view_desc = {};
+    depth_texture_view_desc.texture = depth_texture_;
+    depth_texture_view_desc.format = depth_texture_->get_description().format;
+    depth_texture_view_ = device_->create_texture_view(depth_texture_view_desc);
+
     // Create new framebuffers
     material_framebuffers_.reserve(render_context_->get_swapchain()->get_texture_views().size());
     for (RHITextureView* texture_view : render_context_->get_swapchain()->get_texture_views()) {
         RHIFramebufferDescription description = {};
-        description.height = render_context_->get_swapchain()->get_height();
-        description.width = render_context_->get_swapchain()->get_width();
+        description.width = width;
+        description.height = height;
         description.render_pass = material_graphics_pipeline_->get_render_pass();
         description.attachments = {texture_view, depth_texture_view_};
         description.layers = 1;
@@ -321,10 +330,10 @@ void RenderFrameScript::reset() {
     ui_framebuffers_.reserve(render_context_->get_swapchain()->get_texture_views().size());
     for (RHITextureView* texture_view : render_context_->get_swapchain()->get_texture_views()) {
         RHIFramebufferDescription description = {};
-        description.height = render_context_->get_swapchain()->get_height();
-        description.width = render_context_->get_swapchain()->get_width();
+        description.width = width;
+        description.height = height;
         description.render_pass = ui_graphics_pipeline_->get_render_pass();
-        description.attachments = {texture_view, depth_texture_view_};
+        description.attachments = {texture_view};
         description.layers = 1;
 
         RHIFramebuffer* framebuffer = device_->create_framebuffer(description);
@@ -339,13 +348,14 @@ void RenderFrameScript::on_shutdown() {
         device_->destroy_framebuffer(framebuffer);
     }
     material_framebuffers_.clear();
+    
+    material_graphics_pipeline_->destroy();
 
     for (RHIFramebuffer* framebuffer : ui_framebuffers_) {
         device_->destroy_framebuffer(framebuffer);
     }
     ui_framebuffers_.clear();
 
-    material_graphics_pipeline_->destroy();
     ui_graphics_pipeline_->destroy();
 
     device_->destroy_texture_view(depth_texture_view_);
@@ -366,7 +376,7 @@ void RenderFrameScript::reload_shaders() {
     device_->wait_idle();
 
     compile_shaders();
-    
+
     material_graphics_pipeline_->reload();
     ui_graphics_pipeline_->reload();
 }
@@ -392,10 +402,10 @@ bool RenderFrameScript::compile_shaders() {
                                                           "ludo.material.frag.spv", SPIRVShaderCompiler::Stage::Fragment);
 
     vert_ok = vert_ok && SPIRVShaderCompiler::compile_glsl_file(ui_vertex_shader_path,
-                                                          "ludo.ui.vert.spv", SPIRVShaderCompiler::Stage::Vertex);
+                                                                "ludo.ui.vert.spv", SPIRVShaderCompiler::Stage::Vertex);
 
     frag_ok = frag_ok && SPIRVShaderCompiler::compile_glsl_file(ui_fragment_shader_path,
-                                                          "ludo.ui.frag.spv", SPIRVShaderCompiler::Stage::Fragment);
+                                                                "ludo.ui.frag.spv", SPIRVShaderCompiler::Stage::Fragment);
 
     return vert_ok && frag_ok;
 }

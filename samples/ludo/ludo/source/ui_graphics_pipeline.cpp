@@ -4,6 +4,7 @@
 #include "licht/renderer/render_context.hpp"
 #include "licht/rhi/render_pass.hpp"
 #include "licht/rhi/device.hpp"
+#include "licht/rhi/rhi_types.hpp"
 #include "ludo_types.hpp"
 
 namespace licht {
@@ -17,10 +18,13 @@ void UIGraphicsPipeline::initialize(const SharedRef<RHIDevice>& device,
     // Render Pass.
     RHIColorAttachmentDescription render_pass_color_attachment = {};
     render_pass_color_attachment.format = render_context_->get_swapchain()->get_format();
+    render_pass_color_attachment.load_op = RHIAttachmentLoadOp::Load_OP_Load;
+    render_pass_color_attachment.initial_layout = RHITextureLayout::ColorAttachment;
+    render_pass_color_attachment.final_layout = RHITextureLayout::Present;
 
     render_pass_ = device_->create_render_pass({
         .color_attachment_decriptions = {render_pass_color_attachment},
-        .deph_attachement_description = RHIDepthAttachementDescription(RHIFormat::D24S8),
+        .deph_attachement_description = Option<RHIDepthAttachementDescription>::none(),
     });
 
     RHIShaderResourceBinding ubo_binding(0, RHIShaderResourceType::Uniform, RHIShaderStage::Fragment | RHIShaderStage::Vertex);

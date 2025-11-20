@@ -17,5 +17,5 @@ layout(push_constant) uniform DrawItem {
 } u_item;
 
 void main() {
-    out_frag_color = vec4(0.0);
+    out_frag_color = in_color;
 }

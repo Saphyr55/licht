@@ -62,7 +62,7 @@ private:
     SharedRef<MaterialGraphicsPipeline> material_graphics_pipeline_;
     SharedRef<UIGraphicsPipeline> ui_graphics_pipeline_;
 
-    bool pause_ = false;
+    bool pause_;
 };
 
 }  //namespace licht

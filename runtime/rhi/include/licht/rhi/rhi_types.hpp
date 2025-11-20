@@ -20,6 +20,19 @@ struct Rect2D {
     float32 height = 0.0f;
 };
 
+enum class RHIAttachmentLoadOp {
+    Load_OP_Load = 0,
+    Load_OP_Clear = 1,
+    Load_OP_DontCare = 2,
+    Load_OP_None,
+};
+
+enum class RHIAttachmentStoreOp {
+    Store_OP_Store,
+    Store_OP_DontCare,
+    Store_OP_None,
+};
+
 enum class RHIFilter {
     Nearest,
     Linear
@@ -39,6 +52,7 @@ enum class RHITextureLayout : uint8 {
     ShaderReadOnly,
     ColorAttachment,
     DepthStencilAttachment,
+    Present,
     General
 };
 

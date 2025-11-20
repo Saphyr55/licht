@@ -7,6 +7,7 @@
 #include "licht/rhi/device.hpp"
 #include "licht/rhi/device_memory_uploader.hpp"
 #include "licht/rhi/render_pass.hpp"
+#include "licht/rhi/rhi_types.hpp"
 #include "licht/scene/punctual_light.hpp"
 #include "ludo_types.hpp"
 
@@ -55,10 +56,19 @@ void MaterialGraphicsPipeline::initialize(const SharedRef<RHIDevice>& device,
     // Render Pass.
     RHIColorAttachmentDescription render_pass_color_attachment = {};
     render_pass_color_attachment.format = render_context_->get_swapchain()->get_format();
+    render_pass_color_attachment.load_op = RHIAttachmentLoadOp::Load_OP_Clear;
+    render_pass_color_attachment.store_op = RHIAttachmentStoreOp::Store_OP_Store;
+    render_pass_color_attachment.initial_layout = RHITextureLayout::Undefined;
+    render_pass_color_attachment.final_layout = RHITextureLayout::ColorAttachment;
+    
+    RHIDepthAttachementDescription render_pass_depth_attachment = {};
+    render_pass_depth_attachment.format = RHIFormat::D24S8;
+    render_pass_depth_attachment.load_op = RHIAttachmentLoadOp::Load_OP_Clear;
+    render_pass_depth_attachment.store_op = RHIAttachmentStoreOp::Store_OP_DontCare;
 
     render_pass_ = device_->create_render_pass({
         .color_attachment_decriptions = {render_pass_color_attachment},
-        .deph_attachement_description = RHIDepthAttachementDescription(RHIFormat::D24S8),
+        .deph_attachement_description = render_pass_depth_attachment,
     });
 
     RHIShaderResourceBinding ubo_binding(0, RHIShaderResourceType::Uniform, RHIShaderStage::Fragment | RHIShaderStage::Vertex);
